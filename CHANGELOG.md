@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.1
 
 - Right-click a column header or press Columns to hide or show any column, such as SubKey Available? or List Match with RegEdit.
 - Right-click a row and choose Jump to RegEdit to open RegEdit at the key of that row.
