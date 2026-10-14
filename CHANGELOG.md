@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.1.0
 
 - RegistryKey Check has a new dark look, with a toolbar on top, a search bar and a status bar that shows progress.
 - The search bar searches every column at once, and Ctrl+F jumps to it.
@@ -21,6 +21,7 @@
 - F5 runs Query RegEdit, Ctrl+O runs Read List.txt and F1 opens Help.
 - The Detail window now has Jump to RegEdit and Copy reg command buttons.
 - An empty list now says how to load the reg commands in List.txt.
+- The Help window now has a Close button and closes with Esc.
 
 ## 2.0.1
 
