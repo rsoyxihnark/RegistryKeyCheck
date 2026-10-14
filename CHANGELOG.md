@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- A colored bar at the left of each row shows whether it is True, False, Unknown or Ignored.
+- When a row is False, the RegEdit Value Data or RegEdit Value Type that differs is shown in red.
+- List Value Data and RegEdit Value Data use a fixed-width font, so hex values line up.
+- Execute Result shows Error in red and successful in green.
+- The tabs show how many rows they hold, and Execute Selected shows how many rows are selected.
+- The Detail window shows the RegEdit value that differs in red.
+- Fixed reg delete with /va deleting the whole key with its subkeys instead of only its values.
+- Fixed REG_EXPAND_SZ data with variables other than %SystemRoot%, such as %ProgramFiles%, never matching RegEdit.
+- Fixed a row with a misspelled base key, such as HKEY_LOCAL_MACHIN, showing successful after it was executed.
+- Fixed the Select box in the column header not showing whether the shown rows are selected.
+
 ## 2.1.0
 
 - RegistryKey Check has a new dark look, with a toolbar on top, a search bar and a status bar that shows progress.

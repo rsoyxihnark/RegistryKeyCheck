@@ -44,7 +44,7 @@ namespace RegistryKey_Check
             TextBoxListCommand.Text = mo.ListCommand;
             TextBoxListPath.Text = mo.ListPath;
             TextBoxAvailableSubKey.Text = mo.AvailableSubKey;
-            TextBoxListValueName.Text = DisplayTextConverter.Display(mo.ListValueName, true);
+            TextBoxListValueName.Text = mo.ListValueNameText;
             TextBoxAvailableValueName.Text = DisplayTextConverter.Display(mo.AvailableValueName, false);
             TextBoxListValueType.Text = DisplayTextConverter.Display(mo.ListValueType, false);
             TextBoxRegEditValueType.Text = DisplayTextConverter.Display(mo.RegEditValueType, false);
@@ -52,6 +52,20 @@ namespace RegistryKey_Check
             TextBoxRegEditValueData.Text = DisplayTextConverter.Display(mo.RegEditValueData, false);
             TextBoxExecuteResult.Text = mo.ExecuteResult;
             TextBoxListMatchWithRegEdit.Text = mo.ListMatchWithRegEdit;
+            FontFamily mono = (FontFamily)FindResource("MonoFont");
+            TextBoxListValueData.FontFamily = mono;
+            TextBoxRegEditValueData.FontFamily = mono;
+            Brush differs = (Brush)new BrushConverter().ConvertFromString("#FFFCA5A5")!;
+            if (mo.DataDiffers)
+            {
+                TextBoxRegEditValueData.Foreground = differs;
+                TextBoxRegEditValueData.FontWeight = FontWeights.SemiBold;
+            }
+            if (mo.TypeDiffers)
+            {
+                TextBoxRegEditValueType.Foreground = differs;
+                TextBoxRegEditValueType.FontWeight = FontWeights.SemiBold;
+            }
         }
 
         private void ButtonJumpToRegEdit_Click(object sender, RoutedEventArgs e)

@@ -167,6 +167,10 @@ namespace RegistryKey_Check
                 {
                     valueName = string.Empty;
                 }
+                else if (arg == "/va" && command == "delete")
+                {
+                    modelRegCommand.DeleteAllValues = true;
+                }
                 else if (arg == "/v" && i + 1 < args.Count)
                 {
                     valueName = args[++i];
@@ -222,7 +226,7 @@ namespace RegistryKey_Check
             }
             if (modelRegCommand.ListValueType == "REG_EXPAND_SZ")
             {
-                modelRegCommand.ListValueData = modelRegCommand.ListValueData.Replace("%SystemRoot%", Environment.ExpandEnvironmentVariables("%SystemRoot%"));
+                modelRegCommand.ListValueData = Environment.ExpandEnvironmentVariables(modelRegCommand.ListValueData);
             }
             return modelRegCommand;
         }
@@ -316,6 +320,8 @@ namespace RegistryKey_Check
                 mo.RegEditValueType = "This_field_is_NULL";
                 mo.RegEditValueData = "This_field_is_NULL";
                 mo.ReturnObject = "This_field_is_NULL";
+                mo.DataDiffers = false;
+                mo.TypeDiffers = false;
                 QueryKey? queryKey = OpenQueryKey(keys, mo.ListBaseKey, mo.ListSubKey);
                 RegistryKey? registryKey = queryKey?.Key;
                 if (queryKey != null && registryKey != null)
@@ -370,6 +376,7 @@ namespace RegistryKey_Check
                             else
                             {
                                 mo.ListMatchWithRegEdit = "False";
+                                mo.DataDiffers = mo.ListCommand == "reg add";
                             }
                         }
                         else
@@ -394,6 +401,10 @@ namespace RegistryKey_Check
                         else if (mo.ListCommand == "reg delete")
                         {
                             mo.ListMatchWithRegEdit = "False";
+                        }
+                        if (mo.DeleteAllValues)
+                        {
+                            mo.AvailableValueName = queryKey.ValueNames.Count > 0 ? "It's Available" : "Not Available";
                         }
                     }
                 }
@@ -428,6 +439,7 @@ namespace RegistryKey_Check
                 if (mo.ListCommand == "reg add" && mo.ListValueType != "This_field_is_NULL" && mo.RegEditValueType != "This_field_is_NULL" && mo.ListValueType != mo.RegEditValueType)
                 {
                     mo.ListMatchWithRegEdit = "False";
+                    mo.TypeDiffers = true;
                 }
             }
             catch (Exception ex)
@@ -519,7 +531,25 @@ namespace RegistryKey_Check
                 {
                     if (mo.ListMatchWithRegEdit == "False")
                     {
-                        if (mo.ListCommand == "reg delete" && mo.ListValueName == "This_field_is_NULL")
+                        if (RootKey(mo.ListBaseKey) == null)
+                        {
+                            throw new InvalidOperationException("\"" + mo.ListBaseKey + "\" is not a base key RegEdit has.");
+                        }
+                        if (mo.ListCommand == "reg delete" && mo.DeleteAllValues)
+                        {
+                            await Task.Run(() =>
+                            {
+                                AvailableSubKeyMethodTrue(mo.ListBaseKey, mo.ListSubKey);
+                            });
+                            if (registryKey != null)
+                            {
+                                foreach (string name in registryKey.GetValueNames())
+                                {
+                                    registryKey.DeleteValue(name);
+                                }
+                            }
+                        }
+                        else if (mo.ListCommand == "reg delete" && mo.ListValueName == "This_field_is_NULL")
                         {
                             if (mo.ListSubKey.Length == 0)
                             {

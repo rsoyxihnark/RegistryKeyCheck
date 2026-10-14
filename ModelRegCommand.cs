@@ -33,6 +33,14 @@ namespace RegistryKey_Check
 
         public string ListPath { get; set; } = string.Empty;
 
+        public bool DeleteAllValues { get; set; }
+
+        public string ListValueNameText => DeleteAllValues ? "(All values)" : DisplayTextConverter.Display(ListValueName, true);
+
+        public bool DataDiffers { get; set; }
+
+        public bool TypeDiffers { get; set; }
+
         public string AvailableSubKey { get; set; } = string.Empty;
 
         public string ListValueName { get; set; } = "This_field_is_NULL";

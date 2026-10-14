@@ -31,7 +31,7 @@ namespace RegistryKey_Check
 
         private static readonly string[] SearchFields =
         {
-            "RegCommandId", "ListId", "ListCommand", "ListPath", "AvailableSubKey", "ListValueName", "AvailableValueName",
+            "RegCommandId", "ListId", "ListCommand", "ListPath", "AvailableSubKey", "ListValueNameText", "AvailableValueName",
             "ListValueType", "RegEditValueType", "ListValueData", "RegEditValueData", "ExecuteResult", "ListMatchWithRegEdit", "ListLineString"
         };
 
@@ -46,6 +46,8 @@ namespace RegistryKey_Check
         private readonly Stopwatch stopwatch = new Stopwatch();
 
         private ListCollectionView? regView;
+
+        private CheckBox? selectAllBox;
 
         private string searchText = string.Empty;
 
@@ -453,7 +455,7 @@ namespace RegistryKey_Check
                 "ListCommand" => mo.ListCommand,
                 "ListPath" => mo.ListPath,
                 "AvailableSubKey" => mo.AvailableSubKey,
-                "ListValueName" => DisplayTextConverter.Display(mo.ListValueName, true),
+                "ListValueNameText" => mo.ListValueNameText,
                 "AvailableValueName" => DisplayTextConverter.Display(mo.AvailableValueName, false),
                 "ListValueType" => DisplayTextConverter.Display(mo.ListValueType, false),
                 "RegEditValueType" => DisplayTextConverter.Display(mo.RegEditValueType, false),
@@ -494,10 +496,39 @@ namespace RegistryKey_Check
             ChipIgnored.Content = "Ignored (" + Number(ignored) + ")";
             ChipUnknown.Content = "Unknown (" + Number(total - trues - falses - ignored) + ")";
             TextShown.Text = "Shown " + Number(shown) + " of " + Number(total);
+            TextRegTabCount.Text = Number(total);
+            TextNonRegTabCount.Text = Number(ViewModels.ObsColl_Non_RegCommands.Count);
+            UpdateSelection();
             EmptyState.Visibility = shown == 0 ? Visibility.Visible : Visibility.Collapsed;
             EmptyTitle.Text = total == 0 ? "No reg commands yet" : "No rows match the filters";
             EmptyDetail.Text = total == 0 ? "Press Read List.txt to load the reg commands in List.txt" : "Press Clear filters to show every row again";
             TextTotal.Text = "Total " + Number(total);
+        }
+
+        private void UpdateSelection()
+        {
+            int selected = ViewModels.ObsColl_RegCommands.Count(r => r.IsChecked);
+            ButtonExecuteSelected.Content = selected > 0 ? "Execute Selected (" + Number(selected) + ")" : "Execute Selected";
+            if (selectAllBox != null)
+            {
+                List<ModelRegCommand> shown = regView?.OfType<ModelRegCommand>().ToList() ?? new List<ModelRegCommand>();
+                int shownChecked = shown.Count(r => r.IsChecked);
+                selectAllBox.IsChecked = shownChecked == 0 ? false : shownChecked == shown.Count ? true : null;
+            }
+        }
+
+        private void SelectAllCheckBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            selectAllBox = (CheckBox)sender;
+            UpdateSelection();
+        }
+
+        private void DataGridRegCommands_ButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (e.OriginalSource is CheckBox)
+            {
+                UpdateSelection();
+            }
         }
 
         private static string Number(int value)
@@ -639,6 +670,7 @@ namespace RegistryKey_Check
                     {
                         row.IsChecked = check;
                     }
+                    UpdateSelection();
                     e.Handled = true;
                 }
             }
@@ -746,6 +778,7 @@ namespace RegistryKey_Check
             {
                 mo.IsChecked = true;
             }
+            UpdateSelection();
         }
 
         private void MenuUncheck_Click(object sender, RoutedEventArgs e)
@@ -754,6 +787,7 @@ namespace RegistryKey_Check
             {
                 mo.IsChecked = false;
             }
+            UpdateSelection();
         }
 
         private void MenuAddToIgnoreList_Click(object sender, RoutedEventArgs e)

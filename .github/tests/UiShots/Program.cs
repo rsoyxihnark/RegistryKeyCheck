@@ -42,6 +42,8 @@ internal static class Program
             $"reg delete \"{key}\\OneDrive\" /f",
             $"reg delete \"{key}\\Desktop\" /v \"OldValue\" /f",
             $"reg add \"{key}\\Ignored\" /v \"Anything\" /d \"x\" /f",
+            $"reg delete \"{key}\\OldStuff\" /va /f",
+            $"reg add \"{key}\\Desktop\" /v \"Wallpaper\" /t REG_EXPAND_SZ /d \"%SystemRoot%\\Web\\img0.jpg\" /f",
             "echo Done"
         };
         File.WriteAllLines(Path.Combine(work, "List.txt"), list);
@@ -63,6 +65,10 @@ internal static class Program
             shellFolder.SetValue("Attributes", unchecked((int)0xb0040064), RegistryValueKind.DWord);
         }
         Registry.CurrentUser.CreateSubKey(TestKey + @"\OneDrive").Dispose();
+        using (RegistryKey oldStuff = Registry.CurrentUser.CreateSubKey(TestKey + @"\OldStuff"))
+        {
+            oldStuff.SetValue("Leftover", "1");
+        }
         Directory.SetCurrentDirectory(work);
         try
         {

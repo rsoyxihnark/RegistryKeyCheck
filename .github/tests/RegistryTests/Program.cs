@@ -67,6 +67,12 @@ Registry.CurrentUser.DeleteSubKeyTree(TestKey, false);
 try
 {
     string a = @"HKCU\Software\RegistryKeyCheckTest\A";
+    using (RegistryKey va = Registry.CurrentUser.CreateSubKey(TestKey + @"\A\VA"))
+    {
+        va.SetValue("One", "1");
+        va.SetValue("Two", 2, RegistryValueKind.DWord);
+        va.CreateSubKey("Child").Dispose();
+    }
     string[] regExe =
     {
         $"reg add \"{a}\" /v \"KucukbuyuK\" /t REG_SZ /d \"test\" /f",
@@ -82,7 +88,9 @@ try
         $"reg add \"{a}\" /v \"Spaces\" /d \"a  b\" /f",
         $"reg add {a} /v Unquoted /t REG_SZ /d plain /f",
         $"reg add \"{a}\\OnlyKey\" /f",
-        $"reg add \"{a}\" /v \"Exp\" /t REG_EXPAND_SZ /d \"%SystemRoot%\\system32\" /f"
+        $"reg add \"{a}\" /v \"Exp\" /t REG_EXPAND_SZ /d \"%SystemRoot%\\system32\" /f",
+        $"reg add \"{a}\" /v \"ExpProgramFiles\" /t REG_EXPAND_SZ /d \"%ProgramFiles%\\Test\" /f",
+        $"reg delete \"{a}\\VA\" /va /f"
     };
     foreach (string line in regExe)
     {
@@ -149,6 +157,41 @@ try
     List<(string Line, string Status, string Data)> selectedRun = Run(listC, Array.Empty<string>(), true, line => line.Contains("\"Picked\""));
     Check(selectedRun[0].Status == "True", "Execute Selected changed the selected row: " + selectedRun[0].Status);
     Check(selectedRun[1].Status == "False", "Execute Selected left the unselected row alone: " + selectedRun[1].Status);
+    using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\A\VA")!)
+    {
+        Check(key.GetValueNames().Length == 0 && key.OpenSubKey("Child") != null, "reg.exe /va deleted the values of VA and kept its subkey");
+    }
+
+    string e = @"HKCU\Software\RegistryKeyCheckTest\E";
+    using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\E"))
+    {
+        key.SetValue(string.Empty, "default");
+        key.SetValue("V1", "1");
+        key.SetValue("V2", 2, RegistryValueKind.DWord);
+        key.CreateSubKey("Keep").Dispose();
+    }
+    string[] listE = { $"reg delete \"{e}\" /va /f" };
+    foreach ((string line, string status, string data) in Run(listE, Array.Empty<string>(), false))
+    {
+        Check(status == "False", "Before Execute Missing Commands " + status + " for " + line);
+    }
+    foreach ((string line, string status, string data) in Run(listE, Array.Empty<string>(), true))
+    {
+        Check(status == "True", "After Execute Missing Commands " + status + " for " + line);
+    }
+    using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\E")!)
+    {
+        Check(key.GetValueNames().Length == 0, "/va deleted every value of E");
+        Check(key.OpenSubKey("Keep") != null, "/va kept the subkey Keep of E");
+    }
+
+    string[] listF = { "reg add \"HKEY_CURRENT_USR\\Software\\RegistryKeyCheckTest\\F\" /v \"x\" /d \"1\" /f" };
+    Run(listF, Array.Empty<string>(), true);
+    IEnumerable rowsF = (IEnumerable)viewModels.GetField("ObsColl_RegCommands")!.GetValue(null)!;
+    object rowF = rowsF.Cast<object>().First();
+    string resultF = (string)rowF.GetType().GetProperty("ExecuteResult")!.GetValue(rowF)!;
+    Check(resultF == "Error", "A misspelled base key gives Error after Execute Missing Commands: " + resultF);
+
     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\B\command")!)
     {
         using RegistryKey regExeKey = Registry.CurrentUser.OpenSubKey(TestKey + @"\A\command")!;
