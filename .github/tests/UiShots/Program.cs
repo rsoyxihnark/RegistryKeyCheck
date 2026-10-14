@@ -209,7 +209,7 @@ internal static class Program
 
     private static void Shot(Window window, string name)
     {
-        FrameworkElement root = (FrameworkElement)window.Content;
+        FrameworkElement root = (FrameworkElement)VisualTreeHelper.GetChild(window, 0);
         Save(root, window.Background, name);
     }
 

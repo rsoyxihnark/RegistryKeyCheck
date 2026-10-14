@@ -190,8 +190,10 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" SnapsToDevicePixels="True">
-                        <Grid Margin="{TemplateBinding Padding}">
-                            <TextBlock x:Name="Hint" Text="{TemplateBinding Tag}" Foreground="{StaticResource FaintBrush}" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" TextTrimming="CharacterEllipsis" />
+                        <Grid>
+                            <Border Padding="{TemplateBinding Padding}" IsHitTestVisible="False">
+                                <TextBlock x:Name="Hint" Text="{TemplateBinding Tag}" Foreground="{StaticResource FaintBrush}" VerticalAlignment="Center" Margin="2,0,0,0" Visibility="Collapsed" TextTrimming="CharacterEllipsis" />
+                            </Border>
                             <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" />
                         </Grid>
                     </Border>
@@ -673,10 +675,10 @@
                 <Setter Property="Background" Value="#0AFFFFFF" />
             </Trigger>
             <DataTrigger Binding="{Binding ListMatchWithRegEdit}" Value="False">
-                <Setter Property="Background" Value="#29F87171" />
+                <Setter Property="Background" Value="#38F87171" />
             </DataTrigger>
             <DataTrigger Binding="{Binding ListMatchWithRegEdit}" Value="True">
-                <Setter Property="Background" Value="#1A34D399" />
+                <Setter Property="Background" Value="#2634D399" />
             </DataTrigger>
             <DataTrigger Binding="{Binding ListMatchWithRegEdit}" Value="Ignored">
                 <Setter Property="Foreground" Value="{StaticResource FaintBrush}" />
