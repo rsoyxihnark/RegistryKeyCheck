@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.2.0
 
 - A colored bar at the left of each row shows whether it is True, False, Unknown or Ignored.
 - When a row is False, the RegEdit Value Data or RegEdit Value Type that differs is shown in red.
