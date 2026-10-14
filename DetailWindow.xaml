@@ -1,0 +1,152 @@
+<Window x:Class="RegistryKey_Check.DetailWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RegistryKey_Check"
+        mc:Ignorable="d"
+        x:Name="DetailWin"
+        Title="Detail" Height="500" Width="800" Loaded="DetailWin_Loaded">
+    <Grid>
+        <Label Content="ID" Margin="10,10,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List ID" Margin="10,40,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List Command" Margin="10,70,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List BaseKey" Margin="10,100,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List SubKey" Margin="10,130,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="SubKey Available?" Margin="10,180,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List Value Name" Margin="10,210,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Value Name Available? " Margin="10,240,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List Value Type" Margin="10,270,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="RegEdit Value Type" Margin="10,300,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List Value Data" Margin="10,330,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="RegEdit Value Data" Margin="10,360,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Execute Result" Margin="10,390,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List Match with RegEdit" Margin="10,420,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <TextBox x:Name="TextBoxRegCommandId" Margin="100,10,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxListId" Margin="100,40,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxListCommand" Margin="100,70,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxListBaseKey" Margin="100,100,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxListSubKey" Margin="100,130,0,0" Height="40" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxAvailableSubKey" Margin="100,180,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxListValueName" Margin="100,210,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxAvailableValueName" Margin="100,240,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxListValueType" Margin="100,270,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxRegEditValueType" Margin="100,300,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxListValueData" Margin="100,330,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxRegEditValueData" Margin="100,360,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxExecuteResult" Margin="100,390,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxListMatchWithRegEdit" Margin="100,420,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+    </Grid>
+</Window>

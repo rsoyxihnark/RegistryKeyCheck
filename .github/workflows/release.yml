@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check commit subjects, version and changelog
+        id: gate
+        shell: bash
+        env:
+          BEFORE: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force origin >/dev/null 2>&1 || true
+          fail() { echo "::error::$1"; exit 1; }
+          head=$(git rev-parse HEAD)
+          if [ -n "${BEFORE:-}" ] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null && git merge-base --is-ancestor "$BEFORE" "$head"; then
+            commits=$(git rev-list --reverse "$BEFORE..$head")
+          else
+            commits=$head
+          fi
+          publish=false
+          version=""
+          for c in $commits; do
+            subject=$(git log -1 --format=%s "$c" | tr -d '\r')
+            case "$subject" in
+              "[no release]"*) continue ;;
+              "["[0-9]*"]"*) ;;
+              *) fail "Commit $c must start with [x.y.z] or [no release]: $subject" ;;
+            esac
+            ver=$(printf '%s\n' "$subject" | sed -n 's/^\[\([0-9][0-9.]*\)\].*/\1/p')
+            printf '%s\n' "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || fail "Commit $c carries a version that is not major.minor.patch: $subject"
+            src=$(git show "$c:RegistryKey Check.csproj" | tr -d '\r' | sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' | head -1)
+            [ "$src" = "$ver" ] || fail "Commit $c says $ver but RegistryKey Check.csproj says $src"
+            git diff-tree --no-commit-id --name-only -r --root "$c" | grep -qx 'CHANGELOG.md' || fail "Commit $c ships $ver but leaves CHANGELOG.md untouched"
+            log=$(git show "$c:CHANGELOG.md" | tr -d '\r' | sed 's/[[:space:]]*$//')
+            if printf '%s\n' "$log" | grep -Eiq '^## +unreleased'; then fail "CHANGELOG.md still has an Unreleased heading at $c"; fi
+            top=$(printf '%s\n' "$log" | sed -n 's/^## \(.*\)$/\1/p' | head -1)
+            [ "$top" = "$ver" ] || fail "The top section of CHANGELOG.md is $top, not $ver"
+            entries=$(printf '%s\n' "$log" | awk -v h="## $ver" '$0==h{f=1;next} /^## /{if(f)exit} f && /^- /')
+            [ -n "$entries" ] || fail "CHANGELOG.md has no entries under $ver"
+            body=$(git log -1 --format=%b "$c" | tr -d '\r' | sed 's/[[:space:]]*$//' | grep '^- ' || true)
+            [ "$entries" = "$body" ] || fail "The commit body of $c does not match the $ver section of CHANGELOG.md"
+            if git rev-parse -q --verify "refs/tags/v$ver" >/dev/null; then
+              [ "$(git rev-list -n 1 "v$ver")" = "$c" ] || fail "Version $ver has already been released from another commit"
+              continue
+            fi
+            [ "$c" = "$head" ] || fail "Commit $c ships $ver but is not the last commit of the push; push version commits one at a time"
+            publish=true
+            version=$ver
+          done
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "publish=$publish version=$version"
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet publish "RegistryKey Check.csproj" -c Release -o out
+          mkdir -p dist
+          cp "out/RegistryKey Check.exe" dist/RegistryKeyCheck.exe
+
+      - name: Start the exe
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'smoke'
+          New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          Copy-Item 'dist\RegistryKeyCheck.exe' $dir
+          $p = Start-Process -FilePath (Join-Path $dir 'RegistryKeyCheck.exe') -WorkingDirectory $dir -PassThru
+          $deadline = (Get-Date).AddSeconds(90)
+          while (-not $p.HasExited -and (Get-Date) -lt $deadline -and -not ((Test-Path (Join-Path $dir 'List.txt')) -and (Test-Path (Join-Path $dir 'Log.txt')))) { Start-Sleep -Seconds 1 }
+          Start-Sleep -Seconds 5
+          $running = -not $p.HasExited
+          if ($running) { Stop-Process -Id $p.Id -Force }
+          $loaded = (Test-Path (Join-Path $dir 'List.txt')) -and (Test-Path (Join-Path $dir 'Log.txt'))
+          if (-not ($running -and $loaded)) { Write-Error "RegistryKey Check did not open its main window (running=$running, loaded=$loaded)"; exit 1 }
+          Write-Host 'RegistryKey Check started and opened its main window'
+
+      - name: Publish release
+        if: steps.gate.outputs.publish == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.gate.outputs.version }}
+        run: |
+          set -euo pipefail
+          git log -1 --format=%b HEAD | tr -d '\r' > notes.md
+          gh release create "v$VERSION" dist/RegistryKeyCheck.exe --title "RegistryKey Check $VERSION" --notes-file notes.md --target "$GITHUB_SHA"
+          gh release view "v$VERSION" --json assets --jq '.assets[].name' | grep -qx 'RegistryKeyCheck.exe' || { echo "::error::RegistryKeyCheck.exe is not attached to v$VERSION"; exit 1; }
