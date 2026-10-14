@@ -31,6 +31,8 @@ namespace RegistryKey_Check
 
         public string ListSubKey { get; set; } = string.Empty;
 
+        public string ListPath { get; set; } = string.Empty;
+
         public string AvailableSubKey { get; set; } = string.Empty;
 
         public string ListValueName { get; set; } = "This_field_is_NULL";

@@ -31,7 +31,7 @@ namespace RegistryKey_Check
 
         private static readonly string[] SearchFields =
         {
-            "RegCommandId", "ListId", "ListCommand", "ListBaseKey", "ListSubKey", "AvailableSubKey", "ListValueName", "AvailableValueName",
+            "RegCommandId", "ListId", "ListCommand", "ListPath", "AvailableSubKey", "ListValueName", "AvailableValueName",
             "ListValueType", "RegEditValueType", "ListValueData", "RegEditValueData", "ExecuteResult", "ListMatchWithRegEdit", "ListLineString"
         };
 
@@ -451,15 +451,14 @@ namespace RegistryKey_Check
                 "RegCommandId" => mo.RegCommandId.ToString(CultureInfo.InvariantCulture),
                 "ListId" => mo.ListId.ToString(CultureInfo.InvariantCulture),
                 "ListCommand" => mo.ListCommand,
-                "ListBaseKey" => mo.ListBaseKey,
-                "ListSubKey" => mo.ListSubKey,
+                "ListPath" => mo.ListPath,
                 "AvailableSubKey" => mo.AvailableSubKey,
-                "ListValueName" => mo.ListValueName,
-                "AvailableValueName" => mo.AvailableValueName,
-                "ListValueType" => mo.ListValueType,
-                "RegEditValueType" => mo.RegEditValueType,
-                "ListValueData" => mo.ListValueData,
-                "RegEditValueData" => mo.RegEditValueData,
+                "ListValueName" => DisplayTextConverter.Display(mo.ListValueName, true),
+                "AvailableValueName" => DisplayTextConverter.Display(mo.AvailableValueName, false),
+                "ListValueType" => DisplayTextConverter.Display(mo.ListValueType, false),
+                "RegEditValueType" => DisplayTextConverter.Display(mo.RegEditValueType, false),
+                "ListValueData" => DisplayTextConverter.Display(mo.ListValueData, false),
+                "RegEditValueData" => DisplayTextConverter.Display(mo.RegEditValueData, false),
                 "ExecuteResult" => mo.ExecuteResult,
                 "ListMatchWithRegEdit" => mo.ListMatchWithRegEdit,
                 "ListLineString" => mo.ListLineString,
@@ -733,7 +732,7 @@ namespace RegistryKey_Check
 
         private void MenuCopyKeyPath_Click(object sender, RoutedEventArgs e)
         {
-            CopyText(string.Join(Environment.NewLine, SelectedRows().Select(r => r.ListSubKey.Length > 0 ? r.ListBaseKey + "\\" + r.ListSubKey : r.ListBaseKey)));
+            CopyText(string.Join(Environment.NewLine, SelectedRows().Select(r => r.ListPath)));
         }
 
         private void MenuCopyValueName_Click(object sender, RoutedEventArgs e)

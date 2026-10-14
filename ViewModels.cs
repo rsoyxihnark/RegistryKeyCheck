@@ -156,6 +156,7 @@ namespace RegistryKey_Check
             int slash = keyPath.IndexOf('\\');
             modelRegCommand.ListBaseKey = slash < 0 ? keyPath : keyPath[..slash];
             modelRegCommand.ListSubKey = slash < 0 ? string.Empty : keyPath[(slash + 1)..];
+            modelRegCommand.ListPath = FullBaseKeyName(modelRegCommand.ListBaseKey) + (modelRegCommand.ListSubKey.Length > 0 ? "\\" + modelRegCommand.ListSubKey : string.Empty);
             string? valueName = null;
             string? valueType = null;
             string? valueData = null;
@@ -434,6 +435,33 @@ namespace RegistryKey_Check
                 File.AppendAllText("log.txt", "---vvv ! ! ! Warning ! ! ! vvv--- QueryMethod " + DateTime.Now.ToString() + "\n");
                 File.AppendAllText("log.txt", "     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
                 File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+            }
+        }
+
+        private static string FullBaseKeyName(string listBasekey)
+        {
+            switch (listBasekey.ToUpperInvariant())
+            {
+            case "HKEY_CLASSES_ROOT":
+            case "HKCR":
+                return "HKEY_CLASSES_ROOT";
+            case "HKEY_CURRENT_USER":
+            case "HKCU":
+                return "HKEY_CURRENT_USER";
+            case "HKEY_LOCAL_MACHINE":
+            case "HKLM":
+                return "HKEY_LOCAL_MACHINE";
+            case "HKEY_USERS":
+            case "HKU":
+                return "HKEY_USERS";
+            case "HKEY_CURRENT_CONFIG":
+            case "HKCC":
+                return "HKEY_CURRENT_CONFIG";
+            case "HKEY_PERFORMANCE_DATA":
+            case "HKPD":
+                return "HKEY_PERFORMANCE_DATA";
+            default:
+                return listBasekey;
             }
         }
 

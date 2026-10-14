@@ -5,6 +5,9 @@
 - RegistryKey Check has a new dark look, with a toolbar on top, a search bar and a status bar that shows progress.
 - The search bar searches every column at once, and Ctrl+F jumps to it.
 - Every column header now has its own filter box.
+- The List BaseKey and List SubKey columns are now one Path column that shows the full key path.
+- Empty fields now show as blank instead of This_field_is_NULL.
+- The default value of a key now shows as (Default) in List Value Name.
 - The True, False, Unknown and Ignored buttons in the status bar show or hide rows of that status and show how many there are.
 - Clear filters clears the search and every column filter and shows every status again.
 - List Match with RegEdit now shows True, False, Unknown and Ignored as colored labels.

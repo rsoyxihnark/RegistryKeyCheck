@@ -38,62 +38,58 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="0" Text="ID" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxRegCommandId" Grid.Row="0" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="1" Text="List ID" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxListId" Grid.Row="1" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="2" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="2" Text="List Command" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxListCommand" Grid.Row="2" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="3" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="3" Text="List BaseKey" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxListBaseKey" Grid.Row="3" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="4" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="4" Text="List SubKey" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxListSubKey" Grid.Row="4" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="5" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="5" Text="SubKey Available?" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxAvailableSubKey" Grid.Row="5" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="6" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="6" Text="List Value Name" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxListValueName" Grid.Row="6" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="7" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="7" Text="Value Name Available? " Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxAvailableValueName" Grid.Row="7" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="8" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="8" Text="List Value Type" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxListValueType" Grid.Row="8" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="9" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="9" Text="RegEdit Value Type" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxRegEditValueType" Grid.Row="9" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="10" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="10" Text="List Value Data" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxListValueData" Grid.Row="10" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="11" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="11" Text="RegEdit Value Data" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxRegEditValueData" Grid.Row="11" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <Border Grid.Row="12" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
-                        <TextBlock Grid.Row="12" Text="Execute Result" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxExecuteResult" Grid.Row="12" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
-                        <TextBlock Grid.Row="13" Text="List Match with RegEdit" Style="{StaticResource FieldLabel}" />
-                        <TextBox x:Name="TextBoxListMatchWithRegEdit" Grid.Row="13" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="0" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="0" Text="ID" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxRegCommandId" Grid.Row="0" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="1" Text="List ID" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxListId" Grid.Row="1" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="2" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="2" Text="List Command" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxListCommand" Grid.Row="2" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="3" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="3" Text="Path" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxListPath" Grid.Row="3" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="4" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="4" Text="SubKey Available?" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxAvailableSubKey" Grid.Row="4" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="5" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="5" Text="List Value Name" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxListValueName" Grid.Row="5" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="6" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="6" Text="Value Name Available? " Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxAvailableValueName" Grid.Row="6" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="7" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="7" Text="List Value Type" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxListValueType" Grid.Row="7" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="8" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="8" Text="RegEdit Value Type" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxRegEditValueType" Grid.Row="8" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="9" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="9" Text="List Value Data" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxListValueData" Grid.Row="9" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="10" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="10" Text="RegEdit Value Data" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxRegEditValueData" Grid.Row="10" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <Border Grid.Row="11" Grid.ColumnSpan="2" BorderBrush="{StaticResource SoftLineBrush}" BorderThickness="0,0,0,1" />
+                    <TextBlock Grid.Row="11" Text="Execute Result" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxExecuteResult" Grid.Row="11" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
+                    <TextBlock Grid.Row="12" Text="List Match with RegEdit" Style="{StaticResource FieldLabel}" />
+                    <TextBox x:Name="TextBoxListMatchWithRegEdit" Grid.Row="12" Grid.Column="1" Style="{StaticResource ReadOnlyField}" Margin="0,9" />
                 </Grid>
             </ScrollViewer>
         </Border>

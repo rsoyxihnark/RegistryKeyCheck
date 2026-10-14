@@ -42,15 +42,14 @@ namespace RegistryKey_Check
             TextBoxRegCommandId.Text = mo.RegCommandId.ToString();
             TextBoxListId.Text = mo.ListId.ToString();
             TextBoxListCommand.Text = mo.ListCommand;
-            TextBoxListBaseKey.Text = mo.ListBaseKey;
-            TextBoxListSubKey.Text = mo.ListSubKey;
+            TextBoxListPath.Text = mo.ListPath;
             TextBoxAvailableSubKey.Text = mo.AvailableSubKey;
-            TextBoxListValueName.Text = mo.ListValueName;
-            TextBoxAvailableValueName.Text = mo.AvailableValueName;
-            TextBoxListValueType.Text = mo.ListValueType;
-            TextBoxRegEditValueType.Text = mo.RegEditValueType;
-            TextBoxListValueData.Text = mo.ListValueData;
-            TextBoxRegEditValueData.Text = mo.RegEditValueData;
+            TextBoxListValueName.Text = DisplayTextConverter.Display(mo.ListValueName, true);
+            TextBoxAvailableValueName.Text = DisplayTextConverter.Display(mo.AvailableValueName, false);
+            TextBoxListValueType.Text = DisplayTextConverter.Display(mo.ListValueType, false);
+            TextBoxRegEditValueType.Text = DisplayTextConverter.Display(mo.RegEditValueType, false);
+            TextBoxListValueData.Text = DisplayTextConverter.Display(mo.ListValueData, false);
+            TextBoxRegEditValueData.Text = DisplayTextConverter.Display(mo.RegEditValueData, false);
             TextBoxExecuteResult.Text = mo.ExecuteResult;
             TextBoxListMatchWithRegEdit.Text = mo.ListMatchWithRegEdit;
         }
