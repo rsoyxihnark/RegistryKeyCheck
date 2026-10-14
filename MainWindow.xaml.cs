@@ -495,6 +495,9 @@ namespace RegistryKey_Check
             ChipIgnored.Content = "Ignored (" + Number(ignored) + ")";
             ChipUnknown.Content = "Unknown (" + Number(total - trues - falses - ignored) + ")";
             TextShown.Text = "Shown " + Number(shown) + " of " + Number(total);
+            EmptyState.Visibility = shown == 0 ? Visibility.Visible : Visibility.Collapsed;
+            EmptyTitle.Text = total == 0 ? "No reg commands yet" : "No rows match the filters";
+            EmptyDetail.Text = total == 0 ? "Press Read List.txt to load the reg commands in List.txt" : "Press Clear filters to show every row again";
             TextTotal.Text = "Total " + Number(total);
         }
 

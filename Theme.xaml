@@ -625,7 +625,7 @@
                         <Thumb x:Name="PART_RightHeaderGripper" HorizontalAlignment="Right" Style="{StaticResource HeaderGripper}" />
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <DataTrigger Binding="{Binding Column, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
+                        <DataTrigger Binding="{Binding Column, RelativeSource={RelativeSource Self}}" Value="{x:Null}">
                             <Setter TargetName="Filter" Property="Visibility" Value="Hidden" />
                         </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">

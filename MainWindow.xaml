@@ -176,25 +176,34 @@
 
         <TabControl x:Name="Tabs" Grid.Row="2" Margin="14,12,14,12">
             <TabItem Header="RegistryKey Commands">
-                <DataGrid x:Name="DataGridRegCommands" Style="{StaticResource DarkGrid}" RowStyle="{StaticResource RegRow}" ColumnHeaderStyle="{StaticResource FilterHeader}">
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn x:Name="dgColumnSelect" Header="Select" Width="52" CanUserSort="False" CanUserResize="False" CellTemplate="{StaticResource SelectCell}" HeaderStyle="{StaticResource SelectHeader}" />
-                        <DataGridTextColumn x:Name="dgColumnRegCommandId" Header="ID" Width="58" Binding="{Binding RegCommandId}" SortMemberPath="RegCommandId" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegListId" Header="List ID" Width="68" Binding="{Binding ListId}" SortMemberPath="ListId" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegListCommand" Header="List Command" Width="104" Binding="{Binding ListCommand}" SortMemberPath="ListCommand" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegListBaseKey" Header="List BaseKey" Width="150" Binding="{Binding ListBaseKey}" SortMemberPath="ListBaseKey" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegListSubKey" Header="List SubKey" Width="300" Binding="{Binding ListSubKey}" SortMemberPath="ListSubKey" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegAvailableSubKey" Header="SubKey Available?" Width="124" Binding="{Binding AvailableSubKey}" SortMemberPath="AvailableSubKey" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="List Value Name" Width="170" Binding="{Binding ListValueName}" SortMemberPath="ListValueName" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegAvailableValueName" Header="Value Name Available? " Width="124" Binding="{Binding AvailableValueName}" SortMemberPath="AvailableValueName" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegListValueType" Header="List Value Type" Width="118" Binding="{Binding ListValueType}" SortMemberPath="ListValueType" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegRegEditValueType" Header="RegEdit Value Type" Width="118" Binding="{Binding RegEditValueType}" SortMemberPath="RegEditValueType" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegListValueData" Header="List Value Data" Width="*" MinWidth="150" Binding="{Binding ListValueData}" SortMemberPath="ListValueData" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegRegEditValueData" Header="RegEdit Value Data" Width="*" MinWidth="150" Binding="{Binding RegEditValueData}" SortMemberPath="RegEditValueData" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTextColumn x:Name="dgColumnRegExecuteResult" Header="Execute Result" Width="104" Binding="{Binding ExecuteResult}" SortMemberPath="ExecuteResult" ElementStyle="{StaticResource CellText}" />
-                        <DataGridTemplateColumn x:Name="dgColumnRegListMatchWithRegEdit" Header="List Match with RegEdit" Width="150" SortMemberPath="ListMatchWithRegEdit" CellTemplate="{StaticResource StatusPill}" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid>
+                    <DataGrid x:Name="DataGridRegCommands" Style="{StaticResource DarkGrid}" RowStyle="{StaticResource RegRow}" ColumnHeaderStyle="{StaticResource FilterHeader}">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn x:Name="dgColumnSelect" Header="Select" Width="44" CanUserSort="False" CanUserResize="False" CellTemplate="{StaticResource SelectCell}" HeaderStyle="{StaticResource SelectHeader}" />
+                            <DataGridTextColumn x:Name="dgColumnRegCommandId" Header="ID" Width="50" Binding="{Binding RegCommandId}" SortMemberPath="RegCommandId" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListId" Header="List ID" Width="60" Binding="{Binding ListId}" SortMemberPath="ListId" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListCommand" Header="List Command" Width="92" Binding="{Binding ListCommand}" SortMemberPath="ListCommand" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListBaseKey" Header="List BaseKey" Width="150" Binding="{Binding ListBaseKey}" SortMemberPath="ListBaseKey" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListSubKey" Header="List SubKey" Width="280" Binding="{Binding ListSubKey}" SortMemberPath="ListSubKey" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegAvailableSubKey" Header="SubKey Available?" Width="104" Binding="{Binding AvailableSubKey}" SortMemberPath="AvailableSubKey" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="List Value Name" Width="160" Binding="{Binding ListValueName}" SortMemberPath="ListValueName" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegAvailableValueName" Header="Value Name Available? " Width="104" Binding="{Binding AvailableValueName}" SortMemberPath="AvailableValueName" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueType" Header="List Value Type" Width="104" Binding="{Binding ListValueType}" SortMemberPath="ListValueType" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueType" Header="RegEdit Value Type" Width="104" Binding="{Binding RegEditValueType}" SortMemberPath="RegEditValueType" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueData" Header="List Value Data" Width="200" Binding="{Binding ListValueData}" SortMemberPath="ListValueData" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueData" Header="RegEdit Value Data" Width="200" Binding="{Binding RegEditValueData}" SortMemberPath="RegEditValueData" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn x:Name="dgColumnRegExecuteResult" Header="Execute Result" Width="92" Binding="{Binding ExecuteResult}" SortMemberPath="ExecuteResult" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTemplateColumn x:Name="dgColumnRegListMatchWithRegEdit" Header="List Match with RegEdit" Width="132" SortMemberPath="ListMatchWithRegEdit" CellTemplate="{StaticResource StatusPill}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <Border Width="64" Height="64" CornerRadius="32" Background="#1F3B82F6" HorizontalAlignment="Center">
+                            <TextBlock Text="&#xE8E5;" FontFamily="{StaticResource IconFont}" FontSize="26" Foreground="#FF93C5FD" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock x:Name="EmptyTitle" Text="No reg commands yet" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource BrightTextBrush}" HorizontalAlignment="Center" Margin="0,14,0,0" />
+                        <TextBlock x:Name="EmptyDetail" Text="Press Read List.txt to load the reg commands in List.txt" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Grid>
             </TabItem>
             <TabItem Header="Non RegistryKey Commands">
                 <DataGrid x:Name="DataGridNonRegCommands" Style="{StaticResource DarkGrid}">

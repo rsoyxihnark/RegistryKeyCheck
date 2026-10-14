@@ -20,6 +20,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
         string dll = Path.GetFullPath(args[0]);
         output = Path.GetFullPath(args[1]);
         Directory.CreateDirectory(output);

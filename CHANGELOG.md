@@ -17,6 +17,7 @@
 - Query RegEdit and Execute Missing Commands now show their progress and run faster on long lists.
 - F5 runs Query RegEdit, Ctrl+O runs Read List.txt and F1 opens Help.
 - The Detail window now has Jump to RegEdit and Copy reg command buttons.
+- An empty list now says how to load the reg commands in List.txt.
 
 ## 2.0.1
 
