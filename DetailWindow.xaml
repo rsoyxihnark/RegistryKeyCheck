@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
         x:Name="DetailWin"
-        Title="Detail" Height="500" Width="800" Loaded="DetailWin_Loaded">
+        Title="Detail" Height="500" Width="800" Loaded="DetailWin_Loaded" PreviewKeyDown="DetailWin_PreviewKeyDown">
     <Grid>
         <Label Content="ID" Margin="10,10,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="List ID" Margin="10,40,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />

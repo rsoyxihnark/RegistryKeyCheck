@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 
@@ -16,6 +18,8 @@ namespace RegistryKey_Check
 
         public static ObservableCollection<ModelNonRegCommand> ObsColl_Non_RegCommands = new ObservableCollection<ModelNonRegCommand>();
 
+        public static List<string> IgnoreList = new List<string>();
+
         public static int RegCommandIds;
 
         public static int Non_RegCommandIds;
@@ -23,28 +27,6 @@ namespace RegistryKey_Check
         public static int ListIds;
 
         public static int DisplayingIDs;
-
-        private static string lineTrimed = string.Empty;
-
-        private static readonly RegexOptions optionsNone = RegexOptions.None;
-
-        private static readonly Regex regexSpace1 = new Regex("[ ]{2,}", optionsNone);
-
-        private static readonly Regex regexBaseKey = new Regex("(?<= \")(.*?)(?=\\\\)", optionsNone);
-
-        private static readonly Regex regexSubKey = new Regex("(?<=\\\\)(.*?)(?=\")", optionsNone);
-
-        private static readonly Regex regexValueName = new Regex("(?<= \\/v \")(.*?)(?=\")", optionsNone);
-
-        private static readonly Regex regexValueName2 = new Regex(" \\/v \\S*", optionsNone);
-
-        private static readonly Regex regexType = new Regex("(?<= \\/t \")(.*?)(?=\")", optionsNone);
-
-        private static readonly Regex regexType2 = new Regex(" \\/t \\S*", optionsNone);
-
-        private static readonly Regex regexValueData = new Regex("(?<= \\/d \")(.*?)(?=\")", optionsNone);
-
-        private static readonly Regex regexValueData2 = new Regex(" \\/d \\S*", optionsNone);
 
         private static RegistryKey? registryKey;
 
@@ -69,175 +51,24 @@ namespace RegistryKey_Check
             RegCommandIds = 0;
             Non_RegCommandIds = 0;
             ListIds = 0;
+            ReadIgnoreFile();
             foreach (string line in File.ReadLines("List.txt"))
             {
                 ListIds++;
-                ModelRegCommand modelRegCommand = new ModelRegCommand();
-                ModelNonRegCommand modelNonRegCommand = new ModelNonRegCommand();
-                lineTrimed = line.Trim().Replace(" /ve", " /v \"\"");
-                lineTrimed = regexSpace1.Replace(lineTrimed, " ");
-                if (lineTrimed.Length > 11 && lineTrimed.Substring(0, 11).ToLower() == "reg delete ")
+                List<string> args = SplitCommandLine(line.Trim());
+                string command = args.Count >= 3 && args[0].Equals("reg", StringComparison.OrdinalIgnoreCase) ? args[1].ToLowerInvariant() : string.Empty;
+                if (command == "add" || command == "delete")
                 {
+                    ModelRegCommand modelRegCommand = ReadRegCommand(args, command);
                     modelRegCommand.RegCommandId = ++RegCommandIds;
                     modelRegCommand.ListId = ListIds;
-                    modelRegCommand.ListCommand = "reg delete";
-                    modelRegCommand.ListBaseKey = regexBaseKey.Match(lineTrimed).Value;
-                    modelRegCommand.ListSubKey = regexSubKey.Match(lineTrimed).Value;
-                    if (regexValueName.IsMatch(lineTrimed))
-                    {
-                        modelRegCommand.ListValueName = regexValueName.Match(lineTrimed).Value;
-                    }
-                    else if (regexValueName2.IsMatch(lineTrimed))
-                    {
-                        modelRegCommand.ListValueName = regexValueName2.Match(lineTrimed).Value.Replace(" /v ", "");
-                    }
-                    else
-                    {
-                        modelRegCommand.ListValueName = "This_field_is_NULL";
-                    }
-                    modelRegCommand.ListMatchWithRegEdit = "Unknown";
-                    ObsColl_RegCommands.Add(modelRegCommand);
-                }
-                else if (lineTrimed.Length > 8 && lineTrimed.Substring(0, 8).ToLower() == "reg add ")
-                {
-                    modelRegCommand.RegCommandId = ++RegCommandIds;
-                    modelRegCommand.ListId = ListIds;
-                    modelRegCommand.ListCommand = "reg add";
-                    modelRegCommand.ListBaseKey = regexBaseKey.Match(lineTrimed).Value;
-                    modelRegCommand.ListSubKey = regexSubKey.Match(lineTrimed).Value;
-                    if (regexValueName.IsMatch(lineTrimed))
-                    {
-                        modelRegCommand.ListValueName = regexValueName.Match(lineTrimed).Value;
-                        if (regexType.IsMatch(lineTrimed))
-                        {
-                            modelRegCommand.ListValueType = regexType.Match(lineTrimed).Value.ToUpper();
-                        }
-                        else if (regexType2.IsMatch(lineTrimed))
-                        {
-                            modelRegCommand.ListValueType = regexType2.Match(lineTrimed).Value.Replace(" /t ", "").ToUpper();
-                        }
-                        else
-                        {
-                            modelRegCommand.ListValueType = "REG_SZ";
-                        }
-                        if (regexValueData.IsMatch(lineTrimed))
-                        {
-                            modelRegCommand.ListValueData = regexValueData.Match(lineTrimed).Value;
-                            if (modelRegCommand.ListValueType == "REG_BINARY")
-                            {
-                                if (modelRegCommand.ListValueData.Length % 2 == 0)
-                                {
-                                    modelRegCommand.ListValueData = modelRegCommand.ListValueData.ToLower();
-                                }
-                                else
-                                {
-                                    modelRegCommand.ListValueData = "0" + modelRegCommand.ListValueData.ToLower();
-                                }
-                            }
-                            if (modelRegCommand.ListValueType == "REG_MULTI_SZ" && modelRegCommand.ListValueData.Length >= 2 && modelRegCommand.ListValueData.Substring(modelRegCommand.ListValueData.Length - 2, 2) == "\\0")
-                            {
-                                modelRegCommand.ListValueData = modelRegCommand.ListValueData[..^2];
-                            }
-                        }
-                        else if (regexValueData2.IsMatch(lineTrimed))
-                        {
-                            modelRegCommand.ListValueData = regexValueData2.Match(lineTrimed).Value.Replace(" /d ", "");
-                            if (modelRegCommand.ListValueType == "REG_BINARY")
-                            {
-                                if (modelRegCommand.ListValueData.Length % 2 == 0)
-                                {
-                                    modelRegCommand.ListValueData = modelRegCommand.ListValueData.ToLower();
-                                }
-                                else
-                                {
-                                    modelRegCommand.ListValueData = "0" + modelRegCommand.ListValueData.ToLower();
-                                }
-                            }
-                            if (modelRegCommand.ListValueType == "REG_MULTI_SZ" && modelRegCommand.ListValueData.Length >= 2 && modelRegCommand.ListValueData.Substring(modelRegCommand.ListValueData.Length - 2, 2) == "\\0")
-                            {
-                                modelRegCommand.ListValueData = modelRegCommand.ListValueData[..^2];
-                            }
-                        }
-                        else
-                        {
-                            modelRegCommand.ListValueData = "";
-                        }
-                    }
-                    else if (regexValueName2.IsMatch(lineTrimed))
-                    {
-                        modelRegCommand.ListValueName = regexValueName2.Match(lineTrimed).Value.Replace(" /v ", "");
-                        if (regexType.IsMatch(lineTrimed))
-                        {
-                            modelRegCommand.ListValueType = regexType.Match(lineTrimed).Value.ToUpper();
-                        }
-                        else if (regexType2.IsMatch(lineTrimed))
-                        {
-                            modelRegCommand.ListValueType = regexType2.Match(lineTrimed).Value.Replace(" /t ", "").ToUpper();
-                        }
-                        else
-                        {
-                            modelRegCommand.ListValueType = "REG_SZ";
-                        }
-                        if (regexValueData.IsMatch(lineTrimed))
-                        {
-                            modelRegCommand.ListValueData = regexValueData.Match(lineTrimed).Value;
-                            if (modelRegCommand.ListValueType == "REG_BINARY")
-                            {
-                                if (modelRegCommand.ListValueData.Length % 2 == 0)
-                                {
-                                    modelRegCommand.ListValueData = modelRegCommand.ListValueData.ToLower();
-                                }
-                                else
-                                {
-                                    modelRegCommand.ListValueData = "0" + modelRegCommand.ListValueData.ToLower();
-                                }
-                            }
-                            if (modelRegCommand.ListValueType == "REG_MULTI_SZ" && modelRegCommand.ListValueData.Length >= 2 && modelRegCommand.ListValueData.Substring(modelRegCommand.ListValueData.Length - 2, 2) == "\\0")
-                            {
-                                modelRegCommand.ListValueData = modelRegCommand.ListValueData[..^2];
-                            }
-                        }
-                        else if (regexValueData2.IsMatch(lineTrimed))
-                        {
-                            modelRegCommand.ListValueData = regexValueData2.Match(lineTrimed).Value.Replace(" /d ", "");
-                            if (modelRegCommand.ListValueType == "REG_BINARY")
-                            {
-                                if (modelRegCommand.ListValueData.Length % 2 == 0)
-                                {
-                                    modelRegCommand.ListValueData = modelRegCommand.ListValueData.ToLower();
-                                }
-                                else
-                                {
-                                    modelRegCommand.ListValueData = "0" + modelRegCommand.ListValueData.ToLower();
-                                }
-                            }
-                            if (modelRegCommand.ListValueType == "REG_MULTI_SZ" && modelRegCommand.ListValueData.Length >= 2 && modelRegCommand.ListValueData.Substring(modelRegCommand.ListValueData.Length - 2, 2) == "\\0")
-                            {
-                                modelRegCommand.ListValueData = modelRegCommand.ListValueData[..^2];
-                            }
-                        }
-                        else
-                        {
-                            modelRegCommand.ListValueData = "";
-                        }
-                    }
-                    else
-                    {
-                        modelRegCommand.ListValueName = "This_field_is_NULL";
-                    }
-                    if (modelRegCommand.ListValueType == "REG_DWORD" && modelRegCommand.ListValueData.Contains("0x"))
-                    {
-                        modelRegCommand.ListValueData = Convert.ToInt32(modelRegCommand.ListValueData[2..], 16).ToString();
-                    }
-                    if (modelRegCommand.ListValueType == "REG_EXPAND_SZ")
-                    {
-                        modelRegCommand.ListValueData = modelRegCommand.ListValueData.Replace("%SystemRoot%", Environment.ExpandEnvironmentVariables("%SystemRoot%"));
-                    }
-                    modelRegCommand.ListMatchWithRegEdit = "Unknown";
+                    modelRegCommand.ListLineString = line.Trim();
+                    modelRegCommand.ListMatchWithRegEdit = IgnoreList.Contains(modelRegCommand.ListLineString) ? "Ignored" : "Unknown";
                     ObsColl_RegCommands.Add(modelRegCommand);
                 }
                 else
                 {
+                    ModelNonRegCommand modelNonRegCommand = new ModelNonRegCommand();
                     modelNonRegCommand.Non_RegCommandId = ++Non_RegCommandIds;
                     modelNonRegCommand.ListId = ListIds;
                     modelNonRegCommand.ListLineString = line;
@@ -248,18 +79,202 @@ namespace RegistryKey_Check
             Total = ObsColl_RegCommands.Count;
         }
 
+        public static List<string> SplitCommandLine(string line)
+        {
+            List<string> args = new List<string>();
+            StringBuilder current = new StringBuilder();
+            bool inQuotes = false;
+            bool hasArg = false;
+            int i = 0;
+            while (i < line.Length)
+            {
+                char c = line[i];
+                if (c == '\\')
+                {
+                    int count = 0;
+                    while (i < line.Length && line[i] == '\\')
+                    {
+                        count++;
+                        i++;
+                    }
+                    if (i < line.Length && line[i] == '"')
+                    {
+                        current.Append('\\', count / 2);
+                        if (count % 2 == 1)
+                        {
+                            current.Append('"');
+                            i++;
+                        }
+                    }
+                    else
+                    {
+                        current.Append('\\', count);
+                    }
+                    hasArg = true;
+                }
+                else if (c == '"')
+                {
+                    if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                    {
+                        current.Append('"');
+                        i += 2;
+                    }
+                    else
+                    {
+                        inQuotes = !inQuotes;
+                        i++;
+                    }
+                    hasArg = true;
+                }
+                else if (!inQuotes && char.IsWhiteSpace(c))
+                {
+                    if (hasArg)
+                    {
+                        args.Add(current.ToString());
+                        current.Clear();
+                        hasArg = false;
+                    }
+                    i++;
+                }
+                else
+                {
+                    current.Append(c);
+                    hasArg = true;
+                    i++;
+                }
+            }
+            if (hasArg)
+            {
+                args.Add(current.ToString());
+            }
+            return args;
+        }
+
+        private static ModelRegCommand ReadRegCommand(List<string> args, string command)
+        {
+            ModelRegCommand modelRegCommand = new ModelRegCommand();
+            modelRegCommand.ListCommand = "reg " + command;
+            string keyPath = args[2];
+            int slash = keyPath.IndexOf('\\');
+            modelRegCommand.ListBaseKey = slash < 0 ? keyPath : keyPath[..slash];
+            modelRegCommand.ListSubKey = slash < 0 ? string.Empty : keyPath[(slash + 1)..];
+            string? valueName = null;
+            string? valueType = null;
+            string? valueData = null;
+            for (int i = 3; i < args.Count; i++)
+            {
+                string arg = args[i].ToLowerInvariant();
+                if (arg == "/ve")
+                {
+                    valueName = string.Empty;
+                }
+                else if (arg == "/v" && i + 1 < args.Count)
+                {
+                    valueName = args[++i];
+                }
+                else if (arg == "/t" && i + 1 < args.Count)
+                {
+                    valueType = args[++i].ToUpperInvariant();
+                }
+                else if (arg == "/d" && i + 1 < args.Count)
+                {
+                    valueData = args[++i];
+                }
+                else if (arg == "/s" && i + 1 < args.Count)
+                {
+                    i++;
+                }
+            }
+            if (valueName == null)
+            {
+                return modelRegCommand;
+            }
+            modelRegCommand.ListValueName = valueName;
+            if (command == "delete")
+            {
+                return modelRegCommand;
+            }
+            modelRegCommand.ListValueType = valueType ?? "REG_SZ";
+            modelRegCommand.ListValueData = valueData ?? string.Empty;
+            if (modelRegCommand.ListValueType == "REG_BINARY")
+            {
+                if (modelRegCommand.ListValueData.Length % 2 == 0)
+                {
+                    modelRegCommand.ListValueData = modelRegCommand.ListValueData.ToLower();
+                }
+                else
+                {
+                    modelRegCommand.ListValueData = "0" + modelRegCommand.ListValueData.ToLower();
+                }
+            }
+            if (modelRegCommand.ListValueType == "REG_MULTI_SZ" && modelRegCommand.ListValueData.EndsWith("\\0", StringComparison.Ordinal))
+            {
+                modelRegCommand.ListValueData = modelRegCommand.ListValueData[..^2];
+            }
+            if (modelRegCommand.ListValueType == "REG_DWORD" && TryParseNumber(modelRegCommand.ListValueData, uint.MaxValue, int.MinValue, out ulong dword))
+            {
+                modelRegCommand.ListValueNumber = dword;
+                modelRegCommand.ListValueData = FormatDword(dword);
+            }
+            if (modelRegCommand.ListValueType == "REG_QWORD" && TryParseNumber(modelRegCommand.ListValueData, ulong.MaxValue, long.MinValue, out ulong qword))
+            {
+                modelRegCommand.ListValueNumber = qword;
+                modelRegCommand.ListValueData = FormatQword(qword);
+            }
+            if (modelRegCommand.ListValueType == "REG_EXPAND_SZ")
+            {
+                modelRegCommand.ListValueData = modelRegCommand.ListValueData.Replace("%SystemRoot%", Environment.ExpandEnvironmentVariables("%SystemRoot%"));
+            }
+            return modelRegCommand;
+        }
+
+        private static bool TryParseNumber(string text, ulong maxValue, long minValue, out ulong value)
+        {
+            text = text.Trim();
+            if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                return ulong.TryParse(text.AsSpan(2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out value) && value <= maxValue;
+            }
+            if (text.StartsWith('-'))
+            {
+                bool parsed = long.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out long negative) && negative >= minValue;
+                value = parsed ? unchecked((ulong)negative) & maxValue : 0;
+                return parsed;
+            }
+            return ulong.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value) && value <= maxValue;
+        }
+
+        private static string FormatDword(ulong value)
+        {
+            return "0x" + value.ToString("x8", CultureInfo.InvariantCulture) + " (" + value.ToString(CultureInfo.InvariantCulture) + ")";
+        }
+
+        private static string FormatQword(ulong value)
+        {
+            return "0x" + value.ToString("x16", CultureInfo.InvariantCulture) + " (" + value.ToString(CultureInfo.InvariantCulture) + ")";
+        }
+
         public static void QueryFromRegEdit()
         {
             foreach (ModelRegCommand mo in ObsColl_RegCommands)
             {
+                if (mo.ListMatchWithRegEdit == "Ignored")
+                {
+                    continue;
+                }
                 try
                 {
+                    mo.AvailableSubKey = string.Empty;
+                    mo.AvailableValueName = "This_field_is_NULL";
+                    mo.RegEditValueType = "This_field_is_NULL";
+                    mo.RegEditValueData = "This_field_is_NULL";
+                    mo.ReturnObject = "This_field_is_NULL";
                     if (AvailableSubKeyMethod(mo.ListBaseKey, mo.ListSubKey))
                     {
                         mo.AvailableSubKey = "It's Available";
                         if (registryKey != null && mo.ListValueName != "This_field_is_NULL")
                         {
-                            if (Enumerable.Contains(registryKey.GetValueNames(), mo.ListValueName))
+                            if (registryKey.GetValueNames().Any(name => string.Equals(name, mo.ListValueName, StringComparison.OrdinalIgnoreCase)))
                             {
                                 mo.ReturnObject = registryKey.GetValue(mo.ListValueName)!;
                                 mo.AvailableValueName = "It's Available";
@@ -282,12 +297,12 @@ namespace RegistryKey_Check
                                 else if (registryValueKind == RegistryValueKind.DWord)
                                 {
                                     mo.RegEditValueType = "REG_DWORD";
-                                    mo.RegEditValueData = Convert.ToString((int)mo.ReturnObject);
+                                    mo.RegEditValueData = FormatDword(unchecked((uint)(int)mo.ReturnObject));
                                 }
                                 else if (registryValueKind == RegistryValueKind.QWord)
                                 {
                                     mo.RegEditValueType = "REG_QWORD";
-                                    mo.RegEditValueData = Convert.ToString((long)mo.ReturnObject);
+                                    mo.RegEditValueData = FormatQword(unchecked((ulong)(long)mo.ReturnObject));
                                 }
                                 else if (registryValueKind == RegistryValueKind.Binary)
                                 {
@@ -299,11 +314,11 @@ namespace RegistryKey_Check
                                     mo.RegEditValueType = "REG_NONE";
                                     mo.RegEditValueData = Encoding.Unicode.GetString((byte[])mo.ReturnObject).TrimEnd('\0');
                                 }
-                                if (mo.RegEditValueData == mo.ListValueData)
+                                if (string.Equals(mo.RegEditValueData, mo.ListValueData, StringComparison.OrdinalIgnoreCase))
                                 {
                                     mo.ListMatchWithRegEdit = "True";
                                 }
-                                else if (mo.RegEditValueData != mo.ListValueData)
+                                else
                                 {
                                     mo.ListMatchWithRegEdit = "False";
                                 }
@@ -332,19 +347,8 @@ namespace RegistryKey_Check
                                 mo.ListMatchWithRegEdit = "False";
                             }
                         }
-                        else if (registryKey == null && mo.ListValueName == "This_field_is_NULL")
-                        {
-                            if (mo.ListCommand == "reg add")
-                            {
-                                mo.ListMatchWithRegEdit = "False";
-                            }
-                            else if (mo.ListCommand == "reg delete")
-                            {
-                                mo.ListMatchWithRegEdit = "True";
-                            }
-                        }
                     }
-                    else if (!AvailableSubKeyMethod(mo.ListBaseKey, mo.ListSubKey))
+                    else
                     {
                         mo.AvailableSubKey = "Not Available";
                         if (mo.ListCommand == "reg add")
@@ -386,115 +390,49 @@ namespace RegistryKey_Check
             }
         }
 
-        private static bool AvailableSubKeyMethod(string listBasekey, string listSubKey)
+        private static RegistryKey? RootKey(string listBasekey)
         {
-            registryKey = null;
-            switch (listBasekey)
+            switch (listBasekey.ToUpperInvariant())
             {
             case "HKEY_CLASSES_ROOT":
             case "HKCR":
-                registryKey = Registry.ClassesRoot.OpenSubKey(listSubKey);
-                break;
+                return Registry.ClassesRoot;
             case "HKEY_CURRENT_USER":
             case "HKCU":
-                registryKey = Registry.CurrentUser.OpenSubKey(listSubKey);
-                break;
+                return Registry.CurrentUser;
             case "HKEY_LOCAL_MACHINE":
             case "HKLM":
-                registryKey = Registry.LocalMachine.OpenSubKey(listSubKey);
-                break;
+                return Registry.LocalMachine;
             case "HKEY_USERS":
             case "HKU":
-                registryKey = Registry.Users.OpenSubKey(listSubKey);
-                break;
+                return Registry.Users;
             case "HKEY_CURRENT_CONFIG":
             case "HKCC":
-                registryKey = Registry.CurrentConfig.OpenSubKey(listSubKey);
-                break;
+                return Registry.CurrentConfig;
             case "HKEY_PERFORMANCE_DATA":
             case "HKPD":
-                registryKey = Registry.PerformanceData.OpenSubKey(listSubKey);
-                break;
+                return Registry.PerformanceData;
+            default:
+                return null;
             }
-            if (registryKey != null)
-            {
-                return true;
-            }
-            return false;
+        }
+
+        private static bool AvailableSubKeyMethod(string listBasekey, string listSubKey)
+        {
+            registryKey = RootKey(listBasekey)?.OpenSubKey(listSubKey);
+            return registryKey != null;
         }
 
         private static bool AvailableSubKeyMethodTrue(string listBasekey, string listSubKey)
         {
-            registryKey = null;
-            switch (listBasekey)
-            {
-            case "HKEY_CLASSES_ROOT":
-            case "HKCR":
-                registryKey = Registry.ClassesRoot.OpenSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_CURRENT_USER":
-            case "HKCU":
-                registryKey = Registry.CurrentUser.OpenSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_LOCAL_MACHINE":
-            case "HKLM":
-                registryKey = Registry.LocalMachine.OpenSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_USERS":
-            case "HKU":
-                registryKey = Registry.Users.OpenSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_CURRENT_CONFIG":
-            case "HKCC":
-                registryKey = Registry.CurrentConfig.OpenSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_PERFORMANCE_DATA":
-            case "HKPD":
-                registryKey = Registry.PerformanceData.OpenSubKey(listSubKey, writable: true);
-                break;
-            }
-            if (registryKey != null)
-            {
-                return true;
-            }
-            return false;
+            registryKey = RootKey(listBasekey)?.OpenSubKey(listSubKey, writable: true);
+            return registryKey != null;
         }
 
         private static bool CreateSubKeyMethod(string listBasekey, string listSubKey)
         {
-            registryKey = null;
-            switch (listBasekey)
-            {
-            case "HKEY_CLASSES_ROOT":
-            case "HKCR":
-                registryKey = Registry.ClassesRoot.CreateSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_CURRENT_USER":
-            case "HKCU":
-                registryKey = Registry.CurrentUser.CreateSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_LOCAL_MACHINE":
-            case "HKLM":
-                registryKey = Registry.LocalMachine.CreateSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_USERS":
-            case "HKU":
-                registryKey = Registry.Users.CreateSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_CURRENT_CONFIG":
-            case "HKCC":
-                registryKey = Registry.CurrentConfig.CreateSubKey(listSubKey, writable: true);
-                break;
-            case "HKEY_PERFORMANCE_DATA":
-            case "HKPD":
-                registryKey = Registry.PerformanceData.CreateSubKey(listSubKey, writable: true);
-                break;
-            }
-            if (registryKey != null)
-            {
-                return true;
-            }
-            return false;
+            registryKey = RootKey(listBasekey)?.CreateSubKey(listSubKey, writable: true);
+            return registryKey != null;
         }
 
         public static async Task ExecuteMissingCommands()
@@ -507,30 +445,11 @@ namespace RegistryKey_Check
                     {
                         if (mo.ListCommand == "reg delete" && mo.ListValueName == "This_field_is_NULL")
                         {
-                            if (mo.ListBaseKey == "HKEY_CLASSES_ROOT" || mo.ListBaseKey == "HKCR")
+                            if (mo.ListSubKey.Length == 0)
                             {
-                                Registry.ClassesRoot.DeleteSubKeyTree(mo.ListSubKey);
+                                throw new InvalidOperationException("A whole base key cannot be deleted.");
                             }
-                            else if (mo.ListBaseKey == "HKEY_CURRENT_USER" || mo.ListBaseKey == "HKCU")
-                            {
-                                Registry.CurrentUser.DeleteSubKeyTree(mo.ListSubKey);
-                            }
-                            else if (mo.ListBaseKey == "HKEY_LOCAL_MACHINE" || mo.ListBaseKey == "HKLM")
-                            {
-                                Registry.LocalMachine.DeleteSubKeyTree(mo.ListSubKey);
-                            }
-                            else if (mo.ListBaseKey == "HKEY_USERS" || mo.ListBaseKey == "HKU")
-                            {
-                                Registry.Users.DeleteSubKeyTree(mo.ListSubKey);
-                            }
-                            else if (mo.ListBaseKey == "HKEY_CURRENT_CONFIG" || mo.ListBaseKey == "HKCC")
-                            {
-                                Registry.CurrentConfig.DeleteSubKeyTree(mo.ListSubKey);
-                            }
-                            else if (mo.ListBaseKey == "HKEY_PERFORMANCE_DATA" || mo.ListBaseKey == "HKPD")
-                            {
-                                Registry.PerformanceData.DeleteSubKeyTree(mo.ListSubKey);
-                            }
+                            RootKey(mo.ListBaseKey)?.DeleteSubKeyTree(mo.ListSubKey);
                         }
                         else if (mo.ListCommand == "reg delete" && mo.AvailableValueName == "It's Available")
                         {
@@ -559,7 +478,7 @@ namespace RegistryKey_Check
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_DWORD")
                             {
-                                registryKey.SetValue(mo.ListValueName, int.Parse(mo.ListValueData), RegistryValueKind.DWord);
+                                registryKey.SetValue(mo.ListValueName, unchecked((int)(uint)ListNumber(mo)), RegistryValueKind.DWord);
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_MULTI_SZ")
                             {
@@ -575,7 +494,7 @@ namespace RegistryKey_Check
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_QWORD")
                             {
-                                registryKey.SetValue(mo.ListValueName, long.Parse(mo.ListValueData), RegistryValueKind.QWord);
+                                registryKey.SetValue(mo.ListValueName, unchecked((long)ListNumber(mo)), RegistryValueKind.QWord);
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_NONE")
                             {
@@ -592,6 +511,98 @@ namespace RegistryKey_Check
                     File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
                     mo.ExecuteResult = "Error";
                 }
+            }
+        }
+
+        private static ulong ListNumber(ModelRegCommand mo)
+        {
+            return mo.ListValueNumber ?? throw new FormatException("\"" + mo.ListValueData + "\" is not a valid " + mo.ListValueType + " number.");
+        }
+
+        public static void JumpToRegEdit(ModelRegCommand mo)
+        {
+            try
+            {
+                RegistryKey? root = RootKey(mo.ListBaseKey);
+                if (root == null)
+                {
+                    return;
+                }
+                string lastKey = "Computer\\" + root.Name + (mo.ListSubKey.Length > 0 ? "\\" + mo.ListSubKey : string.Empty);
+                using (RegistryKey regedit = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Regedit", writable: true))
+                {
+                    regedit.SetValue("LastKey", lastKey, RegistryValueKind.String);
+                }
+                Process.Start("regedit.exe", "-m");
+            }
+            catch (Exception ex)
+            {
+                WriteLog("JumpToRegEdit", ex);
+            }
+        }
+
+        public static void ReadIgnoreFile()
+        {
+            IgnoreList.Clear();
+            if (File.Exists("Ignore.txt"))
+            {
+                foreach (string line in File.ReadLines("Ignore.txt"))
+                {
+                    if (line.Trim().Length > 0 && !IgnoreList.Contains(line.Trim()))
+                    {
+                        IgnoreList.Add(line.Trim());
+                    }
+                }
+            }
+        }
+
+        public static void AddToIgnoreList(IEnumerable<ModelRegCommand> rows)
+        {
+            foreach (ModelRegCommand mo in rows)
+            {
+                if (!IgnoreList.Contains(mo.ListLineString))
+                {
+                    IgnoreList.Add(mo.ListLineString);
+                }
+                mo.ListMatchWithRegEdit = "Ignored";
+            }
+            SaveIgnoreFile();
+        }
+
+        public static void RemoveFromIgnoreList(IEnumerable<ModelRegCommand> rows)
+        {
+            foreach (ModelRegCommand mo in rows)
+            {
+                IgnoreList.Remove(mo.ListLineString);
+                if (mo.ListMatchWithRegEdit == "Ignored")
+                {
+                    mo.ListMatchWithRegEdit = "Unknown";
+                }
+            }
+            SaveIgnoreFile();
+        }
+
+        private static void SaveIgnoreFile()
+        {
+            try
+            {
+                File.WriteAllLines("Ignore.txt", IgnoreList);
+            }
+            catch (Exception ex)
+            {
+                WriteLog("SaveIgnoreFile", ex);
+            }
+        }
+
+        public static void WriteLog(string method, Exception ex)
+        {
+            try
+            {
+                File.AppendAllText("log.txt", "---vvv ! ! ! Warning ! ! ! vvv--- " + method + " " + DateTime.Now.ToString() + "\n");
+                File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+            }
+            catch (IOException)
+            {
             }
         }
     }

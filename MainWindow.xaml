@@ -5,34 +5,40 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
-        Title="RegistryKey Check" MinHeight="700" MinWidth="1300" Loaded="Window_Loaded">
+        Title="RegistryKey Check" MinHeight="700" MinWidth="1300" Loaded="Window_Loaded" Closing="Window_Closing">
     <Grid>
         <TabControl>
             <TabItem Header="RegistryKey Commands">
-                <Grid>
+                <Grid PreviewMouseLeftButtonDown="RegCommandsGrid_PreviewMouseLeftButtonDown">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="26" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="60" />
                     </Grid.RowDefinitions>
-                    <StackPanel Height="26" Orientation="Horizontal" Margin="1,0,0,0">
-                        <TextBox x:Name="TextBoxFilterRegCommandId" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegCommandId, Mode=OneWay}" KeyUp="TextBoxFilterRegCommandId_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterListId" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListId, Mode=OneWay}" KeyUp="TextBoxFilterListId_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterListCommand" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListCommand, Mode=OneWay}" KeyUp="TextBoxFilterListCommand_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterListBaseKey" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListBaseKey, Mode=OneWay}" KeyUp="TextBoxFilterListBaseKey_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterListSubKey" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListSubKey, Mode=OneWay}" KeyUp="TextBoxFilterListSubKey_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterAvailableSubKey" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegAvailableSubKey, Mode=OneWay}" KeyUp="TextBoxFilterAvailableSubKey_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterListValueName" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueName, Mode=OneWay}" KeyUp="TextBoxFilterListValueName_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterAvailableValueName" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegAvailableValueName, Mode=OneWay}" KeyUp="TextBoxFilterAvailableValueName_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterListValueType" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueType, Mode=OneWay}" KeyUp="TextBoxFilterListValueType_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterRegEditValueType" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegRegEditValueType, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueType_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterListValueData" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueData, Mode=OneWay}" KeyUp="TextBoxFilterListValueData_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterRegEditValueData" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegRegEditValueData, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueData_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterExecuteResult" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueData_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterListMatchWithRegEdit" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListMatchWithRegEdit, Mode=OneWay}" KeyUp="TextBoxFilterListMatchWithRegEdit_KeyUp" />
+                    <StackPanel x:Name="StackPanelFilters" Height="26" Orientation="Horizontal" Margin="1,0,0,0">
+                        <TextBox x:Name="TextBoxFilterRegCommandId" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegCommandId, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegCommandId, Mode=OneWay}" KeyUp="TextBoxFilterRegCommandId_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterListId" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListId, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListId, Mode=OneWay}" KeyUp="TextBoxFilterListId_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterListCommand" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListCommand, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListCommand, Mode=OneWay}" KeyUp="TextBoxFilterListCommand_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterListBaseKey" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListBaseKey, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListBaseKey, Mode=OneWay}" KeyUp="TextBoxFilterListBaseKey_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterListSubKey" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListSubKey, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListSubKey, Mode=OneWay}" KeyUp="TextBoxFilterListSubKey_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterAvailableSubKey" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegAvailableSubKey, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegAvailableSubKey, Mode=OneWay}" KeyUp="TextBoxFilterAvailableSubKey_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterListValueName" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueName, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListValueName, Mode=OneWay}" KeyUp="TextBoxFilterListValueName_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterAvailableValueName" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegAvailableValueName, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegAvailableValueName, Mode=OneWay}" KeyUp="TextBoxFilterAvailableValueName_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterListValueType" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueType, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListValueType, Mode=OneWay}" KeyUp="TextBoxFilterListValueType_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterRegEditValueType" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegRegEditValueType, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegRegEditValueType, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueType_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterListValueData" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueData, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListValueData, Mode=OneWay}" KeyUp="TextBoxFilterListValueData_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterRegEditValueData" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegRegEditValueData, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegRegEditValueData, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueData_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterExecuteResult" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueData_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterListMatchWithRegEdit" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListMatchWithRegEdit, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListMatchWithRegEdit, Mode=OneWay}" KeyUp="TextBoxFilterListMatchWithRegEdit_KeyUp" />
                     </StackPanel>
-                    <DataGrid x:Name="DataGridRegCommands" RowHeaderWidth="0" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                    <DataGrid x:Name="DataGridRegCommands" RowHeaderWidth="0" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" ColumnReordered="DataGridRegCommands_ColumnReordered">
                         <DataGrid.Resources>
+                            <ContextMenu x:Key="RowMenu">
+                                <MenuItem Header="Jump to RegEdit" Click="MenuJumpToRegEdit_Click" />
+                                <Separator />
+                                <MenuItem Header="Add to Ignore List" Click="MenuAddToIgnoreList_Click" />
+                                <MenuItem Header="Remove from Ignore List" Click="MenuRemoveFromIgnoreList_Click" />
+                            </ContextMenu>
                             <Style TargetType="DataGridCell">
                                 <Style.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
@@ -52,8 +58,13 @@
                                     <DataTrigger Value="True" Binding="{Binding ListMatchWithRegEdit}">
                                         <Setter Property="Background" Value="#FF50D050" />
                                     </DataTrigger>
+                                    <DataTrigger Value="Ignored" Binding="{Binding ListMatchWithRegEdit}">
+                                        <Setter Property="Background" Value="#FFC8C8C8" />
+                                    </DataTrigger>
                                 </Style.Triggers>
+                                <Setter Property="ContextMenu" Value="{StaticResource RowMenu}" />
                                 <EventSetter Event="MouseDoubleClick" Handler="DataGridRegCommands_Row_MouseDoubleClick" />
+                                <EventSetter Event="PreviewMouseRightButtonDown" Handler="DataGridRegCommands_Row_PreviewMouseRightButtonDown" />
                             </Style>
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
@@ -81,6 +92,8 @@
                     <Button x:Name="ButtonFilterFalses" VerticalContentAlignment="Top" Grid.Row="2" Content="Apply False Filter" HorizontalAlignment="Right" Height="21" Margin="0,8,860,0" VerticalAlignment="Top" Width="100" Click="ButtonFilterFalses_Click" />
                     <Button x:Name="ButtonFilterTrues" VerticalContentAlignment="Top" Grid.Row="2" Content="Apply True Filter" HorizontalAlignment="Right" Height="21" Margin="0,30,860,0" VerticalAlignment="Top" Width="100" Click="ButtonFilterTrues_Click" />
                     <Button x:Name="ButtonAllFiltersReset" VerticalContentAlignment="Top" Grid.Row="2" Content="All Filters Reset" HorizontalAlignment="Right" Height="21" Margin="0,8,970,0" VerticalAlignment="Top" Width="100" Click="ButtonAllFiltersReset_Click" />
+                    <Button x:Name="ButtonColumns" VerticalContentAlignment="Top" Grid.Row="2" Content="Columns" HorizontalAlignment="Right" Height="21" Margin="0,8,1080,0" VerticalAlignment="Top" Width="100" Click="ButtonColumns_Click" />
+                    <Button x:Name="ButtonOpenIgnoreFile" VerticalContentAlignment="Top" Grid.Row="2" Content="Open Ignore.txt" HorizontalAlignment="Right" Height="21" Margin="0,30,1080,0" VerticalAlignment="Top" Width="100" Click="ButtonOpenIgnoreFile_Click" />
                     <Button x:Name="ButtonHelp" VerticalContentAlignment="Top" Grid.Row="2" Content="Help" HorizontalAlignment="Right" Height="21" Margin="0,30,970,0" VerticalAlignment="Top" Width="100" Click="ButtonHelp_Click" />
                     <Label x:Name="LabelShown" VerticalContentAlignment="Top" Grid.Row="2" Content="Shown 0" HorizontalAlignment="Left" Height="24" Margin="0,8,1140,0" VerticalAlignment="Top" Width="76" />
                     <Label x:Name="LabelTotal" VerticalContentAlignment="Top" Grid.Row="2" Content="Total 0" HorizontalAlignment="Left" Height="24" Margin="0,30,1140,0" VerticalAlignment="Top" Width="76" />

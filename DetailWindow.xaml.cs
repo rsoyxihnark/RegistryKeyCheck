@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 
 namespace RegistryKey_Check
 {
@@ -7,6 +8,14 @@ namespace RegistryKey_Check
         public DetailWindow()
         {
             InitializeComponent();
+        }
+
+        private void DetailWin_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                Close();
+            }
         }
 
         private void DetailWin_Loaded(object sender, RoutedEventArgs e)

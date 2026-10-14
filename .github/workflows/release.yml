@@ -77,6 +77,10 @@ jobs:
           mkdir -p dist
           cp "out/RegistryKey Check.exe" dist/RegistryKeyCheck.exe
 
+      - name: Test against the registry
+        shell: bash
+        run: dotnet run --project .github/tests/RegistryTests -c Release -- "bin/Release/net10.0-windows/win-x64/RegistryKey Check.dll"
+
       - name: Start the exe
         shell: pwsh
         run: |

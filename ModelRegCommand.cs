@@ -31,5 +31,9 @@ namespace RegistryKey_Check
         public string ExecuteResult { get; set; } = string.Empty;
 
         public string ListMatchWithRegEdit { get; set; } = string.Empty;
+
+        public string ListLineString { get; set; } = string.Empty;
+
+        public ulong? ListValueNumber { get; set; }
     }
 }

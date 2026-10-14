@@ -1,19 +1,58 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace RegistryKey_Check
 {
     public partial class MainWindow : Window
     {
+        private readonly AppSettings settings = AppSettings.Load();
+
+        private readonly Dictionary<DataGridColumn, TextBox> filterBoxes;
+
+        private readonly ContextMenu columnsMenu = new ContextMenu();
+
         public MainWindow()
         {
             InitializeComponent();
+            filterBoxes = new Dictionary<DataGridColumn, TextBox>
+            {
+                [dgColumnRegCommandId] = TextBoxFilterRegCommandId,
+                [dgColumnRegListId] = TextBoxFilterListId,
+                [dgColumnRegListCommand] = TextBoxFilterListCommand,
+                [dgColumnRegListBaseKey] = TextBoxFilterListBaseKey,
+                [dgColumnRegListSubKey] = TextBoxFilterListSubKey,
+                [dgColumnRegAvailableSubKey] = TextBoxFilterAvailableSubKey,
+                [dgColumnRegListValueName] = TextBoxFilterListValueName,
+                [dgColumnRegAvailableValueName] = TextBoxFilterAvailableValueName,
+                [dgColumnRegListValueType] = TextBoxFilterListValueType,
+                [dgColumnRegRegEditValueType] = TextBoxFilterRegEditValueType,
+                [dgColumnRegListValueData] = TextBoxFilterListValueData,
+                [dgColumnRegRegEditValueData] = TextBoxFilterRegEditValueData,
+                [dgColumnRegExecuteResult] = TextBoxFilterExecuteResult,
+                [dgColumnRegListMatchWithRegEdit] = TextBoxFilterListMatchWithRegEdit
+            };
+            foreach (DataGridColumn column in DataGridRegCommands.Columns)
+            {
+                MenuItem item = new MenuItem { Header = AppSettings.HeaderOf(column), IsCheckable = true, StaysOpenOnClick = true, Tag = column };
+                item.Click += ColumnsMenuItem_Click;
+                columnsMenu.Items.Add(item);
+            }
+            columnsMenu.Opened += ColumnsMenu_Opened;
+            Style headerStyle = new Style(typeof(DataGridColumnHeader));
+            headerStyle.Setters.Add(new Setter(ContextMenuProperty, columnsMenu));
+            DataGridRegCommands.ColumnHeaderStyle = headerStyle;
+            settings.ApplyWindow(this);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -32,6 +71,121 @@ namespace RegistryKey_Check
                 {
                 }
             }
+            try
+            {
+                AppSettings.ApplyColumns(DataGridRegCommands, settings.RegColumns);
+                AppSettings.ApplyColumns(DataGridNonRegCommands, settings.NonRegColumns);
+            }
+            catch (Exception ex)
+            {
+                ViewModels.WriteLog("Saved column layout could not be applied, so the default layout is used. ApplyColumns", ex);
+            }
+            ArrangeFilters();
+        }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            settings.ReadWindow(this);
+            settings.RegColumns = AppSettings.ReadColumns(DataGridRegCommands);
+            settings.NonRegColumns = AppSettings.ReadColumns(DataGridNonRegCommands);
+            settings.Save();
+        }
+
+        private void ArrangeFilters()
+        {
+            List<TextBox> ordered = filterBoxes.OrderBy(p => p.Key.DisplayIndex).Select(p => p.Value).ToList();
+            StackPanelFilters.Children.Clear();
+            foreach (TextBox box in ordered)
+            {
+                StackPanelFilters.Children.Add(box);
+            }
+        }
+
+        private void DataGridRegCommands_ColumnReordered(object? sender, DataGridColumnEventArgs e)
+        {
+            ArrangeFilters();
+        }
+
+        private void ColumnsMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            foreach (MenuItem item in columnsMenu.Items.OfType<MenuItem>())
+            {
+                item.IsChecked = ((DataGridColumn)item.Tag).Visibility == Visibility.Visible;
+            }
+        }
+
+        private void ColumnsMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem item = (MenuItem)sender;
+            ((DataGridColumn)item.Tag).Visibility = item.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void ButtonColumns_Click(object sender, RoutedEventArgs e)
+        {
+            columnsMenu.PlacementTarget = ButtonColumns;
+            columnsMenu.Placement = PlacementMode.Top;
+            columnsMenu.IsOpen = true;
+        }
+
+        private void ButtonOpenIgnoreFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (!File.Exists("Ignore.txt"))
+            {
+                using (StreamWriter swIgnore = new StreamWriter("Ignore.txt", append: true))
+                {
+                }
+            }
+            Process.Start("Notepad.exe", "Ignore.txt");
+        }
+
+        private List<ModelRegCommand> SelectedRows()
+        {
+            return DataGridRegCommands.SelectedItems.OfType<ModelRegCommand>().ToList();
+        }
+
+        private void DataGridRegCommands_Row_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            DataGridRow row = (DataGridRow)sender;
+            if (!row.IsSelected)
+            {
+                DataGridRegCommands.SelectedItems.Clear();
+                row.IsSelected = true;
+            }
+        }
+
+        private void MenuJumpToRegEdit_Click(object sender, RoutedEventArgs e)
+        {
+            ModelRegCommand? mo = SelectedRows().FirstOrDefault();
+            if (mo != null)
+            {
+                ViewModels.JumpToRegEdit(mo);
+            }
+        }
+
+        private void MenuAddToIgnoreList_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModels.AddToIgnoreList(SelectedRows());
+            DataGridRegCommands.Items.Refresh();
+        }
+
+        private void MenuRemoveFromIgnoreList_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModels.RemoveFromIgnoreList(SelectedRows());
+            DataGridRegCommands.Items.Refresh();
+        }
+
+        private void RegCommandsGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            DependencyObject? element = e.OriginalSource as DependencyObject;
+            while (element != null)
+            {
+                if (element is DataGridRow || element is DataGridColumnHeader || element is ScrollBar || element is ButtonBase || element is Thumb)
+                {
+                    return;
+                }
+                element = element is Visual || element is Visual3D ? VisualTreeHelper.GetParent(element) : LogicalTreeHelper.GetParent(element);
+            }
+            DataGridRegCommands.UnselectAll();
         }
 
         private void ButtonReadListFile_Click(object sender, RoutedEventArgs e)
@@ -57,6 +211,8 @@ namespace RegistryKey_Check
             ButtonFilterTrues.IsEnabled = true;
             ButtonAllFiltersReset.IsEnabled = true;
             ButtonHelp.IsEnabled = true;
+            ButtonColumns.IsEnabled = true;
+            ButtonOpenIgnoreFile.IsEnabled = true;
         }
 
         private void ButtonsDisable()
@@ -70,6 +226,8 @@ namespace RegistryKey_Check
             ButtonFilterTrues.IsEnabled = false;
             ButtonAllFiltersReset.IsEnabled = false;
             ButtonHelp.IsEnabled = false;
+            ButtonColumns.IsEnabled = false;
+            ButtonOpenIgnoreFile.IsEnabled = false;
         }
 
         private void ButtonOpenListFile_Click(object sender, RoutedEventArgs e)
@@ -246,9 +404,9 @@ namespace RegistryKey_Check
 
         private void DataGridRegCommands_Row_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (DataGridRegCommands.Columns[0].GetCellContent(DataGridRegCommands.SelectedItem) is TextBlock x)
+            if (((DataGridRow)sender).Item is ModelRegCommand x)
             {
-                ViewModels.DisplayingIDs = int.Parse(x.Text) - 1;
+                ViewModels.DisplayingIDs = x.RegCommandId - 1;
             }
             DetailWindow detailWindow = new DetailWindow();
             detailWindow.ShowInTaskbar = false;
