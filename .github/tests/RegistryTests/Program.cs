@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Win32;
 
@@ -28,18 +29,30 @@ int RunCmd(string line)
     return process.ExitCode;
 }
 
-List<(string Line, string Status, string Data)> Run(string[] list, string[] ignore, bool execute)
+List<(string Line, string Status, string Data)> Run(string[] list, string[] ignore, bool execute, Func<string, bool>? only = null)
 {
     Directory.CreateDirectory(work);
     File.WriteAllLines(Path.Combine(work, "List.txt"), list);
     File.WriteAllLines(Path.Combine(work, "Ignore.txt"), ignore);
     Directory.SetCurrentDirectory(work);
     viewModels.GetMethod("ReadListFile")!.Invoke(null, null);
-    viewModels.GetMethod("QueryFromRegEdit")!.Invoke(null, null);
+    viewModels.GetMethod("QueryFromRegEdit")!.Invoke(null, new object?[] { null });
     if (execute)
     {
-        ((Task)viewModels.GetMethod("ExecuteMissingCommands")!.Invoke(null, null)!).GetAwaiter().GetResult();
-        viewModels.GetMethod("QueryFromRegEdit")!.Invoke(null, null);
+        IEnumerable all = (IEnumerable)viewModels.GetField("ObsColl_RegCommands")!.GetValue(null)!;
+        Type rowType = all.Cast<object>().First().GetType();
+        object? include = null;
+        if (only != null)
+        {
+            foreach (object row in all)
+            {
+                rowType.GetProperty("IsChecked")!.SetValue(row, only((string)rowType.GetProperty("ListLineString")!.GetValue(row)!));
+            }
+            ParameterExpression parameter = Expression.Parameter(rowType, "row");
+            include = Expression.Lambda(typeof(Func<,>).MakeGenericType(rowType, typeof(bool)), Expression.Property(parameter, "IsChecked"), parameter).Compile();
+        }
+        ((Task)viewModels.GetMethod("ExecuteMissingCommands")!.Invoke(null, new object?[] { include, null })!).GetAwaiter().GetResult();
+        viewModels.GetMethod("QueryFromRegEdit")!.Invoke(null, new object?[] { null });
     }
     List<(string, string, string)> rows = new List<(string, string, string)>();
     foreach (object row in (IEnumerable)viewModels.GetField("ObsColl_RegCommands")!.GetValue(null)!)
@@ -127,6 +140,15 @@ try
         Check(key.OpenSubKey("Sub") == null, "Sub key was deleted");
         Check(key.GetValue("Ignored") == null, "Ignored row was not executed");
     }
+    string c = @"HKCU\Software\RegistryKeyCheckTest\C";
+    string[] listC =
+    {
+        $"reg add \"{c}\" /v \"Picked\" /d \"yes\" /f",
+        $"reg add \"{c}\" /v \"NotPicked\" /d \"yes\" /f"
+    };
+    List<(string Line, string Status, string Data)> selectedRun = Run(listC, Array.Empty<string>(), true, line => line.Contains("\"Picked\""));
+    Check(selectedRun[0].Status == "True", "Execute Selected changed the selected row: " + selectedRun[0].Status);
+    Check(selectedRun[1].Status == "False", "Execute Selected left the unselected row alone: " + selectedRun[1].Status);
     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\B\command")!)
     {
         using RegistryKey regExeKey = Registry.CurrentUser.OpenSubKey(TestKey + @"\A\command")!;

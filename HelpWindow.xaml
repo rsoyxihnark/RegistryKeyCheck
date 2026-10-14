@@ -6,16 +6,98 @@
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
         x:Name="HelpWin"
-        Title="Help" Height="300" Width="400" ResizeMode="NoResize" Loaded="HelpWin_Loaded">
-    <Grid>
-        <TextBox x:Name="TextBoxHelpString">
-            <TextBox.Style>
-                <Style TargetType="TextBox">
-                    <Setter Property="IsReadOnly" Value="True" />
-                    <Setter Property="BorderThickness" Value="0" />
-                    <Setter Property="TextWrapping" Value="Wrap" />
-                </Style>
-            </TextBox.Style>
-        </TextBox>
-    </Grid>
+        Title="Help" Width="640" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBrush}" Foreground="{StaticResource TextBrush}" FontFamily="{StaticResource UiFont}" FontSize="13"
+        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True"
+        Loaded="HelpWin_Loaded">
+    <Window.Resources>
+        <Style x:Key="KeyCap" TargetType="Border">
+            <Setter Property="Background" Value="#FF1E293B" />
+            <Setter Property="BorderBrush" Value="#5994A3B8" />
+            <Setter Property="BorderThickness" Value="1,1,1,2" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="Margin" Value="0,5,14,5" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="KeyText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{StaticResource BrightTextBrush}" />
+        </Style>
+        <Style x:Key="KeyAction" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </Window.Resources>
+    <StackPanel Margin="24,20,24,20">
+        <StackPanel Orientation="Horizontal">
+            <Border Width="40" Height="40" CornerRadius="20" Background="#333B82F6">
+                <TextBlock Text="&#xE897;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="#FF93C5FD" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <TextBlock Text="Help" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource BrightTextBrush}" VerticalAlignment="Center" Margin="14,0,0,0" />
+        </StackPanel>
+        <Border Margin="0,16,0,0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Padding="16,12">
+            <TextBox x:Name="TextBoxHelpString" Style="{StaticResource ReadOnlyField}" />
+        </Border>
+        <TextBlock Text="Shortcuts" FontWeight="SemiBold" Foreground="{StaticResource BrightTextBrush}" Margin="2,18,0,8" />
+        <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12" Padding="16,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="Ctrl+O" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="Read List.txt" Style="{StaticResource KeyAction}" />
+                <Border Grid.Row="1" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="F5" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="Query RegEdit" Style="{StaticResource KeyAction}" />
+                <Border Grid.Row="2" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="Ctrl+F" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="Search every column" Style="{StaticResource KeyAction}" />
+                <Border Grid.Row="3" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="Ctrl+G" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="Go to a line of List.txt" Style="{StaticResource KeyAction}" />
+                <Border Grid.Row="4" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="Enter" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="Show the Detail window of a row, or double-click the row" Style="{StaticResource KeyAction}" />
+                <Border Grid.Row="5" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="Space" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="Select or unselect the highlighted rows for Execute Selected" Style="{StaticResource KeyAction}" />
+                <Border Grid.Row="6" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="Right-click a row" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="6" Grid.Column="1" Text="Jump to RegEdit, copy, or add to the Ignore List" Style="{StaticResource KeyAction}" />
+                <Border Grid.Row="7" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="Right-click a header" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="7" Grid.Column="1" Text="Hide or show columns" Style="{StaticResource KeyAction}" />
+                <Border Grid.Row="8" Style="{StaticResource KeyCap}">
+                    <TextBlock Text="Esc" Style="{StaticResource KeyText}" />
+                </Border>
+                <TextBlock Grid.Row="8" Grid.Column="1" Text="Close the Detail window" Style="{StaticResource KeyAction}" />
+            </Grid>
+        </Border>
+        <Button Style="{StaticResource PrimaryButton}" Content="Close" Width="110" HorizontalAlignment="Right" Margin="0,18,0,0" IsCancel="True" IsDefault="True" Click="ButtonClose_Click" />
+    </StackPanel>
 </Window>

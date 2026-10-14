@@ -81,6 +81,18 @@ jobs:
         shell: bash
         run: dotnet run --project .github/tests/RegistryTests -c Release -- "bin/Release/net10.0-windows/win-x64/RegistryKey Check.dll"
 
+      - name: Open every window and save screenshots
+        shell: bash
+        run: dotnet run --project .github/tests/UiShots -c Release -- "bin/Release/net10.0-windows/win-x64/RegistryKey Check.dll" screenshots
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: screenshots
+          if-no-files-found: ignore
+
       - name: Start the exe
         shell: pwsh
         run: |

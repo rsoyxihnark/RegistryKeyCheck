@@ -30,8 +30,6 @@ namespace RegistryKey_Check
 
         private static RegistryKey? registryKey;
 
-        private static RegistryValueKind registryValueKind;
-
         public static int Total;
 
         public static int Shown;
@@ -254,139 +252,188 @@ namespace RegistryKey_Check
             return "0x" + value.ToString("x16", CultureInfo.InvariantCulture) + " (" + value.ToString(CultureInfo.InvariantCulture) + ")";
         }
 
-        public static void QueryFromRegEdit()
+        public static void QueryFromRegEdit(IProgress<int>? progress)
         {
-            foreach (ModelRegCommand mo in ObsColl_RegCommands)
+            Dictionary<string, QueryKey?> keys = new Dictionary<string, QueryKey?>(StringComparer.OrdinalIgnoreCase);
+            int done = 0;
+            try
             {
-                if (mo.ListMatchWithRegEdit == "Ignored")
+                foreach (ModelRegCommand mo in ObsColl_RegCommands)
                 {
-                    continue;
-                }
-                try
-                {
-                    mo.AvailableSubKey = string.Empty;
-                    mo.AvailableValueName = "This_field_is_NULL";
-                    mo.RegEditValueType = "This_field_is_NULL";
-                    mo.RegEditValueData = "This_field_is_NULL";
-                    mo.ReturnObject = "This_field_is_NULL";
-                    if (AvailableSubKeyMethod(mo.ListBaseKey, mo.ListSubKey))
+                    done++;
+                    if (progress != null && (done % 50 == 0 || done == ObsColl_RegCommands.Count))
                     {
-                        mo.AvailableSubKey = "It's Available";
-                        if (registryKey != null && mo.ListValueName != "This_field_is_NULL")
+                        progress.Report(done);
+                    }
+                    if (mo.ListMatchWithRegEdit == "Ignored")
+                    {
+                        continue;
+                    }
+                    QueryRow(mo, keys);
+                }
+            }
+            finally
+            {
+                foreach (QueryKey? key in keys.Values)
+                {
+                    key?.Key.Dispose();
+                }
+            }
+        }
+
+        private sealed class QueryKey
+        {
+            public QueryKey(RegistryKey key)
+            {
+                Key = key;
+                ValueNames = new HashSet<string>(key.GetValueNames(), StringComparer.OrdinalIgnoreCase);
+            }
+
+            public RegistryKey Key { get; }
+
+            public HashSet<string> ValueNames { get; }
+        }
+
+        private static QueryKey? OpenQueryKey(Dictionary<string, QueryKey?> keys, string listBasekey, string listSubKey)
+        {
+            string path = listBasekey + "\\" + listSubKey;
+            if (!keys.TryGetValue(path, out QueryKey? key))
+            {
+                RegistryKey? opened = RootKey(listBasekey)?.OpenSubKey(listSubKey);
+                key = opened == null ? null : new QueryKey(opened);
+                keys[path] = key;
+            }
+            return key;
+        }
+
+        private static void QueryRow(ModelRegCommand mo, Dictionary<string, QueryKey?> keys)
+        {
+            try
+            {
+                mo.AvailableSubKey = string.Empty;
+                mo.AvailableValueName = "This_field_is_NULL";
+                mo.RegEditValueType = "This_field_is_NULL";
+                mo.RegEditValueData = "This_field_is_NULL";
+                mo.ReturnObject = "This_field_is_NULL";
+                QueryKey? queryKey = OpenQueryKey(keys, mo.ListBaseKey, mo.ListSubKey);
+                RegistryKey? registryKey = queryKey?.Key;
+                if (queryKey != null && registryKey != null)
+                {
+                    mo.AvailableSubKey = "It's Available";
+                    if (mo.ListValueName != "This_field_is_NULL")
+                    {
+                        if (queryKey.ValueNames.Contains(mo.ListValueName))
                         {
-                            if (registryKey.GetValueNames().Any(name => string.Equals(name, mo.ListValueName, StringComparison.OrdinalIgnoreCase)))
+                            mo.ReturnObject = registryKey.GetValue(mo.ListValueName)!;
+                            mo.AvailableValueName = "It's Available";
+                            RegistryValueKind registryValueKind = registryKey.GetValueKind(mo.ListValueName);
+                            if (registryValueKind == RegistryValueKind.String)
                             {
-                                mo.ReturnObject = registryKey.GetValue(mo.ListValueName)!;
-                                mo.AvailableValueName = "It's Available";
-                                registryValueKind = registryKey.GetValueKind(mo.ListValueName);
-                                if (registryValueKind == RegistryValueKind.String)
-                                {
-                                    mo.RegEditValueType = "REG_SZ";
-                                    mo.RegEditValueData = (string)mo.ReturnObject;
-                                }
-                                else if (registryValueKind == RegistryValueKind.ExpandString)
-                                {
-                                    mo.RegEditValueType = "REG_EXPAND_SZ";
-                                    mo.RegEditValueData = (string)mo.ReturnObject;
-                                }
-                                else if (registryValueKind == RegistryValueKind.MultiString)
-                                {
-                                    mo.RegEditValueType = "REG_MULTI_SZ";
-                                    mo.RegEditValueData = string.Join("\\0", (string[])mo.ReturnObject);
-                                }
-                                else if (registryValueKind == RegistryValueKind.DWord)
-                                {
-                                    mo.RegEditValueType = "REG_DWORD";
-                                    mo.RegEditValueData = FormatDword(unchecked((uint)(int)mo.ReturnObject));
-                                }
-                                else if (registryValueKind == RegistryValueKind.QWord)
-                                {
-                                    mo.RegEditValueType = "REG_QWORD";
-                                    mo.RegEditValueData = FormatQword(unchecked((ulong)(long)mo.ReturnObject));
-                                }
-                                else if (registryValueKind == RegistryValueKind.Binary)
-                                {
-                                    mo.RegEditValueType = "REG_BINARY";
-                                    mo.RegEditValueData = Convert.ToHexString((byte[])mo.ReturnObject).ToLower();
-                                }
-                                else if (registryValueKind == RegistryValueKind.None)
-                                {
-                                    mo.RegEditValueType = "REG_NONE";
-                                    mo.RegEditValueData = Encoding.Unicode.GetString((byte[])mo.ReturnObject).TrimEnd('\0');
-                                }
-                                if (string.Equals(mo.RegEditValueData, mo.ListValueData, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    mo.ListMatchWithRegEdit = "True";
-                                }
-                                else
-                                {
-                                    mo.ListMatchWithRegEdit = "False";
-                                }
+                                mo.RegEditValueType = "REG_SZ";
+                                mo.RegEditValueData = (string)mo.ReturnObject;
                             }
-                            else
+                            else if (registryValueKind == RegistryValueKind.ExpandString)
                             {
-                                mo.AvailableValueName = "Not Available";
-                                if (mo.ListCommand == "reg add")
-                                {
-                                    mo.ListMatchWithRegEdit = "False";
-                                }
-                                else if (mo.ListCommand == "reg delete")
-                                {
-                                    mo.ListMatchWithRegEdit = "True";
-                                }
+                                mo.RegEditValueType = "REG_EXPAND_SZ";
+                                mo.RegEditValueData = (string)mo.ReturnObject;
                             }
-                        }
-                        else if (registryKey != null && mo.ListValueName == "This_field_is_NULL")
-                        {
-                            if (mo.ListCommand == "reg add")
+                            else if (registryValueKind == RegistryValueKind.MultiString)
+                            {
+                                mo.RegEditValueType = "REG_MULTI_SZ";
+                                mo.RegEditValueData = string.Join("\\0", (string[])mo.ReturnObject);
+                            }
+                            else if (registryValueKind == RegistryValueKind.DWord)
+                            {
+                                mo.RegEditValueType = "REG_DWORD";
+                                mo.RegEditValueData = FormatDword(unchecked((uint)(int)mo.ReturnObject));
+                            }
+                            else if (registryValueKind == RegistryValueKind.QWord)
+                            {
+                                mo.RegEditValueType = "REG_QWORD";
+                                mo.RegEditValueData = FormatQword(unchecked((ulong)(long)mo.ReturnObject));
+                            }
+                            else if (registryValueKind == RegistryValueKind.Binary)
+                            {
+                                mo.RegEditValueType = "REG_BINARY";
+                                mo.RegEditValueData = Convert.ToHexString((byte[])mo.ReturnObject).ToLower();
+                            }
+                            else if (registryValueKind == RegistryValueKind.None)
+                            {
+                                mo.RegEditValueType = "REG_NONE";
+                                mo.RegEditValueData = Encoding.Unicode.GetString((byte[])mo.ReturnObject).TrimEnd('\0');
+                            }
+                            if (string.Equals(mo.RegEditValueData, mo.ListValueData, StringComparison.OrdinalIgnoreCase))
                             {
                                 mo.ListMatchWithRegEdit = "True";
                             }
-                            else if (mo.ListCommand == "reg delete")
+                            else
                             {
                                 mo.ListMatchWithRegEdit = "False";
+                            }
+                        }
+                        else
+                        {
+                            mo.AvailableValueName = "Not Available";
+                            if (mo.ListCommand == "reg add")
+                            {
+                                mo.ListMatchWithRegEdit = "False";
+                            }
+                            else if (mo.ListCommand == "reg delete")
+                            {
+                                mo.ListMatchWithRegEdit = "True";
                             }
                         }
                     }
                     else
                     {
-                        mo.AvailableSubKey = "Not Available";
                         if (mo.ListCommand == "reg add")
-                        {
-                            mo.ListMatchWithRegEdit = "False";
-                        }
-                        else if (mo.ListCommand == "reg delete")
                         {
                             mo.ListMatchWithRegEdit = "True";
                         }
-                    }
-                    if (mo.ListCommand == "reg delete" && mo.AvailableSubKey == "It's Available" && mo.AvailableValueName == "It's Available")
-                    {
-                        mo.ListMatchWithRegEdit = "False";
-                    }
-                    else if (mo.ListCommand == "reg delete" && mo.AvailableSubKey == "It's Available" && mo.AvailableValueName == "Not Available")
-                    {
-                        mo.ListMatchWithRegEdit = "True";
-                    }
-                    else if (mo.ListCommand == "reg delete" && mo.AvailableSubKey == "It's Available" && mo.AvailableValueName == "This_field_is_NULL")
-                    {
-                        mo.ListMatchWithRegEdit = "False";
-                    }
-                    else if (mo.ListCommand == "reg delete" && mo.AvailableSubKey == "Not Available")
-                    {
-                        mo.ListMatchWithRegEdit = "True";
-                    }
-                    if (mo.ListCommand == "reg add" && mo.ListValueType != "This_field_is_NULL" && mo.RegEditValueType != "This_field_is_NULL" && mo.ListValueType != mo.RegEditValueType)
-                    {
-                        mo.ListMatchWithRegEdit = "False";
+                        else if (mo.ListCommand == "reg delete")
+                        {
+                            mo.ListMatchWithRegEdit = "False";
+                        }
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    File.AppendAllText("log.txt", "---vvv ! ! ! Warning ! ! ! vvv--- QueryMethod " + DateTime.Now.ToString() + "\n");
-                    File.AppendAllText("log.txt", "     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
-                    File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+                    mo.AvailableSubKey = "Not Available";
+                    if (mo.ListCommand == "reg add")
+                    {
+                        mo.ListMatchWithRegEdit = "False";
+                    }
+                    else if (mo.ListCommand == "reg delete")
+                    {
+                        mo.ListMatchWithRegEdit = "True";
+                    }
                 }
+                if (mo.ListCommand == "reg delete" && mo.AvailableSubKey == "It's Available" && mo.AvailableValueName == "It's Available")
+                {
+                    mo.ListMatchWithRegEdit = "False";
+                }
+                else if (mo.ListCommand == "reg delete" && mo.AvailableSubKey == "It's Available" && mo.AvailableValueName == "Not Available")
+                {
+                    mo.ListMatchWithRegEdit = "True";
+                }
+                else if (mo.ListCommand == "reg delete" && mo.AvailableSubKey == "It's Available" && mo.AvailableValueName == "This_field_is_NULL")
+                {
+                    mo.ListMatchWithRegEdit = "False";
+                }
+                else if (mo.ListCommand == "reg delete" && mo.AvailableSubKey == "Not Available")
+                {
+                    mo.ListMatchWithRegEdit = "True";
+                }
+                if (mo.ListCommand == "reg add" && mo.ListValueType != "This_field_is_NULL" && mo.RegEditValueType != "This_field_is_NULL" && mo.ListValueType != mo.RegEditValueType)
+                {
+                    mo.ListMatchWithRegEdit = "False";
+                }
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText("log.txt", "---vvv ! ! ! Warning ! ! ! vvv--- QueryMethod " + DateTime.Now.ToString() + "\n");
+                File.AppendAllText("log.txt", "     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
+                File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
             }
         }
 
@@ -417,12 +464,6 @@ namespace RegistryKey_Check
             }
         }
 
-        private static bool AvailableSubKeyMethod(string listBasekey, string listSubKey)
-        {
-            registryKey = RootKey(listBasekey)?.OpenSubKey(listSubKey);
-            return registryKey != null;
-        }
-
         private static bool AvailableSubKeyMethodTrue(string listBasekey, string listSubKey)
         {
             registryKey = RootKey(listBasekey)?.OpenSubKey(listSubKey, writable: true);
@@ -435,10 +476,17 @@ namespace RegistryKey_Check
             return registryKey != null;
         }
 
-        public static async Task ExecuteMissingCommands()
+        public static async Task ExecuteMissingCommands(Func<ModelRegCommand, bool>? include, IProgress<int>? progress)
         {
-            foreach (ModelRegCommand mo in ObsColl_RegCommands)
+            List<ModelRegCommand> rows = include == null ? ObsColl_RegCommands.ToList() : ObsColl_RegCommands.Where(include).ToList();
+            int done = 0;
+            foreach (ModelRegCommand mo in rows)
             {
+                done++;
+                if (progress != null && (done % 10 == 0 || done == rows.Count))
+                {
+                    progress.Report(done);
+                }
                 try
                 {
                     if (mo.ListMatchWithRegEdit == "False")
@@ -511,6 +559,11 @@ namespace RegistryKey_Check
                     File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
                     mo.ExecuteResult = "Error";
                 }
+                finally
+                {
+                    registryKey?.Dispose();
+                    registryKey = null;
+                }
             }
         }
 
@@ -527,6 +580,21 @@ namespace RegistryKey_Check
                 if (root == null)
                 {
                     return;
+                }
+                foreach (Process running in Process.GetProcessesByName("regedit"))
+                {
+                    using (running)
+                    {
+                        try
+                        {
+                            running.Kill();
+                            running.WaitForExit(2000);
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteLog("JumpToRegEdit could not close RegEdit", ex);
+                        }
+                    }
                 }
                 string lastKey = "Computer\\" + root.Name + (mo.ListSubKey.Length > 0 ? "\\" + mo.ListSubKey : string.Empty);
                 using (RegistryKey regedit = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Regedit", writable: true))

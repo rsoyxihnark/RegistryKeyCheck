@@ -1,7 +1,26 @@
+using System.ComponentModel;
+
 namespace RegistryKey_Check
 {
-    public class ModelRegCommand
+    public class ModelRegCommand : INotifyPropertyChanged
     {
+        private bool isChecked;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public bool IsChecked
+        {
+            get => isChecked;
+            set
+            {
+                if (isChecked != value)
+                {
+                    isChecked = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsChecked)));
+                }
+            }
+        }
+
         public int RegCommandId { get; set; }
 
         public int ListId { get; set; }

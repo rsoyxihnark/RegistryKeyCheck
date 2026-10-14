@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- RegistryKey Check has a new dark look, with a toolbar on top, a search bar and a status bar that shows progress.
+- The search bar searches every column at once, and Ctrl+F jumps to it.
+- Every column header now has its own filter box.
+- The True, False, Unknown and Ignored buttons in the status bar show or hide rows of that status and show how many there are.
+- Clear filters clears the search and every column filter and shows every status again.
+- List Match with RegEdit now shows True, False, Unknown and Ignored as colored labels.
+- Tick the Select box of rows and press Execute Selected to run the reg commands of only those rows.
+- Go to line jumps to a line of List.txt, and Ctrl+G jumps to it.
+- Right-click a row to copy its reg command, key path or value name.
+- Right-click a row and choose Show Details, or press Enter, to open the Detail window.
+- Space selects or unselects the highlighted rows for Execute Selected.
+- Jump to RegEdit now closes RegEdit first, so it opens at the key even when RegEdit is already open.
+- Query RegEdit and Execute Missing Commands now show their progress and run faster on long lists.
+- F5 runs Query RegEdit, Ctrl+O runs Read List.txt and F1 opens Help.
+- The Detail window now has Jump to RegEdit and Copy reg command buttons.
+
 ## 2.0.1
 
 - Right-click a column header or press Columns to hide or show any column, such as SubKey Available? or List Match with RegEdit.
