@@ -15,7 +15,7 @@
         <Label Content="List SubKey" Margin="10,130,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="SubKey Available?" Margin="10,180,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="List Value Name" Margin="10,210,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
-        <Label Content="Value Name Available? " Margin="10,240,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Value Name Available?" Margin="10,240,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="List Value Type" Margin="10,270,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="RegEdit Value Type" Margin="10,300,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="List Value Data" Margin="10,330,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />

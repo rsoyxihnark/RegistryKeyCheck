@@ -118,6 +118,18 @@ namespace RegistryKey_Check
                 {
                     column.Width = new DataGridLength(setting.Width, DataGridLengthUnitType.Star);
                 }
+                else if (setting.WidthType == nameof(DataGridLengthUnitType.Auto))
+                {
+                    column.Width = DataGridLength.Auto;
+                }
+                else if (setting.WidthType == nameof(DataGridLengthUnitType.SizeToCells))
+                {
+                    column.Width = DataGridLength.SizeToCells;
+                }
+                else if (setting.WidthType == nameof(DataGridLengthUnitType.SizeToHeader))
+                {
+                    column.Width = DataGridLength.SizeToHeader;
+                }
                 column.Visibility = setting.Visible ? Visibility.Visible : Visibility.Collapsed;
                 if (setting.DisplayIndex >= 0 && setting.DisplayIndex < grid.Columns.Count)
                 {

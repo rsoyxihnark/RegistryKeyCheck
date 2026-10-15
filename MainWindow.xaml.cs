@@ -59,17 +59,24 @@ namespace RegistryKey_Check
         {
             string filePathList = "List.txt";
             string filePathLog = "Log.txt";
-            if (!File.Exists(filePathList))
+            try
             {
-                using (StreamWriter swList = new StreamWriter(filePathList, append: true))
+                if (!File.Exists(filePathList))
                 {
+                    using (StreamWriter swList = new StreamWriter(filePathList, append: true))
+                    {
+                    }
+                }
+                if (!File.Exists(filePathLog))
+                {
+                    using (StreamWriter swLog = new StreamWriter(filePathLog, append: true))
+                    {
+                    }
                 }
             }
-            if (!File.Exists(filePathLog))
+            catch (Exception ex)
             {
-                using (StreamWriter swLog = new StreamWriter(filePathLog, append: true))
-                {
-                }
+                ViewModels.WriteLog("List.txt or Log.txt could not be created beside RegistryKey Check. WindowLoaded", ex);
             }
             try
             {
@@ -129,13 +136,20 @@ namespace RegistryKey_Check
 
         private void ButtonOpenIgnoreFile_Click(object sender, RoutedEventArgs e)
         {
-            if (!File.Exists("Ignore.txt"))
+            try
             {
-                using (StreamWriter swIgnore = new StreamWriter("Ignore.txt", append: true))
+                if (!File.Exists("Ignore.txt"))
                 {
+                    using (StreamWriter swIgnore = new StreamWriter("Ignore.txt", append: true))
+                    {
+                    }
                 }
+                Process.Start("Notepad.exe", "Ignore.txt");
             }
-            Process.Start("Notepad.exe", "Ignore.txt");
+            catch (Exception ex)
+            {
+                ViewModels.WriteLog("OpenIgnoreFile", ex);
+            }
         }
 
         private List<ModelRegCommand> SelectedRows()
@@ -192,7 +206,14 @@ namespace RegistryKey_Check
         {
             ButtonsDisable();
             AllFilterReset();
-            ViewModels.ReadListFile();
+            try
+            {
+                ViewModels.ReadListFile();
+            }
+            catch (Exception ex)
+            {
+                ViewModels.WriteLog("ReadListFile", ex);
+            }
             DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands;
             DataGridNonRegCommands.ItemsSource = ViewModels.ObsColl_Non_RegCommands;
             LabelShown.Content = "Shown " + DataGridRegCommands.Items.Count;
@@ -232,17 +253,31 @@ namespace RegistryKey_Check
 
         private void ButtonOpenListFile_Click(object sender, RoutedEventArgs e)
         {
-            if (File.Exists("List.txt"))
+            try
             {
-                Process.Start("Notepad.exe", "List.txt");
+                if (File.Exists("List.txt"))
+                {
+                    Process.Start("Notepad.exe", "List.txt");
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewModels.WriteLog("OpenListFile", ex);
             }
         }
 
         private void ButtonOpenLogFile_Click(object sender, RoutedEventArgs e)
         {
-            if (File.Exists("Log.txt"))
+            try
             {
-                Process.Start("Notepad.exe", "Log.txt");
+                if (File.Exists("Log.txt"))
+                {
+                    Process.Start("Notepad.exe", "Log.txt");
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewModels.WriteLog("OpenLogFile", ex);
             }
         }
 
@@ -363,6 +398,11 @@ namespace RegistryKey_Check
             FilterObsColl_RegCommands();
         }
 
+        private void TextBoxFilterExecuteResult_KeyUp(object sender, KeyEventArgs e)
+        {
+            FilterObsColl_RegCommands();
+        }
+
         private void TextBoxFilterListMatchWithRegEdit_KeyUp(object sender, KeyEventArgs e)
         {
             FilterObsColl_RegCommands();
@@ -383,7 +423,7 @@ namespace RegistryKey_Check
         private async void ButtonExecuteMissingCommands_Click(object sender, RoutedEventArgs e)
         {
             ButtonsDisable();
-            if (MessageBox.Show("   Dikkat! Bu işlem bilgisayarınızı çalışmaz hale getirebilir.\nDevam etmek istediğinizden emin misiniz?\n\n   Attention!, This action may render your computer inoperable.\nAre you sure you want to continue?", "Warning!", MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
+            if (MessageBox.Show("   Dikkat! Bu işlem bilgisayarınızı çalışmaz hale getirebilir.\nDevam etmek istediğinizden emin misiniz?\n\n   Attention! This action may render your computer inoperable.\nAre you sure you want to continue?", "Warning!", MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
             {
                 await Task.Run(() =>
                 {

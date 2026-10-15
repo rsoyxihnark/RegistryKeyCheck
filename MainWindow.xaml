@@ -28,7 +28,7 @@
                         <TextBox x:Name="TextBoxFilterRegEditValueType" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegRegEditValueType, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegRegEditValueType, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueType_KeyUp" />
                         <TextBox x:Name="TextBoxFilterListValueData" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueData, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListValueData, Mode=OneWay}" KeyUp="TextBoxFilterListValueData_KeyUp" />
                         <TextBox x:Name="TextBoxFilterRegEditValueData" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegRegEditValueData, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegRegEditValueData, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueData_KeyUp" />
-                        <TextBox x:Name="TextBoxFilterExecuteResult" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" KeyUp="TextBoxFilterRegEditValueData_KeyUp" />
+                        <TextBox x:Name="TextBoxFilterExecuteResult" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" KeyUp="TextBoxFilterExecuteResult_KeyUp" />
                         <TextBox x:Name="TextBoxFilterListMatchWithRegEdit" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListMatchWithRegEdit, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListMatchWithRegEdit, Mode=OneWay}" KeyUp="TextBoxFilterListMatchWithRegEdit_KeyUp" />
                     </StackPanel>
                     <DataGrid x:Name="DataGridRegCommands" RowHeaderWidth="0" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" ColumnReordered="DataGridRegCommands_ColumnReordered">
@@ -75,7 +75,7 @@
                             <DataGridTextColumn x:Name="dgColumnRegListSubKey" Header="List SubKey" Width="60" Binding="{Binding ListSubKey}" />
                             <DataGridTextColumn x:Name="dgColumnRegAvailableSubKey" Header="SubKey Available?" Width="30" Binding="{Binding AvailableSubKey}" />
                             <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="List Value Name" Width="60" Binding="{Binding ListValueName}" />
-                            <DataGridTextColumn x:Name="dgColumnRegAvailableValueName" Header="Value Name Available? " Width="30" Binding="{Binding AvailableValueName}" />
+                            <DataGridTextColumn x:Name="dgColumnRegAvailableValueName" Header="Value Name Available?" Width="30" Binding="{Binding AvailableValueName}" />
                             <DataGridTextColumn x:Name="dgColumnRegListValueType" Header="List Value Type" Width="60" Binding="{Binding ListValueType}" />
                             <DataGridTextColumn x:Name="dgColumnRegRegEditValueType" Header="RegEdit Value Type" Width="30" Binding="{Binding RegEditValueType}" />
                             <DataGridTextColumn x:Name="dgColumnRegListValueData" Header="List Value Data" Width="100*" Binding="{Binding ListValueData}" />

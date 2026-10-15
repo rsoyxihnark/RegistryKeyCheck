@@ -25,6 +25,7 @@ jobs:
           set -euo pipefail
           git fetch --tags --force origin >/dev/null 2>&1 || true
           fail() { echo "::error::$1"; exit 1; }
+          srcver() { git show "$1:RegistryKey Check.csproj" 2>/dev/null | tr -d '\r' | sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' | head -1 || true; }
           head=$(git rev-parse HEAD)
           if [ -n "${BEFORE:-}" ] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null && git merge-base --is-ancestor "$BEFORE" "$head"; then
             commits=$(git rev-list --reverse "$BEFORE..$head")
@@ -36,13 +37,17 @@ jobs:
           for c in $commits; do
             subject=$(git log -1 --format=%s "$c" | tr -d '\r')
             case "$subject" in
-              "[no release]"*) continue ;;
+              "[no release]"*)
+                if git rev-parse -q --verify "$c^" >/dev/null; then
+                  [ "$(srcver "$c")" = "$(srcver "$c^")" ] || fail "Commit $c is [no release] but changes the version in RegistryKey Check.csproj from $(srcver "$c^") to $(srcver "$c")"
+                fi
+                continue ;;
               "["[0-9]*"]"*) ;;
               *) fail "Commit $c must start with [x.y.z] or [no release]: $subject" ;;
             esac
             ver=$(printf '%s\n' "$subject" | sed -n 's/^\[\([0-9][0-9.]*\)\].*/\1/p')
             printf '%s\n' "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || fail "Commit $c carries a version that is not major.minor.patch: $subject"
-            src=$(git show "$c:RegistryKey Check.csproj" | tr -d '\r' | sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' | head -1)
+            src=$(srcver "$c")
             [ "$src" = "$ver" ] || fail "Commit $c says $ver but RegistryKey Check.csproj says $src"
             git diff-tree --no-commit-id --name-only -r --root "$c" | grep -qx 'CHANGELOG.md' || fail "Commit $c ships $ver but leaves CHANGELOG.md untouched"
             log=$(git show "$c:CHANGELOG.md" | tr -d '\r' | sed 's/[[:space:]]*$//')

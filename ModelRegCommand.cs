@@ -1,3 +1,5 @@
+using Microsoft.Win32;
+
 namespace RegistryKey_Check
 {
     public class ModelRegCommand
@@ -12,6 +14,10 @@ namespace RegistryKey_Check
 
         public string ListSubKey { get; set; } = string.Empty;
 
+        public RegistryView ListView { get; set; } = RegistryView.Default;
+
+        public bool DeleteAllValues { get; set; }
+
         public string AvailableSubKey { get; set; } = string.Empty;
 
         public string ListValueName { get; set; } = "This_field_is_NULL";
@@ -23,6 +29,8 @@ namespace RegistryKey_Check
         public string RegEditValueType { get; set; } = "This_field_is_NULL";
 
         public string ListValueData { get; set; } = "This_field_is_NULL";
+
+        public string ListValueDataRaw { get; set; } = "This_field_is_NULL";
 
         public object ReturnObject { get; set; } = "This_field_is_NULL";
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.3.0
+
+- Query RegEdit now runs faster on long lists.
+- Execute Result now stays blank for a row Execute Missing Commands did not have to change.
+- The Help window now explains the Ignore List, Jump to RegEdit, Columns and closing the Detail window with Esc.
+- The Help window now shows a scroll bar when its text does not fit.
+- Fixed reg delete with /va deleting the whole key with its subkeys instead of only its values.
+- Fixed /reg:32 and /reg:64 being ignored, so every row was checked and changed in the 64-bit registry.
+- Fixed REG_EXPAND_SZ data with variables other than %SystemRoot%, such as %ProgramFiles%, never matching RegEdit.
+- Fixed Execute Missing Commands writing out the full path for REG_EXPAND_SZ data instead of the variable, such as %SystemRoot%.
+- Fixed REG_MULTI_SZ data split with /s, such as /s ",", being checked and written as one string.
+- Fixed REG_NONE data written by Execute Missing Commands being two bytes shorter than what reg.exe writes.
+- Fixed Execute Missing Commands saying successful for a row it could not write, such as one with a misspelled base key.
+- Fixed a row keeping its old True or False when Query RegEdit could not read its value, instead of showing Unknown.
+- Fixed Add to Ignore List and Remove from Ignore List wiping lines you had added to Ignore.txt by hand.
+- Fixed a line dropping off the Ignore List when its upper or lower case was changed in List.txt.
+- Fixed Read List.txt closing RegistryKey Check when List.txt or Ignore.txt could not be read.
+- Fixed RegistryKey Check closing itself at start when List.txt or Log.txt could not be created beside it.
+- Fixed Query RegEdit and Execute Missing Commands closing RegistryKey Check when Log.txt could not be written.
+- Fixed Open List.txt, Open Log.txt and Open Ignore.txt closing RegistryKey Check when Notepad could not be opened.
+- Fixed a column width set by double clicking the line between two headers not coming back when RegistryKey Check opens again.
+- Fixed missing spaces and a stray comma in the Help window, the Execute Missing Commands warning and Log.txt.
+
 ## 2.0.1
 
 - Right-click a column header or press Columns to hide or show any column, such as SubKey Available? or List Match with RegEdit.

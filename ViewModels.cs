@@ -20,6 +20,10 @@ namespace RegistryKey_Check
 
         public static List<string> IgnoreList = new List<string>();
 
+        private static readonly HashSet<string> ignoreLookup = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        private static readonly string[] valueTypes = { "REG_SZ", "REG_EXPAND_SZ", "REG_MULTI_SZ", "REG_DWORD", "REG_QWORD", "REG_BINARY", "REG_NONE" };
+
         public static int RegCommandIds;
 
         public static int Non_RegCommandIds;
@@ -32,6 +36,53 @@ namespace RegistryKey_Check
 
         private static RegistryValueKind registryValueKind;
 
+        private sealed class QueryKey
+        {
+            public QueryKey(RegistryKey key)
+            {
+                Key = key;
+                ValueNames = new HashSet<string>(key.GetValueNames(), StringComparer.OrdinalIgnoreCase);
+            }
+
+            public RegistryKey Key { get; }
+
+            public HashSet<string> ValueNames { get; }
+        }
+
+        private sealed class QueryKeys : IDisposable
+        {
+            private readonly Dictionary<string, QueryKey?> keys = new Dictionary<string, QueryKey?>(StringComparer.OrdinalIgnoreCase);
+
+            public QueryKey? Open(ModelRegCommand mo)
+            {
+                string path = mo.ListView + "\\" + mo.ListBaseKey + "\\" + mo.ListSubKey;
+                if (!keys.TryGetValue(path, out QueryKey? key))
+                {
+                    RegistryKey? opened = RootKey(mo.ListBaseKey, mo.ListView)?.OpenSubKey(mo.ListSubKey);
+                    try
+                    {
+                        key = opened == null ? null : new QueryKey(opened);
+                    }
+                    catch (Exception)
+                    {
+                        opened?.Dispose();
+                        throw;
+                    }
+                    keys[path] = key;
+                }
+                return key;
+            }
+
+            public void Dispose()
+            {
+                foreach (QueryKey? key in keys.Values)
+                {
+                    key?.Key.Dispose();
+                }
+                keys.Clear();
+            }
+        }
+
         public static int Total;
 
         public static int Shown;
@@ -39,10 +90,14 @@ namespace RegistryKey_Check
         public static string HelpString { get; set; } =
             "RegistryKey Check\r\n" +
             "Version " + Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) + "\r\n\r\n" +
-            "     Bu yazılım RegEdit kayıtlarını toplu olarak kontrol edip düzenlemek içindir. \"List.txt\" içerisine yazacağınız reg komutlarını kullanır.Hata bilgilerini \"Log.txt\" dosyasında görebilirsiniz.\r\n" +
-            "     Komutların ne işe yaradığı konusunda bilginiz yoksa lütfen çalıştırmayınız.Bilgisayarınızı çalışmaz hale getirebilir.\r\n\r\n" +
+            "     Bu yazılım RegEdit kayıtlarını toplu olarak kontrol edip düzenlemek içindir. \"List.txt\" içerisine yazacağınız reg komutlarını kullanır. Hata bilgilerini \"Log.txt\" dosyasında görebilirsiniz.\r\n" +
+            "     Satırlara sağ tıklayarak onları Ignore List'e ekleyebilir veya listeden çıkarabilirsiniz. Bu liste \"Ignore.txt\" dosyasında tutulur. Jump to RegEdit, satırın anahtarını RegEdit'te açar.\r\n" +
+            "     Kolon başlığına sağ tıklayarak veya Columns ile kolonları gizleyebilir ya da gösterebilirsiniz. Detail penceresi Esc ile kapanır.\r\n" +
+            "     Komutların ne işe yaradığı konusunda bilginiz yoksa lütfen çalıştırmayınız. Bilgisayarınızı çalışmaz hale getirebilir.\r\n\r\n" +
             "     This software is for batch checking and editing RegEdit records. It uses the reg commands you write in \"List.txt\". You can see the error information in the \"Log.txt\" file.\r\n" +
-            "      If you do not know what the commands do, please do not run them.It can render your computer inoperable.";
+            "     Right-click rows to add them to or remove them from the Ignore List, which is kept in \"Ignore.txt\". Jump to RegEdit opens the key of a row in RegEdit.\r\n" +
+            "     Right-click a column header or press Columns to hide or show columns. The Detail window closes with Esc.\r\n" +
+            "     If you do not know what the commands do, please do not run them. It can render your computer inoperable.";
 
         public static void ReadListFile()
         {
@@ -63,7 +118,7 @@ namespace RegistryKey_Check
                     modelRegCommand.RegCommandId = ++RegCommandIds;
                     modelRegCommand.ListId = ListIds;
                     modelRegCommand.ListLineString = line.Trim();
-                    modelRegCommand.ListMatchWithRegEdit = IgnoreList.Contains(modelRegCommand.ListLineString) ? "Ignored" : "Unknown";
+                    modelRegCommand.ListMatchWithRegEdit = ignoreLookup.Contains(modelRegCommand.ListLineString) ? "Ignored" : "Unknown";
                     ObsColl_RegCommands.Add(modelRegCommand);
                 }
                 else
@@ -161,12 +216,25 @@ namespace RegistryKey_Check
             string? valueName = null;
             string? valueType = null;
             string? valueData = null;
+            string? valueSeparator = null;
             for (int i = 3; i < args.Count; i++)
             {
                 string arg = args[i].ToLowerInvariant();
                 if (arg == "/ve")
                 {
                     valueName = string.Empty;
+                }
+                else if (arg == "/va" && command == "delete")
+                {
+                    modelRegCommand.DeleteAllValues = true;
+                }
+                else if (arg == "/reg:32")
+                {
+                    modelRegCommand.ListView = RegistryView.Registry32;
+                }
+                else if (arg == "/reg:64")
+                {
+                    modelRegCommand.ListView = RegistryView.Registry64;
                 }
                 else if (arg == "/v" && i + 1 < args.Count)
                 {
@@ -182,7 +250,7 @@ namespace RegistryKey_Check
                 }
                 else if (arg == "/s" && i + 1 < args.Count)
                 {
-                    i++;
+                    valueSeparator = args[++i];
                 }
             }
             if (valueName == null)
@@ -207,9 +275,17 @@ namespace RegistryKey_Check
                     modelRegCommand.ListValueData = "0" + modelRegCommand.ListValueData.ToLower();
                 }
             }
-            if (modelRegCommand.ListValueType == "REG_MULTI_SZ" && modelRegCommand.ListValueData.EndsWith("\\0", StringComparison.Ordinal))
+            if (modelRegCommand.ListValueType == "REG_MULTI_SZ")
             {
-                modelRegCommand.ListValueData = modelRegCommand.ListValueData[..^2];
+                string separator = string.IsNullOrEmpty(valueSeparator) ? "\\0" : valueSeparator;
+                if (modelRegCommand.ListValueData.EndsWith(separator, StringComparison.Ordinal))
+                {
+                    modelRegCommand.ListValueData = modelRegCommand.ListValueData[..^separator.Length];
+                }
+                if (separator != "\\0")
+                {
+                    modelRegCommand.ListValueData = string.Join("\\0", modelRegCommand.ListValueData.Split(separator));
+                }
             }
             if (modelRegCommand.ListValueType == "REG_DWORD" && TryParseNumber(modelRegCommand.ListValueData, uint.MaxValue, int.MinValue, out ulong dword))
             {
@@ -223,7 +299,8 @@ namespace RegistryKey_Check
             }
             if (modelRegCommand.ListValueType == "REG_EXPAND_SZ")
             {
-                modelRegCommand.ListValueData = modelRegCommand.ListValueData.Replace("%SystemRoot%", Environment.ExpandEnvironmentVariables("%SystemRoot%"));
+                modelRegCommand.ListValueDataRaw = modelRegCommand.ListValueData;
+                modelRegCommand.ListValueData = Environment.ExpandEnvironmentVariables(modelRegCommand.ListValueData);
             }
             return modelRegCommand;
         }
@@ -256,6 +333,7 @@ namespace RegistryKey_Check
 
         public static void QueryFromRegEdit()
         {
+            using QueryKeys keys = new QueryKeys();
             foreach (ModelRegCommand mo in ObsColl_RegCommands)
             {
                 if (mo.ListMatchWithRegEdit == "Ignored")
@@ -269,16 +347,19 @@ namespace RegistryKey_Check
                     mo.RegEditValueType = "This_field_is_NULL";
                     mo.RegEditValueData = "This_field_is_NULL";
                     mo.ReturnObject = "This_field_is_NULL";
-                    if (AvailableSubKeyMethod(mo.ListBaseKey, mo.ListSubKey))
+                    mo.ListMatchWithRegEdit = "Unknown";
+                    QueryKey? queryKey = keys.Open(mo);
+                    RegistryKey? openedKey = queryKey?.Key;
+                    if (queryKey != null)
                     {
                         mo.AvailableSubKey = "It's Available";
-                        if (registryKey != null && mo.ListValueName != "This_field_is_NULL")
+                        if (openedKey != null && mo.ListValueName != "This_field_is_NULL")
                         {
-                            if (registryKey.GetValueNames().Any(name => string.Equals(name, mo.ListValueName, StringComparison.OrdinalIgnoreCase)))
+                            if (queryKey.ValueNames.Contains(mo.ListValueName))
                             {
-                                mo.ReturnObject = registryKey.GetValue(mo.ListValueName)!;
+                                mo.ReturnObject = openedKey.GetValue(mo.ListValueName)!;
                                 mo.AvailableValueName = "It's Available";
-                                registryValueKind = registryKey.GetValueKind(mo.ListValueName);
+                                registryValueKind = openedKey.GetValueKind(mo.ListValueName);
                                 if (registryValueKind == RegistryValueKind.String)
                                 {
                                     mo.RegEditValueType = "REG_SZ";
@@ -336,7 +417,7 @@ namespace RegistryKey_Check
                                 }
                             }
                         }
-                        else if (registryKey != null && mo.ListValueName == "This_field_is_NULL")
+                        else if (openedKey != null && mo.ListValueName == "This_field_is_NULL")
                         {
                             if (mo.ListCommand == "reg add")
                             {
@@ -345,6 +426,10 @@ namespace RegistryKey_Check
                             else if (mo.ListCommand == "reg delete")
                             {
                                 mo.ListMatchWithRegEdit = "False";
+                            }
+                            if (mo.DeleteAllValues)
+                            {
+                                mo.AvailableValueName = queryKey.ValueNames.Count > 0 ? "It's Available" : "Not Available";
                             }
                         }
                     }
@@ -383,55 +468,49 @@ namespace RegistryKey_Check
                 }
                 catch (Exception ex)
                 {
-                    File.AppendAllText("log.txt", "---vvv ! ! ! Warning ! ! ! vvv--- QueryMethod " + DateTime.Now.ToString() + "\n");
-                    File.AppendAllText("log.txt", "     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
-                    File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+                    AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- QueryMethod " + DateTime.Now.ToString() + "\n");
+                    AppendLog("     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
+                    AppendLog(ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
                 }
             }
         }
 
-        private static RegistryKey? RootKey(string listBasekey)
+        private static RegistryKey? RootKey(string listBasekey, RegistryView view = RegistryView.Default)
         {
             switch (listBasekey.ToUpperInvariant())
             {
             case "HKEY_CLASSES_ROOT":
             case "HKCR":
-                return Registry.ClassesRoot;
+                return RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, view);
             case "HKEY_CURRENT_USER":
             case "HKCU":
-                return Registry.CurrentUser;
+                return RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, view);
             case "HKEY_LOCAL_MACHINE":
             case "HKLM":
-                return Registry.LocalMachine;
+                return RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view);
             case "HKEY_USERS":
             case "HKU":
-                return Registry.Users;
+                return RegistryKey.OpenBaseKey(RegistryHive.Users, view);
             case "HKEY_CURRENT_CONFIG":
             case "HKCC":
-                return Registry.CurrentConfig;
+                return RegistryKey.OpenBaseKey(RegistryHive.CurrentConfig, view);
             case "HKEY_PERFORMANCE_DATA":
             case "HKPD":
-                return Registry.PerformanceData;
+                return RegistryKey.OpenBaseKey(RegistryHive.PerformanceData, view);
             default:
                 return null;
             }
         }
 
-        private static bool AvailableSubKeyMethod(string listBasekey, string listSubKey)
+        private static bool AvailableSubKeyMethodTrue(string listBasekey, string listSubKey, RegistryView view)
         {
-            registryKey = RootKey(listBasekey)?.OpenSubKey(listSubKey);
+            registryKey = RootKey(listBasekey, view)?.OpenSubKey(listSubKey, writable: true);
             return registryKey != null;
         }
 
-        private static bool AvailableSubKeyMethodTrue(string listBasekey, string listSubKey)
+        private static bool CreateSubKeyMethod(string listBasekey, string listSubKey, RegistryView view)
         {
-            registryKey = RootKey(listBasekey)?.OpenSubKey(listSubKey, writable: true);
-            return registryKey != null;
-        }
-
-        private static bool CreateSubKeyMethod(string listBasekey, string listSubKey)
-        {
-            registryKey = RootKey(listBasekey)?.CreateSubKey(listSubKey, writable: true);
+            registryKey = RootKey(listBasekey, view)?.CreateSubKey(listSubKey, writable: true);
             return registryKey != null;
         }
 
@@ -439,23 +518,42 @@ namespace RegistryKey_Check
         {
             foreach (ModelRegCommand mo in ObsColl_RegCommands)
             {
+                mo.ExecuteResult = string.Empty;
                 try
                 {
                     if (mo.ListMatchWithRegEdit == "False")
                     {
-                        if (mo.ListCommand == "reg delete" && mo.ListValueName == "This_field_is_NULL")
+                        if (RootKey(mo.ListBaseKey) == null)
+                        {
+                            throw new InvalidOperationException("\"" + mo.ListBaseKey + "\" is not a base key RegEdit has.");
+                        }
+                        if (mo.ListCommand == "reg delete" && mo.DeleteAllValues)
+                        {
+                            await Task.Run(() =>
+                            {
+                                AvailableSubKeyMethodTrue(mo.ListBaseKey, mo.ListSubKey, mo.ListView);
+                            });
+                            if (registryKey != null)
+                            {
+                                foreach (string name in registryKey.GetValueNames())
+                                {
+                                    registryKey.DeleteValue(name);
+                                }
+                            }
+                        }
+                        else if (mo.ListCommand == "reg delete" && mo.ListValueName == "This_field_is_NULL")
                         {
                             if (mo.ListSubKey.Length == 0)
                             {
                                 throw new InvalidOperationException("A whole base key cannot be deleted.");
                             }
-                            RootKey(mo.ListBaseKey)?.DeleteSubKeyTree(mo.ListSubKey);
+                            RootKey(mo.ListBaseKey, mo.ListView)?.DeleteSubKeyTree(mo.ListSubKey);
                         }
                         else if (mo.ListCommand == "reg delete" && mo.AvailableValueName == "It's Available")
                         {
                             await Task.Run(() =>
                             {
-                                AvailableSubKeyMethodTrue(mo.ListBaseKey, mo.ListSubKey);
+                                AvailableSubKeyMethodTrue(mo.ListBaseKey, mo.ListSubKey, mo.ListView);
                             });
                             if (registryKey != null)
                             {
@@ -464,13 +562,17 @@ namespace RegistryKey_Check
                         }
                         else if (mo.ListCommand == "reg add" && mo.ListValueName == "This_field_is_NULL")
                         {
-                            CreateSubKeyMethod(mo.ListBaseKey, mo.ListSubKey);
+                            CreateSubKeyMethod(mo.ListBaseKey, mo.ListSubKey, mo.ListView);
                         }
                         else if (mo.ListCommand == "reg add" && mo.ListValueName != "This_field_is_NULL")
                         {
+                            if (!valueTypes.Contains(mo.ListValueType))
+                            {
+                                throw new InvalidOperationException("\"" + mo.ListValueType + "\" is not a value type RegEdit has.");
+                            }
                             await Task.Run(() =>
                             {
-                                CreateSubKeyMethod(mo.ListBaseKey, mo.ListSubKey);
+                                CreateSubKeyMethod(mo.ListBaseKey, mo.ListSubKey, mo.ListView);
                             });
                             if (registryKey != null && mo.ListValueType == "REG_SZ")
                             {
@@ -490,7 +592,7 @@ namespace RegistryKey_Check
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_EXPAND_SZ")
                             {
-                                registryKey.SetValue(mo.ListValueName, mo.ListValueData, RegistryValueKind.ExpandString);
+                                registryKey.SetValue(mo.ListValueName, mo.ListValueDataRaw, RegistryValueKind.ExpandString);
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_QWORD")
                             {
@@ -498,17 +600,21 @@ namespace RegistryKey_Check
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_NONE")
                             {
-                                registryKey.SetValue(mo.ListValueName, Encoding.Unicode.GetBytes(mo.ListValueData), RegistryValueKind.None);
+                                registryKey.SetValue(mo.ListValueName, Encoding.Unicode.GetBytes(mo.ListValueData + "\0"), RegistryValueKind.None);
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("The key could not be created.");
                             }
                         }
+                        mo.ExecuteResult = "successful";
                     }
-                    mo.ExecuteResult = "successful";
                 }
                 catch (Exception ex)
                 {
-                    File.AppendAllText("log.txt", "---vvv ! ! ! Warning ! ! ! vvv--- ExecuteMethod" + DateTime.Now.ToString() + "\n");
-                    File.AppendAllText("log.txt", "     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
-                    File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+                    AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- ExecuteMethod " + DateTime.Now.ToString() + "\n");
+                    AppendLog("     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
+                    AppendLog(ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
                     mo.ExecuteResult = "Error";
                 }
             }
@@ -544,6 +650,7 @@ namespace RegistryKey_Check
         public static void ReadIgnoreFile()
         {
             IgnoreList.Clear();
+            ignoreLookup.Clear();
             if (File.Exists("Ignore.txt"))
             {
                 foreach (string line in File.ReadLines("Ignore.txt"))
@@ -551,18 +658,38 @@ namespace RegistryKey_Check
                     if (line.Trim().Length > 0 && !IgnoreList.Contains(line.Trim()))
                     {
                         IgnoreList.Add(line.Trim());
+                        ignoreLookup.Add(line.Trim());
                     }
                 }
             }
         }
 
+        private static bool ReloadIgnoreFile()
+        {
+            try
+            {
+                ReadIgnoreFile();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                WriteLog("Ignore.txt could not be read, so the Ignore List was not changed. ReadIgnoreFile", ex);
+                return false;
+            }
+        }
+
         public static void AddToIgnoreList(IEnumerable<ModelRegCommand> rows)
         {
+            if (!ReloadIgnoreFile())
+            {
+                return;
+            }
             foreach (ModelRegCommand mo in rows)
             {
-                if (!IgnoreList.Contains(mo.ListLineString))
+                if (!ignoreLookup.Contains(mo.ListLineString))
                 {
                     IgnoreList.Add(mo.ListLineString);
+                    ignoreLookup.Add(mo.ListLineString);
                 }
                 mo.ListMatchWithRegEdit = "Ignored";
             }
@@ -571,9 +698,14 @@ namespace RegistryKey_Check
 
         public static void RemoveFromIgnoreList(IEnumerable<ModelRegCommand> rows)
         {
+            if (!ReloadIgnoreFile())
+            {
+                return;
+            }
             foreach (ModelRegCommand mo in rows)
             {
-                IgnoreList.Remove(mo.ListLineString);
+                IgnoreList.RemoveAll(line => string.Equals(line, mo.ListLineString, StringComparison.OrdinalIgnoreCase));
+                ignoreLookup.Remove(mo.ListLineString);
                 if (mo.ListMatchWithRegEdit == "Ignored")
                 {
                     mo.ListMatchWithRegEdit = "Unknown";
@@ -596,12 +728,17 @@ namespace RegistryKey_Check
 
         public static void WriteLog(string method, Exception ex)
         {
+            AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- " + method + " " + DateTime.Now.ToString() + "\n");
+            AppendLog(ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+        }
+
+        private static void AppendLog(string text)
+        {
             try
             {
-                File.AppendAllText("log.txt", "---vvv ! ! ! Warning ! ! ! vvv--- " + method + " " + DateTime.Now.ToString() + "\n");
-                File.AppendAllText("log.txt", ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+                File.AppendAllText("Log.txt", text);
             }
-            catch (IOException)
+            catch (Exception)
             {
             }
         }
