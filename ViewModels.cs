@@ -942,6 +942,16 @@ namespace RegistryKey_Check
             }
         }
 
+        public static string Shown(string text)
+        {
+            return text == "This_field_is_NULL" ? string.Empty : text;
+        }
+
+        public static void WriteNote(string method, string text)
+        {
+            AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- " + method + " " + DateTime.Now.ToString() + "\n" + text + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+        }
+
         public static void WriteLog(string method, Exception ex)
         {
             AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- " + method + " " + DateTime.Now.ToString() + "\n");

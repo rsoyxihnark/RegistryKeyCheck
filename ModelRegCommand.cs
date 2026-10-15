@@ -14,6 +14,8 @@ namespace RegistryKey_Check
 
         public string ListSubKey { get; set; } = string.Empty;
 
+        public string ListFullPath => ListSubKey.Length > 0 ? ListBaseKey + "\\" + ListSubKey : ListBaseKey;
+
         public RegistryView ListView { get; set; } = RegistryView.Default;
 
         public bool DeleteAllValues { get; set; }

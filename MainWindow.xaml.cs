@@ -29,11 +29,9 @@ namespace RegistryKey_Check
             InitializeComponent();
             filterBoxes = new Dictionary<DataGridColumn, TextBox>
             {
-                [dgColumnRegCommandId] = TextBoxFilterRegCommandId,
-                [dgColumnRegListId] = TextBoxFilterListId,
+                [dgColumnRegUID] = TextBoxFilterUID,
                 [dgColumnRegListCommand] = TextBoxFilterListCommand,
-                [dgColumnRegListBaseKey] = TextBoxFilterListBaseKey,
-                [dgColumnRegListSubKey] = TextBoxFilterListSubKey,
+                [dgColumnRegFullPath] = TextBoxFilterFullPath,
                 [dgColumnRegAvailableSubKey] = TextBoxFilterAvailableSubKey,
                 [dgColumnRegListValueName] = TextBoxFilterListValueName,
                 [dgColumnRegAvailableValueName] = TextBoxFilterAvailableValueName,
@@ -314,18 +312,16 @@ namespace RegistryKey_Check
         public void FilterObsColl_RegCommands()
         {
             DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands.Where((ModelRegCommand s) =>
-                s.RegCommandId.ToString().Contains(TextBoxFilterRegCommandId.Text)
-                && s.ListId.ToString().Contains(TextBoxFilterListId.Text)
+                s.ListId.ToString().Contains(TextBoxFilterUID.Text)
                 && s.ListCommand.Contains(TextBoxFilterListCommand.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ListBaseKey.Contains(TextBoxFilterListBaseKey.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ListSubKey.Contains(TextBoxFilterListSubKey.Text, StringComparison.OrdinalIgnoreCase)
+                && s.ListFullPath.Contains(TextBoxFilterFullPath.Text, StringComparison.OrdinalIgnoreCase)
                 && s.AvailableSubKey.Contains(TextBoxFilterAvailableSubKey.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ListValueName.Contains(TextBoxFilterListValueName.Text, StringComparison.OrdinalIgnoreCase)
-                && s.AvailableValueName.Contains(TextBoxFilterAvailableValueName.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ListValueType.Contains(TextBoxFilterListValueType.Text, StringComparison.OrdinalIgnoreCase)
-                && s.RegEditValueType.Contains(TextBoxFilterRegEditValueType.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ListValueData.Contains(TextBoxFilterListValueData.Text, StringComparison.OrdinalIgnoreCase)
-                && s.RegEditValueData.Contains(TextBoxFilterRegEditValueData.Text, StringComparison.OrdinalIgnoreCase)
+                && ViewModels.Shown(s.ListValueName).Contains(TextBoxFilterListValueName.Text, StringComparison.OrdinalIgnoreCase)
+                && ViewModels.Shown(s.AvailableValueName).Contains(TextBoxFilterAvailableValueName.Text, StringComparison.OrdinalIgnoreCase)
+                && ViewModels.Shown(s.ListValueType).Contains(TextBoxFilterListValueType.Text, StringComparison.OrdinalIgnoreCase)
+                && ViewModels.Shown(s.RegEditValueType).Contains(TextBoxFilterRegEditValueType.Text, StringComparison.OrdinalIgnoreCase)
+                && ViewModels.Shown(s.ListValueData).Contains(TextBoxFilterListValueData.Text, StringComparison.OrdinalIgnoreCase)
+                && ViewModels.Shown(s.RegEditValueData).Contains(TextBoxFilterRegEditValueData.Text, StringComparison.OrdinalIgnoreCase)
                 && s.ExecuteResult.Contains(TextBoxFilterExecuteResult.Text, StringComparison.OrdinalIgnoreCase)
                 && s.ListMatchWithRegEdit.Contains(TextBoxFilterListMatchWithRegEdit.Text, StringComparison.OrdinalIgnoreCase)
                 && s.ComplianceDetails.Contains(TextBoxFilterComplianceDetails.Text, StringComparison.OrdinalIgnoreCase));
@@ -336,11 +332,9 @@ namespace RegistryKey_Check
         private void AllFilterReset()
         {
             filtersResetting = true;
-            TextBoxFilterRegCommandId.Text = "";
-            TextBoxFilterListId.Text = "";
+            TextBoxFilterUID.Text = "";
             TextBoxFilterListCommand.Text = "";
-            TextBoxFilterListBaseKey.Text = "";
-            TextBoxFilterListSubKey.Text = "";
+            TextBoxFilterFullPath.Text = "";
             TextBoxFilterAvailableSubKey.Text = "";
             TextBoxFilterListValueName.Text = "";
             TextBoxFilterAvailableValueName.Text = "";

@@ -178,6 +178,15 @@ try
         Check(Detail(line).EndsWith("Compliant"), "Compliance Details says " + Detail(line) + " for " + line);
     }
 
+    string[] listU = { "rem first line", $"reg add \"{a}\" /v \"Attr\" /t REG_DWORD /d \"0xb0940064\" /f", "", $"reg delete \"{a}\\OnlyKey\" /f" };
+    Run(listU, Array.Empty<string>(), false);
+    List<string> regUids = Rows().Cast<object>().Select(r => r.GetType().GetProperty("ListId")!.GetValue(r)!.ToString() + " " + r.GetType().GetProperty("ListFullPath")!.GetValue(r)).ToList();
+    List<string> nonRegUids = ((IEnumerable)viewModels.GetField("ObsColl_Non_RegCommands")!.GetValue(null)!).Cast<object>().Select(r => r.GetType().GetProperty("ListId")!.GetValue(r)!.ToString()!).ToList();
+    Check(regUids.SequenceEqual(new[] { @"2 HKCU\Software\RegistryKeyCheckTest\A", @"4 HKCU\Software\RegistryKeyCheckTest\A\OnlyKey" }), "UID and Full Path of the reg lines: " + string.Join(" | ", regUids));
+    Check(nonRegUids.SequenceEqual(new[] { "1", "3" }), "UID of the other lines: " + string.Join(" | ", nonRegUids));
+    MethodInfo shown = viewModels.GetMethod("Shown")!;
+    Check((string)shown.Invoke(null, new object[] { "This_field_is_NULL" })! == string.Empty && (string)shown.Invoke(null, new object[] { "x" })! == "x", "An empty field shows as a blank cell");
+
     string b = @"HKCU\Software\RegistryKeyCheckTest\B";
     using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\B"))
     {

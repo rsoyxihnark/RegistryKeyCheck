@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.5.0
+
+- Empty fields now show as blank cells instead of This_field_is_NULL, in the list and in the Detail window.
+- The ID and List ID columns are now one UID column, which shows the line of List.txt each row comes from, on both tabs.
+- The List BaseKey and List SubKey columns are now one Full Path column that shows the whole key path.
+- Execute Result, List Match with RegEdit, Value Name Available? and SubKey Available? are now hidden until you tick them in Columns.
+- The Detail window now shows UID and Full Path in place of ID, List ID, List BaseKey and List SubKey.
+- Log.txt now notes a column whose saved layout in Settings.json no longer applies.
+
 ## 2.4.0
 
 - The new Compliance Details column says Compliant for a row that matches RegEdit, and why a row does not, such as Value data differs.

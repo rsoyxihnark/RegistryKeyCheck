@@ -20,21 +20,20 @@ namespace RegistryKey_Check
 
         private void DetailWin_Loaded(object sender, RoutedEventArgs e)
         {
-            TextBoxRegCommandId.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].RegCommandId.ToString();
-            TextBoxListId.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListId.ToString();
-            TextBoxListCommand.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListCommand;
-            TextBoxListBaseKey.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListBaseKey;
-            TextBoxListSubKey.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListSubKey;
-            TextBoxAvailableSubKey.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].AvailableSubKey;
-            TextBoxListValueName.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListValueName;
-            TextBoxAvailableValueName.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].AvailableValueName;
-            TextBoxListValueType.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListValueType;
-            TextBoxRegEditValueType.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].RegEditValueType;
-            TextBoxListValueData.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListValueData;
-            TextBoxRegEditValueData.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].RegEditValueData;
-            TextBoxExecuteResult.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ExecuteResult;
-            TextBoxListMatchWithRegEdit.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListMatchWithRegEdit;
-            TextBoxComplianceDetails.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ComplianceDetails;
+            ModelRegCommand mo = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs];
+            TextBoxUID.Text = mo.ListId.ToString();
+            TextBoxListCommand.Text = mo.ListCommand;
+            TextBoxListFullPath.Text = mo.ListFullPath;
+            TextBoxAvailableSubKey.Text = mo.AvailableSubKey;
+            TextBoxListValueName.Text = ViewModels.Shown(mo.ListValueName);
+            TextBoxAvailableValueName.Text = ViewModels.Shown(mo.AvailableValueName);
+            TextBoxListValueType.Text = ViewModels.Shown(mo.ListValueType);
+            TextBoxRegEditValueType.Text = ViewModels.Shown(mo.RegEditValueType);
+            TextBoxListValueData.Text = ViewModels.Shown(mo.ListValueData);
+            TextBoxRegEditValueData.Text = ViewModels.Shown(mo.RegEditValueData);
+            TextBoxExecuteResult.Text = mo.ExecuteResult;
+            TextBoxListMatchWithRegEdit.Text = mo.ListMatchWithRegEdit;
+            TextBoxComplianceDetails.Text = mo.ComplianceDetails;
         }
     }
 }

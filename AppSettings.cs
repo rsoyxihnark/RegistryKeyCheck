@@ -108,6 +108,7 @@ namespace RegistryKey_Check
                 DataGridColumn? column = grid.Columns.FirstOrDefault(c => HeaderOf(c) == setting.Header);
                 if (column == null)
                 {
+                    ViewModels.WriteNote("ApplyColumns", "Settings.json has a layout for the column \"" + setting.Header + "\", which RegistryKey Check no longer has, so that layout was not used and the other columns kept their saved or default layout.");
                     continue;
                 }
                 if (setting.Width > 0 && setting.WidthType == nameof(DataGridLengthUnitType.Pixel))
