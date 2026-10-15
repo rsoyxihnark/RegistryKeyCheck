@@ -56,10 +56,11 @@ namespace RegistryKey_Check
             settings.ApplyWindow(this);
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             string filePathList = "List.txt";
             string filePathLog = "Log.txt";
+            bool listFound = File.Exists(filePathList);
             try
             {
                 if (!File.Exists(filePathList))
@@ -89,6 +90,12 @@ namespace RegistryKey_Check
                 ViewModels.WriteLog("Saved column layout could not be applied, so the default layout is used. ApplyColumns", ex);
             }
             ArrangeFilters();
+            if (listFound)
+            {
+                ButtonReadListFile_Click(sender, e);
+                await QueryRegEdit();
+                ButtonFilterFalses_Click(sender, e);
+            }
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
@@ -291,6 +298,11 @@ namespace RegistryKey_Check
 
         private async void ButtonQueryFromRegEdit_Click(object sender, RoutedEventArgs e)
         {
+            await QueryRegEdit();
+        }
+
+        private async Task QueryRegEdit()
+        {
             ButtonsDisable();
             await Task.Run(() =>
             {
@@ -356,14 +368,12 @@ namespace RegistryKey_Check
 
         private void ButtonFilterFalses_Click(object sender, RoutedEventArgs e)
         {
-            dgColumnRegListMatchWithRegEdit.Visibility = Visibility.Visible;
             TextBoxFilterListMatchWithRegEdit.Text = "False";
             FilterObsColl_RegCommands();
         }
 
         private void ButtonFilterTrues_Click(object sender, RoutedEventArgs e)
         {
-            dgColumnRegListMatchWithRegEdit.Visibility = Visibility.Visible;
             TextBoxFilterListMatchWithRegEdit.Text = "True";
             FilterObsColl_RegCommands();
         }

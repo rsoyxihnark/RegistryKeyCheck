@@ -1,10 +1,14 @@
 # Changelog
 
+## 2.6.0
+
+- Opening RegistryKey Check now runs Read List.txt, Query RegEdit and Apply False Filter by itself when List.txt is beside it.
+- Columns now start wide enough to show each header in full, with more room for Full Path, List Value Name and Compliance Details.
+
 ## 2.5.1
 
 - Read List.txt, Add to Ignore List and Remove from Ignore List now run faster on long lists.
 - List Value Data and RegEdit Value Data now show REG_EXPAND_SZ data as written, such as %SystemRoot%\system32 instead of C:\Windows\system32.
-- Apply False Filter and Apply True Filter now show the List Match with RegEdit column, so the filter they set can be seen.
 - Hiding a column in Columns now clears its filter box, so no hidden filter keeps rows out of the list.
 - A reg line that runs a second command after &, && or || now shows on the Non RegistryKey Commands tab and is never run.
 - Fixed reg delete with two backslashes right after the base key deleting everything under that base key.

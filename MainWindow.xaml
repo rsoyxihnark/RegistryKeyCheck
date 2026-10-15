@@ -74,18 +74,18 @@
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn x:Name="dgColumnRegUID" Header="UID" Width="40" Binding="{Binding ListId}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListCommand" Header="List Command" Width="50" Binding="{Binding ListCommand}" />
-                            <DataGridTextColumn x:Name="dgColumnRegFullPath" Header="Full Path" Width="200" Binding="{Binding ListFullPath, Mode=OneWay}" />
-                            <DataGridTextColumn x:Name="dgColumnRegAvailableSubKey" Header="SubKey Available?" Width="30" Visibility="Collapsed" Binding="{Binding AvailableSubKey}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="List Value Name" Width="60" Binding="{Binding ListValueName, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegAvailableValueName" Header="Value Name Available?" Width="30" Visibility="Collapsed" Binding="{Binding AvailableValueName, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListValueType" Header="List Value Type" Width="60" Binding="{Binding ListValueType, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueType" Header="RegEdit Value Type" Width="30" Binding="{Binding RegEditValueType, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListValueData" Header="List Value Data" Width="100*" Binding="{Binding ListValueData, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueData" Header="RegEdit Value Data" Width="100*" Binding="{Binding RegEditValueData, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegExecuteResult" Header="Execute Result" Width="60" Visibility="Collapsed" Binding="{Binding ExecuteResult}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListMatchWithRegEdit" Header="List Match with RegEdit" Width="60" Visibility="Collapsed" Binding="{Binding ListMatchWithRegEdit}" />
-                            <DataGridTextColumn x:Name="dgColumnRegComplianceDetails" Header="Compliance Details" Width="150" Binding="{Binding ComplianceDetails, Mode=OneWay}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListCommand" Header="List Command" Width="95" Binding="{Binding ListCommand}" />
+                            <DataGridTextColumn x:Name="dgColumnRegFullPath" Header="Full Path" Width="315*" Binding="{Binding ListFullPath, Mode=OneWay}" />
+                            <DataGridTextColumn x:Name="dgColumnRegAvailableSubKey" Header="SubKey Available?" Width="115" Visibility="Collapsed" Binding="{Binding AvailableSubKey}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="List Value Name" Width="130*" Binding="{Binding ListValueName, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegAvailableValueName" Header="Value Name Available?" Width="140" Visibility="Collapsed" Binding="{Binding AvailableValueName, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueType" Header="List Value Type" Width="100" Binding="{Binding ListValueType, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueType" Header="RegEdit Value Type" Width="120" Binding="{Binding RegEditValueType, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueData" Header="List Value Data" Width="125*" Binding="{Binding ListValueData, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueData" Header="RegEdit Value Data" Width="125*" Binding="{Binding RegEditValueData, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegExecuteResult" Header="Execute Result" Width="95" Visibility="Collapsed" Binding="{Binding ExecuteResult}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListMatchWithRegEdit" Header="List Match with RegEdit" Width="145" Visibility="Collapsed" Binding="{Binding ListMatchWithRegEdit}" />
+                            <DataGridTextColumn x:Name="dgColumnRegComplianceDetails" Header="Compliance Details" Width="210*" Binding="{Binding ComplianceDetails, Mode=OneWay}" />
                         </DataGrid.Columns>
                     </DataGrid>
                     <Button x:Name="ButtonReadListFile" Grid.Row="2" Content="Read List.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,10,0" VerticalAlignment="Top" Width="160" Click="ButtonReadListFile_Click" />
