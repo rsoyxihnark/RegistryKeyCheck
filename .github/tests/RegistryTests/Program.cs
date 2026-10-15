@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text;
 using Microsoft.Win32;
 
 const string TestKey = @"Software\RegistryKeyCheckTest";
@@ -52,6 +53,24 @@ void CleanUp()
 IEnumerable Rows()
 {
     return (IEnumerable)viewModels.GetField("ObsColl_RegCommands")!.GetValue(null)!;
+}
+
+int NonRegCount()
+{
+    return ((IEnumerable)viewModels.GetField("ObsColl_Non_RegCommands")!.GetValue(null)!).Cast<object>().Count();
+}
+
+string Detail(string line)
+{
+    foreach (object row in Rows())
+    {
+        Type type = row.GetType();
+        if ((string)type.GetProperty("ListLineString")!.GetValue(row)! == line)
+        {
+            return (string)type.GetProperty("ComplianceDetails")!.GetValue(row)!;
+        }
+    }
+    return "missing";
 }
 
 List<(string Line, string Status, string Data, string Result)> Run(string[] list, string[] ignore, bool execute)
@@ -128,16 +147,35 @@ try
     {
         Check(key.GetValueNames().Length == 0 && key.OpenSubKey("Child") != null, "reg.exe /va deleted the values of VA and kept its subkey");
     }
+    Type model = viewModels.Assembly.GetType("RegistryKey_Check.ModelRegCommand", true)!;
+    MethodInfo regEditPath = viewModels.GetMethod("RegEditPath", BindingFlags.NonPublic | BindingFlags.Static)!;
+    string JumpPath(string subKey, RegistryView view)
+    {
+        object mo = Activator.CreateInstance(model)!;
+        model.GetProperty("ListBaseKey")!.SetValue(mo, "HKLM");
+        model.GetProperty("ListSubKey")!.SetValue(mo, subKey);
+        model.GetProperty("ListView")!.SetValue(mo, view);
+        return (string?)regEditPath.Invoke(null, new[] { mo }) ?? "null";
+    }
+    string jump32 = JumpPath(LmKey, RegistryView.Registry32);
+    Check(string.Equals(jump32, @"Computer\HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\RegistryKeyCheckTest", StringComparison.OrdinalIgnoreCase), "Jump to RegEdit opens the 32-bit key of a /reg:32 line: " + jump32);
+    string jump64 = JumpPath(LmKey, RegistryView.Registry64);
+    Check(string.Equals(jump64, @"Computer\HKEY_LOCAL_MACHINE\SOFTWARE\RegistryKeyCheckTest", StringComparison.OrdinalIgnoreCase), "Jump to RegEdit opens the 64-bit key of a /reg:64 line: " + jump64);
+    string jumpMissing = JumpPath(LmKey + @"\Missing", RegistryView.Registry32);
+    Check(string.Equals(jumpMissing, @"Computer\HKEY_LOCAL_MACHINE\SOFTWARE\RegistryKeyCheckTest\Missing", StringComparison.OrdinalIgnoreCase), "Jump to RegEdit keeps the plain path of a missing /reg:32 key: " + jumpMissing);
     string[] listA = regExe.Concat(new[]
     {
         "reg add \"HKEY_CURRENT_USER\\software\\registrykeychecktest\\a\" /v \"KUCUKbuyuK\" /t REG_SZ /d \"TEST\" /f",
         "reg add \"hkey_current_user\\Software\\RegistryKeyCheckTest\\A\" /v \"small\" /t reg_dword /d 10 /f",
         $"reg delete \"{a}\" /v \"NotThere\" /f",
-        "reg delete \"HKCU\\Software\\RegistryKeyCheckTest\\Nope\" /f"
+        "reg delete \"HKCU\\Software\\RegistryKeyCheckTest\\Nope\" /f",
+        $"reg.exe add \"{a}\" /v \"KucukbuyuK\" /t REG_SZ /d \"test\" /f",
+        $"@reg add \"{a}\" /v \"Small\" /t REG_DWORD /d \"0xa\" /f"
     }).ToArray();
     foreach ((string line, string status, string data, string result) in Run(listA, Array.Empty<string>(), false))
     {
         Check(status == "True", "Query RegEdit says " + status + " for " + line + " [" + data + "]");
+        Check(Detail(line).EndsWith("Compliant"), "Compliance Details says " + Detail(line) + " for " + line);
     }
 
     string b = @"HKCU\Software\RegistryKeyCheckTest\B";
@@ -163,14 +201,27 @@ try
         $"reg delete \"{b}\\Sub\" /f",
         ignored
     };
+    Dictionary<string, string> detailsB = new Dictionary<string, string>
+    {
+        [listB[0]] = "Value data differs",
+        [listB[1]] = "Value not found in RegEdit",
+        [listB[9]] = "Value still exists in RegEdit",
+        [listB[10]] = "Key still exists in RegEdit",
+        [ignored] = "On the Ignore List"
+    };
     foreach ((string line, string status, string data, string result) in Run(listB, new[] { ignored }, false))
     {
         Check(status == (line == ignored ? "Ignored" : "False"), "Before Execute Missing Commands " + status + " for " + line);
+        if (detailsB.TryGetValue(line, out string? expected))
+        {
+            Check(Detail(line) == expected, "Compliance Details says " + Detail(line) + " for " + line);
+        }
     }
     foreach ((string line, string status, string data, string result) in Run(listB, new[] { ignored }, true))
     {
         Check(status == (line == ignored ? "Ignored" : "True"), "After Execute Missing Commands " + status + " for " + line + " [" + data + "]");
         Check(result == (line == ignored ? string.Empty : "successful"), "Execute Result says " + result + " for " + line);
+        Check(Detail(line) == (line == ignored ? "On the Ignore List" : "Compliant"), "Compliance Details says " + Detail(line) + " after Execute Missing Commands for " + line);
     }
     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\B")!)
     {
@@ -188,6 +239,11 @@ try
         using RegistryKey regExeKey = Registry.CurrentUser.OpenSubKey(TestKey + @"\A")!;
         Check(((byte[])key.GetValue("None")!).SequenceEqual((byte[])regExeKey.GetValue("None")!), "REG_NONE was written the same as reg.exe: " + Convert.ToHexString((byte[])regExeKey.GetValue("None")!));
     }
+    string typeLine = $"reg add \"{b}\" /v \"Name\" /t REG_DWORD /d 1 /f";
+    string noKeyLine = $"reg add \"{b}\\NoSuchKey\" /v \"X\" /d \"1\" /f";
+    Run(new[] { typeLine, noKeyLine }, Array.Empty<string>(), false);
+    Check(Detail(typeLine) == "Value type differs", "Compliance Details says " + Detail(typeLine) + " for " + typeLine);
+    Check(Detail(noKeyLine) == "Key not found in RegEdit", "Compliance Details says " + Detail(noKeyLine) + " for " + noKeyLine);
 
     string e = @"HKCU\Software\RegistryKeyCheckTest\E";
     using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\E"))
@@ -201,10 +257,12 @@ try
     foreach ((string line, string status, string data, string result) in Run(listE, Array.Empty<string>(), false))
     {
         Check(status == "False", "Before Execute Missing Commands " + status + " for " + line);
+        Check(Detail(line) == "Key still has values in RegEdit", "Compliance Details says " + Detail(line) + " for " + line);
     }
     foreach ((string line, string status, string data, string result) in Run(listE, Array.Empty<string>(), true))
     {
         Check(status == "True", "After Execute Missing Commands " + status + " for " + line);
+        Check(Detail(line) == "Compliant", "Compliance Details says " + Detail(line) + " after Execute Missing Commands for " + line);
     }
     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\E")!)
     {
@@ -215,10 +273,12 @@ try
     string trueLine = $"reg add \"{a}\" /v \"KucukbuyuK\" /t REG_SZ /d \"test\" /f";
     string misspelled = "reg add \"HKEY_CURRENT_USR\\Software\\RegistryKeyCheckTest\\F\" /v \"x\" /d \"1\" /f";
     string badType = "reg add \"HKCU\\Software\\RegistryKeyCheckTest\\F\" /v \"Foo\" /t REG_FOO /d \"1\" /f";
-    foreach ((string line, string status, string data, string result) in Run(new[] { trueLine, misspelled, badType }, Array.Empty<string>(), true))
+    string misspelledDelete = "reg delete \"HKEY_CURRENT_USR\\Software\\RegistryKeyCheckTest\\F\" /f";
+    foreach ((string line, string status, string data, string result) in Run(new[] { trueLine, misspelled, badType, misspelledDelete }, Array.Empty<string>(), true))
     {
         Check(result == (line == trueLine ? string.Empty : "Error"), "Execute Result says " + result + " for " + line);
     }
+    Check(Detail(misspelledDelete).EndsWith("Base key is not one RegEdit has"), "Compliance Details says " + Detail(misspelledDelete) + " for " + misspelledDelete);
     Check(Registry.CurrentUser.OpenSubKey(TestKey + @"\F") == null, "REG_FOO did not create its key");
 
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
@@ -263,6 +323,99 @@ try
         using RegistryKey regExeKey = Registry.CurrentUser.OpenSubKey(TestKey + @"\A\command")!;
         Check((string?)key.GetValue("") == (string?)regExeKey.GetValue(""), "Execute Missing Commands wrote the same as reg.exe: " + regExeKey.GetValue(""));
     }
+
+    string h = @"HKCU\Software\RegistryKeyCheckTest\H";
+    using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\H"))
+    {
+        key.SetValue("V", "1");
+        key.CreateSubKey("Sub").Dispose();
+    }
+    string[] listH = { $"reg delete \"{h}\\Sub\" /f", $"reg delete \"{h}\\Sub\" /f", $"reg delete \"{h}\" /v \"V\" /f", $"reg delete \"{h}\" /v \"V\" /f" };
+    foreach ((string line, string status, string data, string result) in Run(listH, Array.Empty<string>(), true))
+    {
+        Check(status == "True" && result == "successful", "Execute Missing Commands says " + status + " and " + result + " for " + line);
+    }
+    Check(Detail(listH[0]).StartsWith("List syntax warning: line 2 also changes this key"), "Compliance Details says " + Detail(listH[0]) + " for " + listH[0]);
+    Check(Detail(listH[2]).StartsWith("List syntax warning: line 4 also changes this value"), "Compliance Details says " + Detail(listH[2]) + " for " + listH[2]);
+
+    string m = @"HKCU\Software\RegistryKeyCheckTest\M";
+    using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\M\Keep"))
+    {
+        key.SetValue("Bar", "1");
+    }
+    string[] listM =
+    {
+        @"reg delete HKCU\Software\RegistryKeyCheckTest\M\Keep Me /f",
+        $"reg delete \"{m}\\Keep\" /vv \"Bar\" /f",
+        $"reg delete \"{m}\\Keep\" /f /v",
+        $"reg add \"{m}\\Keep\" /v \"Bar\" /d \"2\" /f >nul 2>&1",
+        $"reg add \"{m}\\Keep\" /v \"Glued\" /d \"3\" /f>nul",
+        $"reg delete \"{m}\\Keep\" /va /v \"Bar\" /f",
+        $"reg add \"{m}\\Keep\\\" /v \"Junk\" /d \"1\" /f"
+    };
+    List<(string Line, string Status, string Data, string Result)> rowsM = Run(listM, Array.Empty<string>(), true);
+    Check(rowsM.Count == 2 && rowsM.All(r => (r.Line == listM[3] || r.Line == listM[4]) && r.Status == "True" && r.Result == "successful"), "Only the two well formed lines of M were read as reg lines and run: " + string.Join(" | ", rowsM.Select(r => r.Line + " " + r.Status + " " + r.Result)));
+    Check(NonRegCount() == 5, "Five lines of M went to Non RegistryKey Commands: " + NonRegCount());
+    using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\M")!)
+    {
+        using RegistryKey? keep = key.OpenSubKey("Keep");
+        Check(keep != null && (string?)keep.GetValue("Bar") == "2" && (string?)keep.GetValue("Glued") == "3", "M\\Keep kept Bar and got Bar = 2 and Glued = 3");
+        Check(key.GetSubKeyNames().SequenceEqual(new[] { "Keep" }), "No other key was made under M: " + string.Join(", ", key.GetSubKeyNames()));
+    }
+
+    string w = @"HKCU\Software\RegistryKeyCheckTest\W";
+    string[] listW =
+    {
+        $"reg add \"{w}\" /v \"A\" /d \"1\" /f",
+        $"reg add \"{w}\" /v \"a\" /d \"2\" /f",
+        $"reg add \"{w}\" /v \"B\" /d \"1\" /f",
+        $"reg delete \"{w}\\Two\" /f",
+        $"reg add \"{w}\\Two\\Sub\" /v \"C\" /d \"1\" /f",
+        $"reg delete \"{w}\\Three\" /va /f",
+        $"reg add \"{w}\\Three\" /v \"D\" /d \"1\" /f",
+        $"reg add \"{w}\\Three\\Child\" /v \"E\" /d \"1\" /f",
+        "reg add \"HKEY_CURRENT_USER\\Software\\RegistryKeyCheckTest\\W\\Four\" /v \"F\" /d \"1\" /f",
+        "reg add \"HKCU\\Software\\RegistryKeyCheckTest\\W\\Four\" /v \"F\" /d \"2\" /f"
+    };
+    string[] warningsW =
+    {
+        "List syntax warning: line 2 also changes this value",
+        "List syntax warning: line 1 also changes this value",
+        "",
+        "List syntax warning: line 5 also changes this key",
+        "List syntax warning: line 4 also changes this key",
+        "List syntax warning: line 7 also changes this key",
+        "List syntax warning: line 6 also changes this key",
+        "",
+        "List syntax warning: line 10 also changes this value",
+        "List syntax warning: line 9 also changes this value"
+    };
+    Run(listW, Array.Empty<string>(), false);
+    for (int i = 0; i < listW.Length; i++)
+    {
+        string detail = Detail(listW[i]);
+        Check(warningsW[i].Length > 0 ? detail.StartsWith(warningsW[i]) : !detail.Contains("List syntax warning"), "Compliance Details says " + detail + " for " + listW[i]);
+    }
+    Run(listW, new[] { listW[1] }, false);
+    Check(!Detail(listW[0]).Contains("List syntax warning"), "Ignoring line 2 clears the warning of line 1: " + Detail(listW[0]));
+    Check(Detail(listW[1]) == "On the Ignore List", "Compliance Details says " + Detail(listW[1]) + " for an ignored line");
+
+    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    Encoding ansi = Encoding.GetEncoding(0);
+    string n = @"HKCU\Software\RegistryKeyCheckTest\N";
+    Directory.SetCurrentDirectory(work);
+    File.WriteAllLines(Path.Combine(work, "List.txt"), new[] { $"reg add \"{n}\" /v \"M\u00fczik\" /d \"\u00dc\" /f" }, ansi);
+    File.WriteAllLines(Path.Combine(work, "Ignore.txt"), new[] { "M\u00fczik typed by hand" }, ansi);
+    viewModels.GetMethod("ReadListFile")!.Invoke(null, null);
+    viewModels.GetMethod("QueryFromRegEdit")!.Invoke(null, null);
+    ((Task)viewModels.GetMethod("ExecuteMissingCommands")!.Invoke(null, null)!).GetAwaiter().GetResult();
+    using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\N"))
+    {
+        Check((string?)key?.GetValue("M\u00fczik") == "\u00dc", "List.txt saved in code page " + ansi.CodePage + " wrote the value with its letters intact");
+    }
+    viewModels.GetMethod("AddToIgnoreList")!.Invoke(null, new object[] { Array.CreateInstance(model, 0) });
+    string ignoreBack = File.ReadAllText(Path.Combine(work, "Ignore.txt"), new UTF8Encoding(false, true));
+    Check(ignoreBack.Contains("M\u00fczik typed by hand"), "Ignore.txt saved in code page " + ansi.CodePage + " kept its letters after Add to Ignore List");
 }
 finally
 {

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
         x:Name="DetailWin"
-        Title="Detail" Height="500" Width="800" Loaded="DetailWin_Loaded" PreviewKeyDown="DetailWin_PreviewKeyDown">
+        Title="Detail" Height="530" Width="800" Loaded="DetailWin_Loaded" PreviewKeyDown="DetailWin_PreviewKeyDown">
     <Grid>
         <Label Content="ID" Margin="10,10,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="List ID" Margin="10,40,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
@@ -22,6 +22,7 @@
         <Label Content="RegEdit Value Data" Margin="10,360,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="Execute Result" Margin="10,390,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="List Match with RegEdit" Margin="10,420,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Compliance Details" Margin="10,450,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <TextBox x:Name="TextBoxRegCommandId" Margin="100,10,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="TextBox">
@@ -140,6 +141,15 @@
             </TextBox.Style>
         </TextBox>
         <TextBox x:Name="TextBoxListMatchWithRegEdit" Margin="100,420,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="TextWrapping" Value="Wrap" />
+                </Style>
+            </TextBox.Style>
+        </TextBox>
+        <TextBox x:Name="TextBoxComplianceDetails" Margin="100,450,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
                 <Style TargetType="TextBox">
                     <Setter Property="IsReadOnly" Value="True" />

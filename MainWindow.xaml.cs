@@ -22,6 +22,8 @@ namespace RegistryKey_Check
 
         private readonly ContextMenu columnsMenu = new ContextMenu();
 
+        private bool filtersResetting;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -40,7 +42,8 @@ namespace RegistryKey_Check
                 [dgColumnRegListValueData] = TextBoxFilterListValueData,
                 [dgColumnRegRegEditValueData] = TextBoxFilterRegEditValueData,
                 [dgColumnRegExecuteResult] = TextBoxFilterExecuteResult,
-                [dgColumnRegListMatchWithRegEdit] = TextBoxFilterListMatchWithRegEdit
+                [dgColumnRegListMatchWithRegEdit] = TextBoxFilterListMatchWithRegEdit,
+                [dgColumnRegComplianceDetails] = TextBoxFilterComplianceDetails
             };
             foreach (DataGridColumn column in DataGridRegCommands.Columns)
             {
@@ -169,7 +172,7 @@ namespace RegistryKey_Check
 
         private void MenuJumpToRegEdit_Click(object sender, RoutedEventArgs e)
         {
-            ModelRegCommand? mo = SelectedRows().FirstOrDefault();
+            ModelRegCommand? mo = ((sender as MenuItem)?.Parent as ContextMenu)?.PlacementTarget is DataGridRow { Item: ModelRegCommand clicked } ? clicked : SelectedRows().FirstOrDefault();
             if (mo != null)
             {
                 ViewModels.JumpToRegEdit(mo);
@@ -234,6 +237,7 @@ namespace RegistryKey_Check
             ButtonHelp.IsEnabled = true;
             ButtonColumns.IsEnabled = true;
             ButtonOpenIgnoreFile.IsEnabled = true;
+            ((ContextMenu)DataGridRegCommands.Resources["RowMenu"]).IsEnabled = true;
         }
 
         private void ButtonsDisable()
@@ -249,6 +253,7 @@ namespace RegistryKey_Check
             ButtonHelp.IsEnabled = false;
             ButtonColumns.IsEnabled = false;
             ButtonOpenIgnoreFile.IsEnabled = false;
+            ((ContextMenu)DataGridRegCommands.Resources["RowMenu"]).IsEnabled = false;
         }
 
         private void ButtonOpenListFile_Click(object sender, RoutedEventArgs e)
@@ -298,9 +303,12 @@ namespace RegistryKey_Check
             AllFilterReset();
         }
 
-        private void TextBoxFilterRegCommandId_KeyUp(object sender, KeyEventArgs e)
+        private void TextBoxFilter_TextChanged(object sender, TextChangedEventArgs e)
         {
-            FilterObsColl_RegCommands();
+            if (!filtersResetting)
+            {
+                FilterObsColl_RegCommands();
+            }
         }
 
         public void FilterObsColl_RegCommands()
@@ -319,23 +327,15 @@ namespace RegistryKey_Check
                 && s.ListValueData.Contains(TextBoxFilterListValueData.Text, StringComparison.OrdinalIgnoreCase)
                 && s.RegEditValueData.Contains(TextBoxFilterRegEditValueData.Text, StringComparison.OrdinalIgnoreCase)
                 && s.ExecuteResult.Contains(TextBoxFilterExecuteResult.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ListMatchWithRegEdit.Contains(TextBoxFilterListMatchWithRegEdit.Text, StringComparison.OrdinalIgnoreCase));
+                && s.ListMatchWithRegEdit.Contains(TextBoxFilterListMatchWithRegEdit.Text, StringComparison.OrdinalIgnoreCase)
+                && s.ComplianceDetails.Contains(TextBoxFilterComplianceDetails.Text, StringComparison.OrdinalIgnoreCase));
             LabelShown.Content = "Shown " + DataGridRegCommands.Items.Count;
             LabelTotal.Content = "Total " + ViewModels.ObsColl_RegCommands.Count;
         }
 
-        private void TextBoxFilterListId_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterListCommand_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
         private void AllFilterReset()
         {
+            filtersResetting = true;
             TextBoxFilterRegCommandId.Text = "";
             TextBoxFilterListId.Text = "";
             TextBoxFilterListCommand.Text = "";
@@ -350,61 +350,8 @@ namespace RegistryKey_Check
             TextBoxFilterRegEditValueData.Text = "";
             TextBoxFilterExecuteResult.Text = "";
             TextBoxFilterListMatchWithRegEdit.Text = "";
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterListBaseKey_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterListSubKey_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterAvailableSubKey_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterListValueName_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterAvailableValueName_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterListValueType_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterRegEditValueType_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterListValueData_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterRegEditValueData_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterExecuteResult_KeyUp(object sender, KeyEventArgs e)
-        {
-            FilterObsColl_RegCommands();
-        }
-
-        private void TextBoxFilterListMatchWithRegEdit_KeyUp(object sender, KeyEventArgs e)
-        {
+            TextBoxFilterComplianceDetails.Text = "";
+            filtersResetting = false;
             FilterObsColl_RegCommands();
         }
 
@@ -429,9 +376,7 @@ namespace RegistryKey_Check
                 {
                     ViewModels.QueryFromRegEdit();
                 });
-                await Task.Delay(100);
                 await Task.Run(() => ViewModels.ExecuteMissingCommands());
-                await Task.Delay(100);
                 await Task.Run(() =>
                 {
                     ViewModels.QueryFromRegEdit();

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.4.0
+
+- The new Compliance Details column says Compliant for a row that matches RegEdit, and why a row does not, such as Value data differs.
+- A row that changes the same key or value as another line shows in yellow, with a List syntax warning in Compliance Details.
+- The Detail window now shows Compliance Details.
+- The Help window now explains Compliance Details and the yellow rows.
+- Lines that start with reg.exe, @reg or the full path of reg.exe in System32 are now read the same as lines that start with reg.
+- A reg line with a switch or word that reg add or reg delete does not take now shows on the Non RegistryKey Commands tab and is never run.
+- Execute Missing Commands now closes each registry key it opens as soon as it is done with it.
+- Execute Missing Commands no longer pauses for a moment between its steps.
+- Fixed a key path with spaces written without quotes making reg delete or reg add act on the part of the path before the space.
+- Fixed reg delete with a misspelled switch, such as /vv, or /v with no name after it, deleting the whole key.
+- Fixed reg delete with both /va and /v deleting every value of the key.
+- Fixed a quoted key path ending in a backslash creating a key with the rest of the line in its name.
+- Fixed letters such as ü and ş in a List.txt or Ignore.txt saved as ANSI turning into unreadable characters.
+- Fixed Execute Missing Commands showing Error for a reg delete line whose key or value an earlier line had already deleted.
+- Fixed a reg delete line with a misspelled base key, such as HKEY_LOCAL_MACHIN, showing True as if the key were already gone.
+- Fixed Jump to RegEdit opening the 64-bit key instead of the 32-bit one for a /reg:32 line under HKEY_LOCAL_MACHINE.
+- Fixed Jump to RegEdit opening the key of the first selected row instead of the row you right-clicked.
+- Fixed the column filter boxes not filtering after text was pasted or cut with the mouse.
+- Fixed the row right-click menu staying usable while Query RegEdit or Execute Missing Commands was running.
+
 ## 2.3.0
 
 - Query RegEdit now runs faster on long lists.

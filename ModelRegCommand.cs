@@ -43,5 +43,13 @@ namespace RegistryKey_Check
         public string ListLineString { get; set; } = string.Empty;
 
         public ulong? ListValueNumber { get; set; }
+
+        public string ListWarning { get; set; } = string.Empty;
+
+        public string ComplianceReason { get; set; } = string.Empty;
+
+        public bool HasListWarning => ListWarning.Length > 0;
+
+        public string ComplianceDetails => ListWarning.Length == 0 ? ComplianceReason : ComplianceReason.Length == 0 ? ListWarning : ListWarning + ". " + ComplianceReason;
     }
 }

@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>glasses.ico</ApplicationIcon>
-    <Version>2.3.0</Version>
+    <Version>2.4.0</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <DebugType>embedded</DebugType>
     <PathMap>$(MSBuildProjectDirectory)=RegistryKey Check</PathMap>
@@ -21,9 +21,5 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Include="glasses.ico" />
-  </ItemGroup>
 
 </Project>

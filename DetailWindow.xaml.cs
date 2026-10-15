@@ -34,6 +34,7 @@ namespace RegistryKey_Check
             TextBoxRegEditValueData.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].RegEditValueData;
             TextBoxExecuteResult.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ExecuteResult;
             TextBoxListMatchWithRegEdit.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ListMatchWithRegEdit;
+            TextBoxComplianceDetails.Text = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs].ComplianceDetails;
         }
     }
 }

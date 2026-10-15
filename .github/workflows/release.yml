@@ -25,6 +25,7 @@ jobs:
           set -euo pipefail
           git fetch --tags --force origin >/dev/null 2>&1 || true
           fail() { echo "::error::$1"; exit 1; }
+          vkey() { printf '%s\n' "$1" | awk -F. '{printf "%09d%09d%09d\n", $1, $2, $3}'; }
           srcver() { git show "$1:RegistryKey Check.csproj" 2>/dev/null | tr -d '\r' | sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' | head -1 || true; }
           head=$(git rev-parse HEAD)
           if [ -n "${BEFORE:-}" ] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null && git merge-base --is-ancestor "$BEFORE" "$head"; then
@@ -40,6 +41,11 @@ jobs:
               "[no release]"*)
                 if git rev-parse -q --verify "$c^" >/dev/null; then
                   [ "$(srcver "$c")" = "$(srcver "$c^")" ] || fail "Commit $c is [no release] but changes the version in RegistryKey Check.csproj from $(srcver "$c^") to $(srcver "$c")"
+                fi
+                changed=$(git diff-tree --no-commit-id --name-only -r --root "$c")
+                program=$(printf '%s\n' "$changed" | grep -Ev '^(\.github/|\.claude/|CLAUDE\.md$|README\.md$|COMPARISON\.md$|\.gitignore$|CHANGELOG\.md$|$)' || true)
+                if [ -n "$program" ]; then
+                  printf '%s\n' "$changed" | grep -qx 'CHANGELOG.md' || fail "Commit $c is [no release] and changes the program but leaves CHANGELOG.md untouched"
                 fi
                 continue ;;
               "["[0-9]*"]"*) ;;
@@ -62,6 +68,9 @@ jobs:
               [ "$(git rev-list -n 1 "v$ver")" = "$c" ] || fail "Version $ver has already been released from another commit"
               continue
             fi
+            for t in $(git tag -l 'v[0-9]*' | sed 's/^v//'); do
+              [[ "$(vkey "$ver")" > "$(vkey "$t")" ]] || fail "Version $ver is not higher than the released version $t"
+            done
             [ "$c" = "$head" ] || fail "Commit $c ships $ver but is not the last commit of the push; push version commits one at a time"
             publish=true
             version=$ver
