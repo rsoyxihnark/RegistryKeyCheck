@@ -43,6 +43,7 @@ RegistryKey LocalMachine(RegistryView view)
 void CleanUp()
 {
     Registry.CurrentUser.DeleteSubKeyTree(TestKey, false);
+    Registry.CurrentUser.DeleteValue("RegistryKeyCheckTestValue", false);
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
     {
         using RegistryKey lm = LocalMachine(view);
@@ -60,17 +61,22 @@ int NonRegCount()
     return ((IEnumerable)viewModels.GetField("ObsColl_Non_RegCommands")!.GetValue(null)!).Cast<object>().Count();
 }
 
-string Detail(string line)
+string Field(string line, string name)
 {
     foreach (object row in Rows())
     {
         Type type = row.GetType();
         if ((string)type.GetProperty("ListLineString")!.GetValue(row)! == line)
         {
-            return (string)type.GetProperty("ComplianceDetails")!.GetValue(row)!;
+            return (string)type.GetProperty(name)!.GetValue(row)!;
         }
     }
     return "missing";
+}
+
+string Detail(string line)
+{
+    return Field(line, "ComplianceDetails");
 }
 
 List<(string Line, string Status, string Data, string Result)> Run(string[] list, string[] ignore, bool execute)
@@ -106,6 +112,8 @@ try
         va.SetValue("Two", 2, RegistryValueKind.DWord);
         va.CreateSubKey("Child").Dispose();
     }
+    string expCaret = $"reg add \"{a}\" /v \"ExpCaret\" /t REG_EXPAND_SZ /d ^%SystemRoot^%\\system32 /f";
+    string defaultOnlyLine = $"reg add \"{a}\\DefaultOnly\" /t REG_DWORD /d 5 /f";
     string[] regExe =
     {
         $"reg add \"{a}\" /v \"KucukbuyuK\" /t REG_SZ /d \"test\" /f",
@@ -128,7 +136,14 @@ try
         $"reg add \"{a}\" /v \"MS\" /t REG_MULTI_SZ /s \",\" /d \"a,b\" /f",
         $"reg delete \"{a}\\VA\" /va /f",
         $"reg add \"{lmPath}\" /v \"View\" /d \"32\" /f /reg:32",
-        $"reg add \"{lmPath}\" /v \"View\" /d \"64\" /f /reg:64"
+        $"reg add \"{lmPath}\" /v \"View\" /d \"64\" /f /reg:64",
+        defaultOnlyLine,
+        $"reg add \"{a}\" /v \"QNoData\" /t REG_QWORD /f",
+        $"reg add \"{a}\" /v \"MEmpty\" /t REG_MULTI_SZ /d \"\" /f",
+        $"reg add \"{a}\" /v \"MSlash\" /t REG_MULTI_SZ /s \"#\" /d \"two\\0#strings\" /f",
+        $"reg add \"{a}\" /v \"MOnlySep\" /t REG_MULTI_SZ /d \"\\0\" /f",
+        expCaret,
+        $"reg add \"{a}\" /v \"SzVar\" /d \"%SystemRoot%\\x\" /f"
     };
     foreach (string line in regExe)
     {
@@ -142,6 +157,16 @@ try
         Check((string?)key.GetValue("ExpRaw", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == @"%SystemRoot%\system32", "reg.exe kept %SystemRoot% in ExpRaw");
         Check(((byte[])key.GetValue("Odd")!).SequenceEqual(new byte[] { 0x0a, 0xbc }), "reg.exe wrote REG_BINARY abc as 0a bc: " + Convert.ToHexString((byte[])key.GetValue("Odd")!));
         Check(((string[])key.GetValue("MS")!).SequenceEqual(new[] { "a", "b" }), "reg.exe split REG_MULTI_SZ a,b with /s");
+        Check(key.GetValue("QNoData") is long qNoData && qNoData == 0, "reg.exe wrote 0 for a REG_QWORD line with no /d");
+        Check(key.GetValue("MEmpty") is string[] mEmpty && mEmpty.Length == 0, "reg.exe wrote empty REG_MULTI_SZ data as no strings");
+        Check(key.GetValue("MSlash") is string[] mSlash && mSlash.SequenceEqual(new[] { @"two\0", "strings" }), @"reg.exe split two\0#strings with /s # into two\0 and strings");
+        Check(key.GetValue("MOnlySep") is string[] mOnlySep && mOnlySep.SequenceEqual(new[] { string.Empty }), @"reg.exe wrote REG_MULTI_SZ \0 as one empty string");
+        Check((string?)key.GetValue("ExpCaret", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == @"%SystemRoot%\system32", "reg.exe run from cmd kept %SystemRoot% in ExpCaret written as ^%SystemRoot^%");
+        Check((string?)key.GetValue("SzVar") == Environment.ExpandEnvironmentVariables(@"%SystemRoot%\x"), "reg.exe run from cmd filled in %SystemRoot% in SzVar: " + key.GetValue("SzVar"));
+    }
+    using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\A\DefaultOnly"))
+    {
+        Check(key?.GetValue("") is int defaultOnly && defaultOnly == 5, "reg.exe wrote 5 into (Default) for a line with /t and /d but no /v");
     }
     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\A\VA")!)
     {
@@ -177,6 +202,8 @@ try
         Check(status == "True", "Query RegEdit says " + status + " for " + line + " [" + data + "]");
         Check(Detail(line).EndsWith("Compliant"), "Compliance Details says " + Detail(line) + " for " + line);
     }
+    Check(Field(expCaret, "ListValueData") == @"%SystemRoot%\system32" && Field(expCaret, "RegEditValueData") == @"%SystemRoot%\system32", "List Value Data and RegEdit Value Data show REG_EXPAND_SZ as written: " + Field(expCaret, "ListValueData") + " | " + Field(expCaret, "RegEditValueData"));
+    Check(Field(defaultOnlyLine, "RegEditValueData") == "0x00000005 (5)", "A line with /t and /d but no /v checks the (Default) value: " + Field(defaultOnlyLine, "RegEditValueData"));
 
     string[] listU = { "rem first line", $"reg add \"{a}\" /v \"Attr\" /t REG_DWORD /d \"0xb0940064\" /f", "", $"reg delete \"{a}\\OnlyKey\" /f" };
     Run(listU, Array.Empty<string>(), false);
@@ -208,6 +235,13 @@ try
         $"reg add \"{b}\" /v \"None\" /t REG_NONE /d \"deadbeef\" /f",
         $"reg delete \"{b}\" /v \"DELVAL\" /f",
         $"reg delete \"{b}\\Sub\" /f",
+        $"reg add \"{b}\\DefaultData\" /d \"x\" /f",
+        $"reg add \"{b}\" /v \"QNoData\" /t REG_QWORD /f",
+        $"reg add \"{b}\" /v \"MEmpty\" /t REG_MULTI_SZ /d \"\" /f",
+        $"reg add \"{b}\" /v \"MSlash\" /t REG_MULTI_SZ /s \"#\" /d \"two\\0#strings\" /f",
+        $"reg add \"{b}\" /v \"MOnlySep\" /t REG_MULTI_SZ /d \"\\0\" /f",
+        $"reg add \"{b}\" /v \"ExpCaret\" /t REG_EXPAND_SZ /d ^%SystemRoot^%\\system32 /f",
+        $"reg add \"{b}\" /v \"SzVar\" /d \"%SystemRoot%\\x\" /f",
         ignored
     };
     Dictionary<string, string> detailsB = new Dictionary<string, string>
@@ -247,6 +281,17 @@ try
         Check(((string[])key.GetValue("MS")!).SequenceEqual(new[] { "a", "b" }), "REG_MULTI_SZ a,b with /s was written as a and b");
         using RegistryKey regExeKey = Registry.CurrentUser.OpenSubKey(TestKey + @"\A")!;
         Check(((byte[])key.GetValue("None")!).SequenceEqual((byte[])regExeKey.GetValue("None")!), "REG_NONE was written the same as reg.exe: " + Convert.ToHexString((byte[])regExeKey.GetValue("None")!));
+        Check(key.GetValue("QNoData") is long qNoData && qNoData == 0, "Execute Missing Commands wrote 0 for a REG_QWORD line with no /d");
+        foreach (string name in new[] { "MEmpty", "MSlash", "MOnlySep" })
+        {
+            Check(key.GetValue(name) is string[] written && regExeKey.GetValue(name) is string[] fromRegExe && written.SequenceEqual(fromRegExe), "REG_MULTI_SZ " + name + " was written the same as reg.exe");
+        }
+        Check((string?)key.GetValue("ExpCaret", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == @"%SystemRoot%\system32", "REG_EXPAND_SZ written as ^%SystemRoot^% was written with %SystemRoot% kept");
+        Check((string?)key.GetValue("SzVar") == (string?)regExeKey.GetValue("SzVar"), "REG_SZ with %SystemRoot% was written the same as reg.exe run from cmd: " + key.GetValue("SzVar"));
+    }
+    using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\B\DefaultData"))
+    {
+        Check((string?)key?.GetValue("") == "x", "Execute Missing Commands wrote x into (Default) for a line with /d but no /v");
     }
     string typeLine = $"reg add \"{b}\" /v \"Name\" /t REG_DWORD /d 1 /f";
     string noKeyLine = $"reg add \"{b}\\NoSuchKey\" /v \"X\" /d \"1\" /f";
@@ -371,6 +416,61 @@ try
         Check(keep != null && (string?)keep.GetValue("Bar") == "2" && (string?)keep.GetValue("Glued") == "3", "M\\Keep kept Bar and got Bar = 2 and Glued = 3");
         Check(key.GetSubKeyNames().SequenceEqual(new[] { "Keep" }), "No other key was made under M: " + string.Join(", ", key.GetSubKeyNames()));
     }
+
+    string[] listRoot = { @"reg delete HKCU\\ /f", "reg delete \"HKCU\\\\\" /f", @"reg delete HKCU\ /va /f", @"reg add HKCU\ /v RegistryKeyCheckTestValue /d foo /f" };
+    Check(RunCmd(listRoot[3]) != 0, "reg.exe refuses " + listRoot[3]);
+    Run(listRoot, Array.Empty<string>(), false);
+    Check(!Rows().Cast<object>().Any() && NonRegCount() == listRoot.Length, "Every line with nothing or two backslashes after the base key went to Non RegistryKey Commands: " + NonRegCount());
+
+    string z = @"HKCU\Software\RegistryKeyCheckTest\Z";
+    using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\Z"))
+    {
+        key.SetValue("Keep", "1");
+        key.CreateSubKey("Sub").Dispose();
+    }
+    void CheckZ(string when)
+    {
+        using RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\Z");
+        string values = key == null ? "no key" : string.Join(", ", key.GetValueNames());
+        string subKeys = key == null ? "no key" : string.Join(", ", key.GetSubKeyNames());
+        Check(values == "Keep" && (string?)key?.GetValue("Keep") == "1" && subKeys == "Sub", "Z kept only Keep and Sub " + when + ": " + values + " | " + subKeys);
+    }
+    string[] listZ =
+    {
+        $"reg delete \"{z}\" /t REG_SZ /f",
+        $"reg delete \"{z}\" /v \"Keep\" /d \"x\" /f",
+        $"reg delete \"{z}\\Sub\" /s \",\" /f",
+        $"reg add \"{z}\" /v \"A\" /v \"B\" /d \"x\" /f",
+        $"reg add \"{z}\" /v \"A\" /ve /d \"x\" /f",
+        $"reg add \"{z}\" /v \"D\" /d \"1\" /d \"2\" /f",
+        $"reg add \"{z}\" /v \"F\" /d \"x\" /f /f",
+        $"reg add \"{z}\" /v \"View\" /d \"x\" /f /reg:32 /reg:64",
+        $"reg delete \"{z}\" /va /va /f",
+        $"reg add \"{z}\" /v \"Multi\" /t REG_MULTI_SZ /s \"#x\" /d \"a#xb\" /f",
+        $@"reg add {z}\Two\\ /f",
+        $"reg add \"{z}\" /v \"Neg\" /t REG_DWORD /d -1 /f",
+        $"reg add \"{z}\" /v \"TwoEmpty\" /t REG_MULTI_SZ /d \"two\\0\\0strings\" /f"
+    };
+    foreach (string line in listZ)
+    {
+        Check(RunCmd(line) != 0, "reg.exe refuses " + line);
+    }
+    CheckZ("after reg.exe");
+    List<(string Line, string Status, string Data, string Result)> rowsZ = Run(listZ, Array.Empty<string>(), true);
+    Check(rowsZ.Count == 2 && rowsZ.All(r => r.Result == "Error") && NonRegCount() == listZ.Length - 2, "Only the Neg and TwoEmpty lines of Z were read as reg lines and both showed Error: " + string.Join(" | ", rowsZ.Select(r => r.Line + " " + r.Result)) + ", Non RegistryKey Commands: " + NonRegCount());
+    CheckZ("after Execute Missing Commands");
+
+    string[] listChain =
+    {
+        $"reg add \"{z}\" /v \"Chain\" /d \"1\" /f & reg delete \"{z}\" /v \"Keep\" /f",
+        $"reg add \"{z}\" /v \"Chain\" /d \"1\" /f && reg delete \"{z}\" /v \"Keep\" /f",
+        $"reg add \"{z}\" /v \"Chain\" /d \"1\" /f || reg delete \"{z}\" /v \"Keep\" /f",
+        $"reg add \"{z}\" /v \"Chain\" /d \"1\" /f&reg delete \"{z}\" /v \"Keep\" /f",
+        $"reg add \"{z}\" /v \"Keep\" /d \"1\" /f | find \"x\""
+    };
+    List<(string Line, string Status, string Data, string Result)> rowsChain = Run(listChain, Array.Empty<string>(), true);
+    Check(rowsChain.Count == 1 && rowsChain[0].Line == listChain[4] && rowsChain[0].Status == "True" && NonRegCount() == listChain.Length - 1, "Lines that run a second command after &, && or || went to Non RegistryKey Commands, and the line piped into find was read: " + string.Join(" | ", rowsChain.Select(r => r.Line + " " + r.Status)) + ", Non RegistryKey Commands: " + NonRegCount());
+    CheckZ("after lines that run a second command");
 
     string w = @"HKCU\Software\RegistryKeyCheckTest\W";
     string[] listW =

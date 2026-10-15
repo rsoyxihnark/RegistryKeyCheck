@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Win32;
 
 namespace RegistryKey_Check
@@ -32,7 +33,7 @@ namespace RegistryKey_Check
 
         public string ListValueData { get; set; } = "This_field_is_NULL";
 
-        public string ListValueDataRaw { get; set; } = "This_field_is_NULL";
+        public string[] ListValueStrings { get; set; } = Array.Empty<string>();
 
         public object ReturnObject { get; set; } = "This_field_is_NULL";
 

@@ -125,7 +125,12 @@ namespace RegistryKey_Check
         private void ColumnsMenuItem_Click(object sender, RoutedEventArgs e)
         {
             MenuItem item = (MenuItem)sender;
-            ((DataGridColumn)item.Tag).Visibility = item.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+            DataGridColumn column = (DataGridColumn)item.Tag;
+            column.Visibility = item.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+            if (!item.IsChecked && filterBoxes.TryGetValue(column, out TextBox? box))
+            {
+                box.Text = string.Empty;
+            }
         }
 
         private void ButtonColumns_Click(object sender, RoutedEventArgs e)
@@ -351,12 +356,14 @@ namespace RegistryKey_Check
 
         private void ButtonFilterFalses_Click(object sender, RoutedEventArgs e)
         {
+            dgColumnRegListMatchWithRegEdit.Visibility = Visibility.Visible;
             TextBoxFilterListMatchWithRegEdit.Text = "False";
             FilterObsColl_RegCommands();
         }
 
         private void ButtonFilterTrues_Click(object sender, RoutedEventArgs e)
         {
+            dgColumnRegListMatchWithRegEdit.Visibility = Visibility.Visible;
             TextBoxFilterListMatchWithRegEdit.Text = "True";
             FilterObsColl_RegCommands();
         }

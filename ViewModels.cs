@@ -28,8 +28,6 @@ namespace RegistryKey_Check
 
         public static int RegCommandIds;
 
-        public static int Non_RegCommandIds;
-
         public static int ListIds;
 
         public static int DisplayingIDs;
@@ -104,13 +102,12 @@ namespace RegistryKey_Check
             ObsColl_RegCommands.Clear();
             ObsColl_Non_RegCommands.Clear();
             RegCommandIds = 0;
-            Non_RegCommandIds = 0;
             ListIds = 0;
             ReadIgnoreFile();
             foreach (string line in ReadTextLines("List.txt"))
             {
                 ListIds++;
-                List<string> args = SplitCommandLine(line.Trim());
+                List<string> args = SplitCommandLine(CmdUnescape(line.Trim()));
                 string program = args.Count >= 3 ? args[0].TrimStart('@') : string.Empty;
                 bool isReg = program.Equals("reg", StringComparison.OrdinalIgnoreCase) || program.Equals("reg.exe", StringComparison.OrdinalIgnoreCase) || program.EndsWith("\\System32\\reg.exe", StringComparison.OrdinalIgnoreCase) || program.EndsWith("\\Sysnative\\reg.exe", StringComparison.OrdinalIgnoreCase);
                 string command = isReg ? args[1].ToLowerInvariant() : string.Empty;
@@ -127,7 +124,6 @@ namespace RegistryKey_Check
                 else
                 {
                     ModelNonRegCommand modelNonRegCommand = new ModelNonRegCommand();
-                    modelNonRegCommand.Non_RegCommandId = ++Non_RegCommandIds;
                     modelNonRegCommand.ListId = ListIds;
                     modelNonRegCommand.ListLineString = line;
                     ObsColl_Non_RegCommands.Add(modelNonRegCommand);
@@ -191,10 +187,11 @@ namespace RegistryKey_Check
                     mo.ListWarning = "List syntax warning: line " + other.ListId + " also changes this " + what;
                 }
             }
+            Dictionary<ModelRegCommand, string> keys = rows.ToDictionary(mo => mo, KeyIdentity);
             Dictionary<string, ModelRegCommand> values = new Dictionary<string, ModelRegCommand>(StringComparer.OrdinalIgnoreCase);
             foreach (ModelRegCommand mo in rows.Where(mo => mo.ListValueName != "This_field_is_NULL"))
             {
-                string value = KeyIdentity(mo) + "\n" + mo.ListValueName;
+                string value = keys[mo] + "\n" + mo.ListValueName;
                 if (values.TryGetValue(value, out ModelRegCommand? first))
                 {
                     Warn(first, mo, "value");
@@ -207,17 +204,18 @@ namespace RegistryKey_Check
             }
             foreach (ModelRegCommand delete in rows.Where(mo => mo.ListCommand == "reg delete" && mo.ListValueName == "This_field_is_NULL"))
             {
-                string key = KeyIdentity(delete);
+                string key = keys[delete];
+                string under = key + "\\";
                 foreach (ModelRegCommand mo in rows)
                 {
                     if (mo == delete)
                     {
                         continue;
                     }
-                    string other = KeyIdentity(mo);
+                    string other = keys[mo];
                     bool clash = delete.DeleteAllValues
                         ? string.Equals(other, key, StringComparison.OrdinalIgnoreCase) && (mo.ListValueName != "This_field_is_NULL" || mo.DeleteAllValues)
-                        : string.Equals(other, key, StringComparison.OrdinalIgnoreCase) || other.StartsWith(key + "\\", StringComparison.OrdinalIgnoreCase);
+                        : string.Equals(other, key, StringComparison.OrdinalIgnoreCase) || other.StartsWith(under, StringComparison.OrdinalIgnoreCase);
                     if (clash)
                     {
                         Warn(delete, mo, "key");
@@ -225,6 +223,26 @@ namespace RegistryKey_Check
                     }
                 }
             }
+        }
+
+        private static string CmdUnescape(string line)
+        {
+            StringBuilder text = new StringBuilder(line.Length);
+            bool quoted = false;
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+                if (c == '"')
+                {
+                    quoted = !quoted;
+                }
+                else if (c == '^' && !quoted && i + 1 < line.Length)
+                {
+                    c = line[++i];
+                }
+                text.Append(c);
+            }
+            return text.ToString();
         }
 
         public static List<string> SplitCommandLine(string line)
@@ -303,17 +321,18 @@ namespace RegistryKey_Check
             ModelRegCommand modelRegCommand = new ModelRegCommand();
             modelRegCommand.ListCommand = "reg " + command;
             string keyPath = args[2];
-            if (keyPath.Contains('"'))
+            int slash = keyPath.IndexOf('\\');
+            if (keyPath.Contains('"') || keyPath.EndsWith("\\\\", StringComparison.Ordinal) || slash == keyPath.Length - 1)
             {
                 return null;
             }
-            int slash = keyPath.IndexOf('\\');
             modelRegCommand.ListBaseKey = slash < 0 ? keyPath : keyPath[..slash];
             modelRegCommand.ListSubKey = slash < 0 ? string.Empty : keyPath[(slash + 1)..];
             string? valueName = null;
             string? valueType = null;
             string? valueData = null;
             string? valueSeparator = null;
+            HashSet<string> seen = new HashSet<string>();
             for (int i = 3; i < args.Count; i++)
             {
                 string arg = args[i].ToLowerInvariant();
@@ -326,6 +345,10 @@ namespace RegistryKey_Check
                     }
                     args.Insert(i + 1, arg[glued..]);
                     arg = arg[..glued];
+                }
+                if (arg.StartsWith('/') && !seen.Add(arg switch { "/ve" => "/v", "/reg:64" => "/reg:32", _ => arg }))
+                {
+                    return null;
                 }
                 if (arg == "/ve")
                 {
@@ -347,22 +370,26 @@ namespace RegistryKey_Check
                 {
                     valueName = args[++i];
                 }
-                else if (arg == "/t" && i + 1 < args.Count)
+                else if (arg == "/t" && command == "add" && i + 1 < args.Count)
                 {
                     valueType = args[++i].ToUpperInvariant();
                 }
-                else if (arg == "/d" && i + 1 < args.Count)
+                else if (arg == "/d" && command == "add" && i + 1 < args.Count)
                 {
                     valueData = args[++i];
                 }
-                else if (arg == "/s" && i + 1 < args.Count)
+                else if (arg == "/s" && command == "add" && i + 1 < args.Count && args[i + 1].Length == 1)
                 {
                     valueSeparator = args[++i];
                 }
                 else if (arg == "/f")
                 {
                 }
-                else if (arg.StartsWith('&') || arg.StartsWith('|'))
+                else if (arg.StartsWith('&') || arg.StartsWith("||"))
+                {
+                    return null;
+                }
+                else if (arg.StartsWith('|'))
                 {
                     break;
                 }
@@ -382,6 +409,10 @@ namespace RegistryKey_Check
             {
                 return null;
             }
+            if (valueName == null && (valueType != null || valueData != null))
+            {
+                valueName = string.Empty;
+            }
             if (valueName == null)
             {
                 return modelRegCommand;
@@ -392,7 +423,11 @@ namespace RegistryKey_Check
                 return modelRegCommand;
             }
             modelRegCommand.ListValueType = valueType ?? "REG_SZ";
-            modelRegCommand.ListValueData = valueData ?? string.Empty;
+            modelRegCommand.ListValueData = valueData ?? (modelRegCommand.ListValueType == "REG_QWORD" ? "0" : string.Empty);
+            if (modelRegCommand.ListValueType is "REG_SZ" or "REG_MULTI_SZ" or "REG_NONE")
+            {
+                modelRegCommand.ListValueData = Environment.ExpandEnvironmentVariables(modelRegCommand.ListValueData);
+            }
             if (modelRegCommand.ListValueType == "REG_BINARY")
             {
                 if (modelRegCommand.ListValueData.Length % 2 == 0)
@@ -407,16 +442,15 @@ namespace RegistryKey_Check
             if (modelRegCommand.ListValueType == "REG_MULTI_SZ")
             {
                 string separator = string.IsNullOrEmpty(valueSeparator) ? "\\0" : valueSeparator;
+                bool onlySeparator = modelRegCommand.ListValueData == separator;
                 if (modelRegCommand.ListValueData.EndsWith(separator, StringComparison.Ordinal))
                 {
                     modelRegCommand.ListValueData = modelRegCommand.ListValueData[..^separator.Length];
                 }
-                if (separator != "\\0")
-                {
-                    modelRegCommand.ListValueData = string.Join("\\0", modelRegCommand.ListValueData.Split(separator));
-                }
+                modelRegCommand.ListValueStrings = onlySeparator ? new[] { string.Empty } : modelRegCommand.ListValueData.Length == 0 ? Array.Empty<string>() : modelRegCommand.ListValueData.Split(separator);
+                modelRegCommand.ListValueData = string.Join("\\0", modelRegCommand.ListValueStrings);
             }
-            if (modelRegCommand.ListValueType == "REG_DWORD" && TryParseNumber(modelRegCommand.ListValueData, uint.MaxValue, int.MinValue, out ulong dword))
+            if (modelRegCommand.ListValueType == "REG_DWORD" && TryParseNumber(modelRegCommand.ListValueData, uint.MaxValue, 0, out ulong dword))
             {
                 modelRegCommand.ListValueNumber = dword;
                 modelRegCommand.ListValueData = FormatDword(dword);
@@ -425,11 +459,6 @@ namespace RegistryKey_Check
             {
                 modelRegCommand.ListValueNumber = qword;
                 modelRegCommand.ListValueData = FormatQword(qword);
-            }
-            if (modelRegCommand.ListValueType == "REG_EXPAND_SZ")
-            {
-                modelRegCommand.ListValueDataRaw = modelRegCommand.ListValueData;
-                modelRegCommand.ListValueData = Environment.ExpandEnvironmentVariables(modelRegCommand.ListValueData);
             }
             return modelRegCommand;
         }
@@ -487,7 +516,7 @@ namespace RegistryKey_Check
                         {
                             if (queryKey.ValueNames.Contains(mo.ListValueName))
                             {
-                                mo.ReturnObject = openedKey.GetValue(mo.ListValueName)!;
+                                mo.ReturnObject = openedKey.GetValue(mo.ListValueName, string.Empty, RegistryValueOptions.DoNotExpandEnvironmentNames)!;
                                 mo.AvailableValueName = "It's Available";
                                 registryValueKind = openedKey.GetValueKind(mo.ListValueName);
                                 if (registryValueKind == RegistryValueKind.String)
@@ -525,7 +554,8 @@ namespace RegistryKey_Check
                                     mo.RegEditValueType = "REG_NONE";
                                     mo.RegEditValueData = Encoding.Unicode.GetString((byte[])mo.ReturnObject).TrimEnd('\0');
                                 }
-                                if (string.Equals(mo.RegEditValueData, mo.ListValueData, StringComparison.OrdinalIgnoreCase))
+                                bool expand = mo.RegEditValueType == "REG_EXPAND_SZ" && mo.ListValueType == "REG_EXPAND_SZ";
+                                if (string.Equals(expand ? Environment.ExpandEnvironmentVariables(mo.RegEditValueData) : mo.RegEditValueData, expand ? Environment.ExpandEnvironmentVariables(mo.ListValueData) : mo.ListValueData, StringComparison.OrdinalIgnoreCase))
                                 {
                                     mo.ListMatchWithRegEdit = "True";
                                 }
@@ -753,7 +783,11 @@ namespace RegistryKey_Check
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_MULTI_SZ")
                             {
-                                registryKey.SetValue(mo.ListValueName, mo.ListValueData.Split("\\0"), RegistryValueKind.MultiString);
+                                if (mo.ListValueStrings.Length > 1 && mo.ListValueStrings.Contains(string.Empty))
+                                {
+                                    throw new FormatException("\"" + mo.ListValueData + "\" has an empty string, which reg.exe does not write in REG_MULTI_SZ data.");
+                                }
+                                registryKey.SetValue(mo.ListValueName, mo.ListValueStrings, RegistryValueKind.MultiString);
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_BINARY")
                             {
@@ -761,7 +795,7 @@ namespace RegistryKey_Check
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_EXPAND_SZ")
                             {
-                                registryKey.SetValue(mo.ListValueName, mo.ListValueDataRaw, RegistryValueKind.ExpandString);
+                                registryKey.SetValue(mo.ListValueName, mo.ListValueData, RegistryValueKind.ExpandString);
                             }
                             else if (registryKey != null && mo.ListValueType == "REG_QWORD")
                             {

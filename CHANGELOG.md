@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.5.1
+
+- Read List.txt, Add to Ignore List and Remove from Ignore List now run faster on long lists.
+- List Value Data and RegEdit Value Data now show REG_EXPAND_SZ data as written, such as %SystemRoot%\system32 instead of C:\Windows\system32.
+- Apply False Filter and Apply True Filter now show the List Match with RegEdit column, so the filter they set can be seen.
+- Hiding a column in Columns now clears its filter box, so no hidden filter keeps rows out of the list.
+- A reg line that runs a second command after &, && or || now shows on the Non RegistryKey Commands tab and is never run.
+- Fixed reg delete with two backslashes right after the base key deleting everything under that base key.
+- Fixed a key path ending in two backslashes being run although reg.exe refuses it.
+- Fixed a key path with a backslash right after the base key writing into or deleting from the base key itself.
+- Fixed reg delete with /t, /d or /s deleting the key or value although reg.exe refuses it.
+- Fixed reg lines that give a switch twice, or both /v and /ve, or both /reg:32 and /reg:64, being run although reg.exe refuses them.
+- Fixed a REG_MULTI_SZ line with a /s longer than one character being run although reg.exe refuses it.
+- Fixed reg add with /t or /d but no /v or /ve checking and writing only the key instead of its (Default) value.
+- Fixed a REG_QWORD line without /d never matching RegEdit and showing Error instead of writing 0 like reg.exe does.
+- Fixed a REG_DWORD line with negative data, such as -1, being written although reg.exe refuses it.
+- Fixed Execute Missing Commands writing REG_MULTI_SZ data with an empty string in it, such as a\0\0b, although reg.exe refuses it.
+- Fixed empty REG_MULTI_SZ data written by Execute Missing Commands being two bytes longer than what reg.exe writes.
+- Fixed REG_MULTI_SZ data split with /s also being split at the text \0, such as in /s "#" /d "two\0#strings".
+- Fixed a ^ outside quotes, such as in ^%SystemRoot^%, being read as part of the text instead of the way cmd reads it.
+- Fixed a variable such as %ProgramFiles% in REG_SZ, REG_MULTI_SZ or REG_NONE data not being filled in the way cmd fills it in.
+
 ## 2.5.0
 
 - Empty fields now show as blank cells instead of This_field_is_NULL, in the list and in the Detail window.
