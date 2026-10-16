@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.9.0
+
+- The Compliant and Non-Compliant buttons can now both be on at once, showing the rows of both.
+- Shown and Total at the bottom left are now the number of lines, with compliant in green and noncompliant in red.
+- The Find box is now always open and has the keyboard focus when RegistryKey Check opens.
+- Esc in the Find box now clears it and leaves it open.
+- All Filters Reset now clears the Find box and leaves it open.
+- Ignore.txt is now made only when it has a line in it, and is removed when the last line leaves the Ignore List.
+- Open Ignore.txt no longer makes an empty Ignore.txt by itself.
+- An empty Ignore.txt is removed when RegistryKey Check opens.
+
 ## 2.8.2
 
 - Fixed a lone % in a List.txt line, such as in search?q=%s, being kept although a batch file drops it.

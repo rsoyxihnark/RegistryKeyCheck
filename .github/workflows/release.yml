@@ -156,6 +156,7 @@ jobs:
           New-Item -ItemType Directory -Path $shots -Force | Out-Null
           Copy-Item 'dist\RegistryKeyCheck.exe' $dir
           New-Item -ItemType File -Path (Join-Path $dir 'Log.txt') -Force | Out-Null
+          New-Item -ItemType File -Path (Join-Path $dir 'Ignore.txt') -Force | Out-Null
           New-Item -Path $key -Force | Out-Null
           New-ItemProperty -Path $key -Name 'Here' -Value '1' -PropertyType String -Force | Out-Null
           Set-Content -Path (Join-Path $dir 'List.txt') -Value @(
@@ -168,38 +169,41 @@ jobs:
           $scope = [System.Windows.Automation.TreeScope]
           $types = [System.Windows.Automation.ControlType]
           function Find-Id([string]$id) { $window.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::AutomationIdProperty, $id))) }
-          function Read-Label([string]$word) {
+          function Read-Count([string]$word) {
             $texts = @($window.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Text))) | ForEach-Object { $_.Current.Name })
-            @($texts | Where-Object { $_ -match "^$word \d+$" })[0]
+            @($texts | Where-Object { $_ -match "^\d+ $word$" })[0]
           }
+          function Count-Rows { @($grid.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::DataItem)))).Count }
           function Wait-Until([scriptblock]$ok) {
             $end = (Get-Date).AddSeconds(20)
             while (-not (& $ok) -and (Get-Date) -lt $end) { Start-Sleep -Milliseconds 500 }
             & $ok
           }
           function Read-Toggle([string]$id) { (Find-Id $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState.ToString() }
+          function Flip([string]$id) { (Find-Id $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle() }
+          function Find-Focused { (Find-Id 'TextBoxFind').Current.HasKeyboardFocus }
           function Save-Shot([string]$name) { [WindowShot]::Save([IntPtr]$window.Current.NativeWindowHandle, (Join-Path $shots "$name.png")) }
           $p = Start-Process -FilePath (Join-Path $dir 'RegistryKeyCheck.exe') -WorkingDirectory $dir -PassThru
           $deadline = (Get-Date).AddSeconds(90)
           $window = $null
-          $shown = ''
-          $total = ''
-          while (-not $p.HasExited -and (Get-Date) -lt $deadline -and -not ($shown -eq 'Shown 1' -and $total -eq 'Total 4')) {
+          $grid = $null
+          $rows = -1
+          $counts = ''
+          while (-not $p.HasExited -and (Get-Date) -lt $deadline -and -not ($rows -eq 1 -and $counts -eq '4 lines, 3 compliant, 1 noncompliant')) {
             Start-Sleep -Seconds 1
             if ($null -eq $window) {
               $window = $auto::RootElement.FindFirst($scope::Children, (New-Object System.Windows.Automation.PropertyCondition($auto::ProcessIdProperty, [int]$p.Id)))
             }
-            if ($null -ne $window) {
-              $shown = Read-Label 'Shown'
-              $total = Read-Label 'Total'
+            if ($null -ne $window -and $null -eq $grid) {
+              $grid = Find-Id 'DataGridRegCommands'
+            }
+            if ($null -ne $grid) {
+              $rows = Count-Rows
+              $counts = (Read-Count 'lines') + ', ' + (Read-Count 'compliant') + ', ' + (Read-Count 'noncompliant')
             }
           }
           $expected = @('UID', 'Path', 'Value', 'Expected', 'Actual', 'Details')
           $seen = @{}
-          $grid = $null
-          if ($null -ne $window) {
-            $grid = Find-Id 'DataGridRegCommands'
-          }
           if ($null -ne $grid) {
             foreach ($header in $grid.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::HeaderItem)))) {
               if (-not $header.Current.IsOffscreen -and $header.Current.Name -and -not $seen.ContainsKey($header.Current.Name)) {
@@ -218,30 +222,40 @@ jobs:
               if ($seen[$name] / $scale -lt $text.Width + 12) { $cut += $name }
             }
           }
-          $started = -not $p.HasExited -and $shown -eq 'Shown 1' -and $total -eq 'Total 4'
+          $started = -not $p.HasExited -and $rows -eq 1 -and $counts -eq '4 lines, 3 compliant, 1 noncompliant'
+          $focused = $false
           $lit = ''
-          $unlit = ''
+          $both = $false
+          $compliantOnly = $false
           $reset = $false
+          $unlit = ''
+          $ctrlF = $false
           $found = $false
-          $closed = $false
+          $cleared = $false
           if ($started) {
             try {
+              [WindowShot]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle) | Out-Null
+              $focused = Wait-Until { Find-Focused }
               $lit = (Read-Toggle 'ButtonFilterFalses') + '/' + (Read-Toggle 'ButtonFilterTrues')
               Save-Shot 'start'
+              Flip 'ButtonFilterTrues'
+              $both = Wait-Until { (Count-Rows) -eq 4 -and (Read-Toggle 'ButtonFilterFalses') -eq 'On' -and (Read-Toggle 'ButtonFilterTrues') -eq 'On' }
+              Save-Shot 'both'
+              Flip 'ButtonFilterFalses'
+              $compliantOnly = Wait-Until { (Count-Rows) -eq 3 -and (Read-Toggle 'ButtonFilterFalses') -eq 'Off' -and (Read-Toggle 'ButtonFilterTrues') -eq 'On' }
               (Find-Id 'ButtonAllFiltersReset').GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-              $reset = Wait-Until { (Read-Label 'Shown') -eq 'Shown 4' }
+              $reset = Wait-Until { (Count-Rows) -eq 4 }
               $unlit = (Read-Toggle 'ButtonFilterFalses') + '/' + (Read-Toggle 'ButtonFilterTrues')
               Save-Shot 'all'
-              [WindowShot]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle) | Out-Null
               $grid.SetFocus()
+              Wait-Until { -not (Find-Focused) } | Out-Null
               [System.Windows.Forms.SendKeys]::SendWait('^f')
-              if (Wait-Until { $null -ne (Find-Id 'TextBoxFind') }) {
-                (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue('Missing')
-                $found = Wait-Until { (Read-Label 'Shown') -eq 'Shown 1' }
-                Save-Shot 'find'
-                [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
-                $closed = Wait-Until { (Read-Label 'Shown') -eq 'Shown 4' -and $null -eq (Find-Id 'TextBoxFind') }
-              }
+              $ctrlF = Wait-Until { Find-Focused }
+              (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue('Missing')
+              $found = Wait-Until { (Count-Rows) -eq 1 }
+              Save-Shot 'find'
+              [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
+              $cleared = Wait-Until { (Count-Rows) -eq 4 -and (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -eq '' }
             }
             catch {
               Write-Host "Driving the window failed: $_"
@@ -250,21 +264,25 @@ jobs:
           $running = -not $p.HasExited
           if ($running) { Stop-Process -Id $p.Id -Force }
           $written = $null -ne (Get-ItemProperty -Path $key -Name 'Missing' -ErrorAction SilentlyContinue)
-          $emptyLogKept = Test-Path (Join-Path $dir 'Log.txt')
+          $emptyKept = @('Log.txt', 'Ignore.txt' | Where-Object { Test-Path (Join-Path $dir $_) })
           Remove-Item -Path $key -Recurse -Force
-          Write-Host "running=$running, $shown, $total, headers: $(($seen.Keys | Sort-Object) -join ', '), lit=$lit, unlit=$unlit, reset=$reset, found=$found, closed=$closed"
-          if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry and show only the False row at start'; exit 1 }
+          Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, both=$both, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared"
+          if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           if ($absent.Count -gt 0 -or $cut.Count -gt 0) { Write-Error "Headers missing: $($absent -join ', '). Headers cut off: $($cut -join ', ')"; exit 1 }
           if ($extra.Count -gt 0) { Write-Error "Columns shown at start that should be hidden: $($extra -join ', ')"; exit 1 }
+          if (-not $focused) { Write-Error 'The Find box did not have the keyboard focus at start'; exit 1 }
           if ($lit -ne 'On/Off') { Write-Error "Non-Compliant was not the only lit filter button at start: $lit"; exit 1 }
+          if (-not $both) { Write-Error 'Compliant and Non-Compliant on together did not show the rows of both'; exit 1 }
+          if (-not $compliantOnly) { Write-Error 'Compliant alone did not show only the compliant rows'; exit 1 }
           if (-not $reset) { Write-Error 'All Filters Reset did not show every row'; exit 1 }
           if ($unlit -ne 'Off/Off') { Write-Error "All Filters Reset left a filter button lit: $unlit"; exit 1 }
-          if (-not $found) { Write-Error 'Ctrl+F did not open the Find box or the Find box did not show only the rows with that text'; exit 1 }
-          if (-not $closed) { Write-Error 'Esc did not close the Find box and show every row again'; exit 1 }
+          if (-not $ctrlF) { Write-Error 'Ctrl+F did not put the keyboard focus in the Find box'; exit 1 }
+          if (-not $found) { Write-Error 'The Find box did not show only the rows with that text'; exit 1 }
+          if (-not $cleared) { Write-Error 'Esc did not clear the Find box, keep it open and show every row again'; exit 1 }
           if (-not $running) { Write-Error 'RegistryKey Check closed by itself'; exit 1 }
           if ($written) { Write-Error 'Opening RegistryKey Check wrote a value from List.txt into the registry'; exit 1 }
-          if ($emptyLogKept) { Write-Error 'RegistryKey Check kept an empty Log.txt or wrote one although nothing went wrong'; exit 1 }
-          Write-Host 'RegistryKey Check read List.txt, showed only the False row with every header in full, and Ctrl+F found the row with that text'
+          if ($emptyKept.Count -gt 0) { Write-Error "RegistryKey Check kept or made an empty file although nothing went wrong: $($emptyKept -join ', ')"; exit 1 }
+          Write-Host 'RegistryKey Check read List.txt, counted the lines, showed only the False row with every header in full, let both filters be on together, and the Find box found the row with that text'
 
       - name: Keep the screenshots
         if: always()

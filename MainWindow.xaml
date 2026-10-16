@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
-        Title="RegistryKey Check" MinHeight="700" MinWidth="1300" Background="{StaticResource WindowBrush}" FocusManager.FocusedElement="{Binding ElementName=DataGridRegCommands}" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="RegistryKey Check" MinHeight="700" MinWidth="1300" Background="{StaticResource WindowBrush}" FocusManager.FocusedElement="{Binding ElementName=TextBoxFind}" Loaded="Window_Loaded" Closing="Window_Closing">
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Find" CanExecute="Find_CanExecute" Executed="Find_Executed" />
     </Window.CommandBindings>
@@ -21,7 +21,7 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="60" />
                     </Grid.RowDefinitions>
-                    <StackPanel x:Name="PanelFind" Orientation="Horizontal" Margin="0,0,0,4" Visibility="Collapsed">
+                    <StackPanel x:Name="PanelFind" Orientation="Horizontal" Margin="0,0,0,4">
                         <Label Content="Find" VerticalAlignment="Center" />
                         <TextBox x:Name="TextBoxFind" Width="320" Height="24" VerticalContentAlignment="Center" TextChanged="TextBoxFind_TextChanged" PreviewKeyDown="TextBoxFind_PreviewKeyDown" />
                     </StackPanel>
@@ -78,13 +78,16 @@
                     <Button x:Name="ButtonExecuteMissingCommands" Background="#FFFFA500" Foreground="#FF1B1F2B" Grid.Row="2" Content="Execute Missing Commands" HorizontalAlignment="Right" Height="40" Margin="0,10,350,0" VerticalAlignment="Top" Width="160" Click="ButtonExecuteMissingCommands_Click" />
                     <Button x:Name="ButtonOpenListFile" Grid.Row="2" Content="Open List.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,520,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenListFile_Click" />
                     <Button x:Name="ButtonOpenLogFile" Grid.Row="2" Content="Open Log.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,690,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenLogFile_Click" />
-                    <ToggleButton x:Name="ButtonFilterFalses" Style="{StaticResource FilterToggle}" Tag="{StaticResource RedBrush}" VerticalContentAlignment="Top" Grid.Row="2" Content="Non-Compliant" HorizontalAlignment="Right" Height="21" Margin="0,8,860,0" VerticalAlignment="Top" Width="100" Click="ButtonFilterFalses_Click" />
-                    <ToggleButton x:Name="ButtonFilterTrues" Style="{StaticResource FilterToggle}" Tag="{StaticResource GreenBrush}" VerticalContentAlignment="Top" Grid.Row="2" Content="Compliant" HorizontalAlignment="Right" Height="21" Margin="0,30,860,0" VerticalAlignment="Top" Width="100" Click="ButtonFilterTrues_Click" />
+                    <ToggleButton x:Name="ButtonFilterFalses" Style="{StaticResource FilterToggle}" Tag="{StaticResource RedBrush}" VerticalContentAlignment="Top" Grid.Row="2" Content="Non-Compliant" HorizontalAlignment="Right" Height="21" Margin="0,8,860,0" VerticalAlignment="Top" Width="100" Checked="FilterButton_Changed" Unchecked="FilterButton_Changed" />
+                    <ToggleButton x:Name="ButtonFilterTrues" Style="{StaticResource FilterToggle}" Tag="{StaticResource GreenBrush}" VerticalContentAlignment="Top" Grid.Row="2" Content="Compliant" HorizontalAlignment="Right" Height="21" Margin="0,30,860,0" VerticalAlignment="Top" Width="100" Checked="FilterButton_Changed" Unchecked="FilterButton_Changed" />
                     <Button x:Name="ButtonAllFiltersReset" Grid.Row="2" Content="All Filters Reset" HorizontalAlignment="Right" Height="43" Margin="0,8,970,0" VerticalAlignment="Top" Width="100" Click="ButtonAllFiltersReset_Click" />
                     <Button x:Name="ButtonColumns" VerticalContentAlignment="Top" Grid.Row="2" Content="Columns" HorizontalAlignment="Right" Height="21" Margin="0,8,1080,0" VerticalAlignment="Top" Width="100" Click="ButtonColumns_Click" />
                     <Button x:Name="ButtonOpenIgnoreFile" VerticalContentAlignment="Top" Grid.Row="2" Content="Open Ignore.txt" HorizontalAlignment="Right" Height="21" Margin="0,30,1080,0" VerticalAlignment="Top" Width="100" Click="ButtonOpenIgnoreFile_Click" />
-                    <Label x:Name="LabelShown" VerticalContentAlignment="Top" Grid.Row="2" Content="Shown 0" HorizontalAlignment="Left" Height="24" Margin="0,8,1140,0" VerticalAlignment="Top" Width="76" />
-                    <Label x:Name="LabelTotal" VerticalContentAlignment="Top" Grid.Row="2" Content="Total 0" HorizontalAlignment="Left" Height="24" Margin="0,30,1140,0" VerticalAlignment="Top" Width="76" />
+                    <StackPanel Grid.Row="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4,7,0,0">
+                        <TextBlock x:Name="TextLines" Text="0 lines" FontSize="11" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock x:Name="TextCompliant" Text="0 compliant" FontSize="11" Foreground="{StaticResource GreenBrush}" />
+                        <TextBlock x:Name="TextNonCompliant" Text="0 noncompliant" FontSize="11" Foreground="{StaticResource RedBrush}" />
+                    </StackPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="Non RegistryKey Commands">

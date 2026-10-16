@@ -24,8 +24,6 @@ namespace RegistryKey_Check
 
         private bool filtersResetting;
 
-        private string matchFilter = string.Empty;
-
         public MainWindow()
         {
             App.UseDarkTitleBar(this);
@@ -66,9 +64,12 @@ namespace RegistryKey_Check
             bool listFound = File.Exists(filePathList);
             try
             {
-                if (File.Exists(filePathLog) && new FileInfo(filePathLog).Length == 0)
+                foreach (string empty in new[] { filePathLog, "Ignore.txt" })
                 {
-                    File.Delete(filePathLog);
+                    if (File.Exists(empty) && new FileInfo(empty).Length == 0)
+                    {
+                        File.Delete(empty);
+                    }
                 }
             }
             catch (Exception)
@@ -100,7 +101,7 @@ namespace RegistryKey_Check
             {
                 ButtonReadListFile_Click(sender, e);
                 await QueryRegEdit();
-                ButtonFilterFalses_Click(sender, e);
+                ButtonFilterFalses.IsChecked = true;
             }
         }
 
@@ -138,8 +139,6 @@ namespace RegistryKey_Check
 
         private void Find_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            PanelFind.Visibility = Visibility.Visible;
-            PanelFind.UpdateLayout();
             TextBoxFind.Focus();
             TextBoxFind.SelectAll();
         }
@@ -149,8 +148,6 @@ namespace RegistryKey_Check
             if (e.Key == Key.Escape)
             {
                 TextBoxFind.Text = string.Empty;
-                PanelFind.Visibility = Visibility.Collapsed;
-                DataGridRegCommands.Focus();
                 e.Handled = true;
             }
         }
@@ -166,12 +163,6 @@ namespace RegistryKey_Check
         {
             try
             {
-                if (!File.Exists("Ignore.txt"))
-                {
-                    using (StreamWriter swIgnore = new StreamWriter("Ignore.txt", append: true))
-                    {
-                    }
-                }
                 Process.Start("Notepad.exe", "Ignore.txt");
             }
             catch (Exception ex)
@@ -208,12 +199,14 @@ namespace RegistryKey_Check
         {
             ViewModels.AddToIgnoreList(SelectedRows());
             DataGridRegCommands.Items.Refresh();
+            UpdateCounts();
         }
 
         private void MenuRemoveFromIgnoreList_Click(object sender, RoutedEventArgs e)
         {
             ViewModels.RemoveFromIgnoreList(SelectedRows());
             DataGridRegCommands.Items.Refresh();
+            UpdateCounts();
         }
 
         private void RegCommandsGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -244,8 +237,7 @@ namespace RegistryKey_Check
             }
             DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands;
             DataGridNonRegCommands.ItemsSource = ViewModels.ObsColl_Non_RegCommands;
-            LabelShown.Content = "Shown " + DataGridRegCommands.Items.Count;
-            LabelTotal.Content = "Total " + ViewModels.ObsColl_RegCommands.Count;
+            UpdateCounts();
             ButtonsEnable();
         }
 
@@ -342,36 +334,39 @@ namespace RegistryKey_Check
         public void FilterObsColl_RegCommands()
         {
             string find = TextBoxFind.Text;
+            bool compliant = ButtonFilterTrues.IsChecked == true;
+            bool nonCompliant = ButtonFilterFalses.IsChecked == true;
             List<Func<ModelRegCommand, string>> shownTexts = columnTexts.Where(p => p.Key.Visibility == Visibility.Visible).Select(p => p.Value).ToList();
             DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands.Where((ModelRegCommand s) =>
-                s.ListMatchWithRegEdit.Contains(matchFilter, StringComparison.OrdinalIgnoreCase)
+                ((!compliant && !nonCompliant) || (compliant && s.ListMatchWithRegEdit == "True") || (nonCompliant && s.ListMatchWithRegEdit == "False"))
                 && (find.Length == 0 || shownTexts.Any(text => text(s).Contains(find, StringComparison.OrdinalIgnoreCase))));
-            ButtonFilterFalses.IsChecked = matchFilter == "False";
-            ButtonFilterTrues.IsChecked = matchFilter == "True";
-            LabelShown.Content = "Shown " + DataGridRegCommands.Items.Count;
-            LabelTotal.Content = "Total " + ViewModels.ObsColl_RegCommands.Count;
+            UpdateCounts();
+        }
+
+        private void UpdateCounts()
+        {
+            int lines = ViewModels.ObsColl_RegCommands.Count;
+            TextLines.Text = lines + (lines == 1 ? " line" : " lines");
+            TextCompliant.Text = ViewModels.ObsColl_RegCommands.Count(s => s.ListMatchWithRegEdit == "True") + " compliant";
+            TextNonCompliant.Text = ViewModels.ObsColl_RegCommands.Count(s => s.ListMatchWithRegEdit == "False") + " noncompliant";
         }
 
         private void AllFilterReset()
         {
             filtersResetting = true;
-            matchFilter = string.Empty;
+            ButtonFilterFalses.IsChecked = false;
+            ButtonFilterTrues.IsChecked = false;
             TextBoxFind.Text = "";
-            PanelFind.Visibility = Visibility.Collapsed;
             filtersResetting = false;
             FilterObsColl_RegCommands();
         }
 
-        private void ButtonFilterFalses_Click(object sender, RoutedEventArgs e)
+        private void FilterButton_Changed(object sender, RoutedEventArgs e)
         {
-            matchFilter = matchFilter == "False" ? string.Empty : "False";
-            FilterObsColl_RegCommands();
-        }
-
-        private void ButtonFilterTrues_Click(object sender, RoutedEventArgs e)
-        {
-            matchFilter = matchFilter == "True" ? string.Empty : "True";
-            FilterObsColl_RegCommands();
+            if (!filtersResetting)
+            {
+                FilterObsColl_RegCommands();
+            }
         }
 
         private async void ButtonExecuteMissingCommands_Click(object sender, RoutedEventArgs e)

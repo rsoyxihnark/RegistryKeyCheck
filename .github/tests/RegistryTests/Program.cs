@@ -584,6 +584,11 @@ try
     rowsR = Run(listR, Array.Empty<string>(), true);
     Check(rowsR[0].Result.Length == 0 && rowsR[1].Result == "successful" && rowsR.All(row => row.Status == "True"), "A key holding only what the later lines write is not reset again: " + string.Join(" | ", rowsR.Select(row => row.Status + " " + row.Result + " " + row.Line)));
 
+    string lastIgnored = $"reg add \"{w}\" /v \"Last\" /d \"1\" /f";
+    Run(new[] { lastIgnored }, new[] { lastIgnored }, false);
+    viewModels.GetMethod("RemoveFromIgnoreList")!.Invoke(null, new[] { Rows() });
+    Check(!File.Exists(Path.Combine(work, "Ignore.txt")), "Removing the last line from the Ignore List left no empty Ignore.txt");
+
     Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     Encoding ansi = Encoding.GetEncoding(0);
     string n = @"HKCU\Software\RegistryKeyCheckTest\N";

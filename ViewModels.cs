@@ -1155,7 +1155,14 @@ namespace RegistryKey_Check
         {
             try
             {
-                File.WriteAllLines("Ignore.txt", IgnoreList);
+                if (IgnoreList.Count > 0)
+                {
+                    File.WriteAllLines("Ignore.txt", IgnoreList);
+                }
+                else
+                {
+                    File.Delete("Ignore.txt");
+                }
             }
             catch (Exception ex)
             {
