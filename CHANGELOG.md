@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- RegistryKey Check, the Detail window and the Help window now have a dark look.
+- Rows in the list are no longer colored red, green, grey or yellow.
+- Details text is now red for a row that does not match, and orange for a row with a List syntax warning.
+- The row under the mouse is now highlighted.
+- The Full Path, List Value Name and Compliance Details columns are now called Path, Value and Details.
+- The List Value Data and RegEdit Value Data columns are now called Expected and Actual.
+- The RegEdit Value Type and List Match with RegEdit columns are now called Registry Value Type and List Match with Registry.
+- List Command, List Value Type and Registry Value Type are now hidden until you tick them in Columns.
+- The Detail window now uses the new column names, such as Path, Expected and Actual.
+- The filter boxes above the columns are gone.
+- Ctrl+F opens a Find box that shows only the rows with that text in a shown column, and Esc closes it.
+- All Filters Reset now also clears and closes the Find box.
+- The Columns menu now closes after you tick or untick a column.
+- The Non RegistryKey Commands tab no longer shows a grey strip at the left of each row.
+- The Help window now explains Ctrl+F and the red and orange Details text.
+
 ## 2.6.0
 
 - Opening RegistryKey Check now runs Read List.txt, Query RegEdit and Apply False Filter by itself when List.txt is beside it.

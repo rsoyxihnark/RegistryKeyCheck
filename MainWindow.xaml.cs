@@ -18,39 +18,42 @@ namespace RegistryKey_Check
     {
         private readonly AppSettings settings = AppSettings.Load();
 
-        private readonly Dictionary<DataGridColumn, TextBox> filterBoxes;
+        private readonly Dictionary<DataGridColumn, Func<ModelRegCommand, string>> columnTexts;
 
         private readonly ContextMenu columnsMenu = new ContextMenu();
 
         private bool filtersResetting;
 
+        private string matchFilter = string.Empty;
+
         public MainWindow()
         {
+            App.UseDarkTitleBar(this);
             InitializeComponent();
-            filterBoxes = new Dictionary<DataGridColumn, TextBox>
+            columnTexts = new Dictionary<DataGridColumn, Func<ModelRegCommand, string>>
             {
-                [dgColumnRegUID] = TextBoxFilterUID,
-                [dgColumnRegListCommand] = TextBoxFilterListCommand,
-                [dgColumnRegFullPath] = TextBoxFilterFullPath,
-                [dgColumnRegAvailableSubKey] = TextBoxFilterAvailableSubKey,
-                [dgColumnRegListValueName] = TextBoxFilterListValueName,
-                [dgColumnRegAvailableValueName] = TextBoxFilterAvailableValueName,
-                [dgColumnRegListValueType] = TextBoxFilterListValueType,
-                [dgColumnRegRegEditValueType] = TextBoxFilterRegEditValueType,
-                [dgColumnRegListValueData] = TextBoxFilterListValueData,
-                [dgColumnRegRegEditValueData] = TextBoxFilterRegEditValueData,
-                [dgColumnRegExecuteResult] = TextBoxFilterExecuteResult,
-                [dgColumnRegListMatchWithRegEdit] = TextBoxFilterListMatchWithRegEdit,
-                [dgColumnRegComplianceDetails] = TextBoxFilterComplianceDetails
+                [dgColumnRegUID] = s => s.ListId.ToString(),
+                [dgColumnRegListCommand] = s => s.ListCommand,
+                [dgColumnRegFullPath] = s => s.ListFullPath,
+                [dgColumnRegAvailableSubKey] = s => s.AvailableSubKey,
+                [dgColumnRegListValueName] = s => ViewModels.Shown(s.ListValueName),
+                [dgColumnRegAvailableValueName] = s => ViewModels.Shown(s.AvailableValueName),
+                [dgColumnRegListValueType] = s => ViewModels.Shown(s.ListValueType),
+                [dgColumnRegRegEditValueType] = s => ViewModels.Shown(s.RegEditValueType),
+                [dgColumnRegListValueData] = s => ViewModels.Shown(s.ListValueData),
+                [dgColumnRegRegEditValueData] = s => ViewModels.Shown(s.RegEditValueData),
+                [dgColumnRegExecuteResult] = s => s.ExecuteResult,
+                [dgColumnRegListMatchWithRegEdit] = s => s.ListMatchWithRegEdit,
+                [dgColumnRegComplianceDetails] = s => s.ComplianceDetails
             };
             foreach (DataGridColumn column in DataGridRegCommands.Columns)
             {
-                MenuItem item = new MenuItem { Header = AppSettings.HeaderOf(column), IsCheckable = true, StaysOpenOnClick = true, Tag = column };
+                MenuItem item = new MenuItem { Header = AppSettings.HeaderOf(column), IsCheckable = true, Tag = column };
                 item.Click += ColumnsMenuItem_Click;
                 columnsMenu.Items.Add(item);
             }
             columnsMenu.Opened += ColumnsMenu_Opened;
-            Style headerStyle = new Style(typeof(DataGridColumnHeader));
+            Style headerStyle = new Style(typeof(DataGridColumnHeader), (Style)FindResource(typeof(DataGridColumnHeader)));
             headerStyle.Setters.Add(new Setter(ContextMenuProperty, columnsMenu));
             DataGridRegCommands.ColumnHeaderStyle = headerStyle;
             settings.ApplyWindow(this);
@@ -89,7 +92,6 @@ namespace RegistryKey_Check
             {
                 ViewModels.WriteLog("Saved column layout could not be applied, so the default layout is used. ApplyColumns", ex);
             }
-            ArrangeFilters();
             if (listFound)
             {
                 ButtonReadListFile_Click(sender, e);
@@ -106,21 +108,6 @@ namespace RegistryKey_Check
             settings.Save();
         }
 
-        private void ArrangeFilters()
-        {
-            List<TextBox> ordered = filterBoxes.OrderBy(p => p.Key.DisplayIndex).Select(p => p.Value).ToList();
-            StackPanelFilters.Children.Clear();
-            foreach (TextBox box in ordered)
-            {
-                StackPanelFilters.Children.Add(box);
-            }
-        }
-
-        private void DataGridRegCommands_ColumnReordered(object? sender, DataGridColumnEventArgs e)
-        {
-            ArrangeFilters();
-        }
-
         private void ColumnsMenu_Opened(object sender, RoutedEventArgs e)
         {
             foreach (MenuItem item in columnsMenu.Items.OfType<MenuItem>())
@@ -134,9 +121,33 @@ namespace RegistryKey_Check
             MenuItem item = (MenuItem)sender;
             DataGridColumn column = (DataGridColumn)item.Tag;
             column.Visibility = item.IsChecked ? Visibility.Visible : Visibility.Collapsed;
-            if (!item.IsChecked && filterBoxes.TryGetValue(column, out TextBox? box))
+            if (TextBoxFind.Text.Length > 0)
             {
-                box.Text = string.Empty;
+                FilterObsColl_RegCommands();
+            }
+        }
+
+        private void Find_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = TabItemRegCommands.IsSelected;
+        }
+
+        private void Find_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            PanelFind.Visibility = Visibility.Visible;
+            PanelFind.UpdateLayout();
+            TextBoxFind.Focus();
+            TextBoxFind.SelectAll();
+        }
+
+        private void TextBoxFind_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                TextBoxFind.Text = string.Empty;
+                PanelFind.Visibility = Visibility.Collapsed;
+                DataGridRegCommands.Focus();
+                e.Handled = true;
             }
         }
 
@@ -318,7 +329,7 @@ namespace RegistryKey_Check
             AllFilterReset();
         }
 
-        private void TextBoxFilter_TextChanged(object sender, TextChangedEventArgs e)
+        private void TextBoxFind_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (!filtersResetting)
             {
@@ -328,20 +339,11 @@ namespace RegistryKey_Check
 
         public void FilterObsColl_RegCommands()
         {
+            string find = TextBoxFind.Text;
+            List<Func<ModelRegCommand, string>> shownTexts = columnTexts.Where(p => p.Key.Visibility == Visibility.Visible).Select(p => p.Value).ToList();
             DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands.Where((ModelRegCommand s) =>
-                s.ListId.ToString().Contains(TextBoxFilterUID.Text)
-                && s.ListCommand.Contains(TextBoxFilterListCommand.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ListFullPath.Contains(TextBoxFilterFullPath.Text, StringComparison.OrdinalIgnoreCase)
-                && s.AvailableSubKey.Contains(TextBoxFilterAvailableSubKey.Text, StringComparison.OrdinalIgnoreCase)
-                && ViewModels.Shown(s.ListValueName).Contains(TextBoxFilterListValueName.Text, StringComparison.OrdinalIgnoreCase)
-                && ViewModels.Shown(s.AvailableValueName).Contains(TextBoxFilterAvailableValueName.Text, StringComparison.OrdinalIgnoreCase)
-                && ViewModels.Shown(s.ListValueType).Contains(TextBoxFilterListValueType.Text, StringComparison.OrdinalIgnoreCase)
-                && ViewModels.Shown(s.RegEditValueType).Contains(TextBoxFilterRegEditValueType.Text, StringComparison.OrdinalIgnoreCase)
-                && ViewModels.Shown(s.ListValueData).Contains(TextBoxFilterListValueData.Text, StringComparison.OrdinalIgnoreCase)
-                && ViewModels.Shown(s.RegEditValueData).Contains(TextBoxFilterRegEditValueData.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ExecuteResult.Contains(TextBoxFilterExecuteResult.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ListMatchWithRegEdit.Contains(TextBoxFilterListMatchWithRegEdit.Text, StringComparison.OrdinalIgnoreCase)
-                && s.ComplianceDetails.Contains(TextBoxFilterComplianceDetails.Text, StringComparison.OrdinalIgnoreCase));
+                s.ListMatchWithRegEdit.Contains(matchFilter, StringComparison.OrdinalIgnoreCase)
+                && (find.Length == 0 || shownTexts.Any(text => text(s).Contains(find, StringComparison.OrdinalIgnoreCase))));
             LabelShown.Content = "Shown " + DataGridRegCommands.Items.Count;
             LabelTotal.Content = "Total " + ViewModels.ObsColl_RegCommands.Count;
         }
@@ -349,32 +351,22 @@ namespace RegistryKey_Check
         private void AllFilterReset()
         {
             filtersResetting = true;
-            TextBoxFilterUID.Text = "";
-            TextBoxFilterListCommand.Text = "";
-            TextBoxFilterFullPath.Text = "";
-            TextBoxFilterAvailableSubKey.Text = "";
-            TextBoxFilterListValueName.Text = "";
-            TextBoxFilterAvailableValueName.Text = "";
-            TextBoxFilterListValueType.Text = "";
-            TextBoxFilterRegEditValueType.Text = "";
-            TextBoxFilterListValueData.Text = "";
-            TextBoxFilterRegEditValueData.Text = "";
-            TextBoxFilterExecuteResult.Text = "";
-            TextBoxFilterListMatchWithRegEdit.Text = "";
-            TextBoxFilterComplianceDetails.Text = "";
+            matchFilter = string.Empty;
+            TextBoxFind.Text = "";
+            PanelFind.Visibility = Visibility.Collapsed;
             filtersResetting = false;
             FilterObsColl_RegCommands();
         }
 
         private void ButtonFilterFalses_Click(object sender, RoutedEventArgs e)
         {
-            TextBoxFilterListMatchWithRegEdit.Text = "False";
+            matchFilter = "False";
             FilterObsColl_RegCommands();
         }
 
         private void ButtonFilterTrues_Click(object sender, RoutedEventArgs e)
         {
-            TextBoxFilterListMatchWithRegEdit.Text = "True";
+            matchFilter = "True";
             FilterObsColl_RegCommands();
         }
 

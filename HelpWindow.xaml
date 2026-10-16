@@ -6,12 +6,13 @@
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
         x:Name="HelpWin"
-        Title="Help" Height="300" Width="400" ResizeMode="NoResize" Loaded="HelpWin_Loaded">
+        Title="Help" Height="300" Width="400" ResizeMode="NoResize" Background="{StaticResource WindowBrush}" Loaded="HelpWin_Loaded">
     <Grid>
         <TextBox x:Name="TextBoxHelpString">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                     <Setter Property="VerticalScrollBarVisibility" Value="Auto" />

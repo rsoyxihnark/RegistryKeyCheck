@@ -89,12 +89,14 @@ namespace RegistryKey_Check
             "     Bu yazılım RegEdit kayıtlarını toplu olarak kontrol edip düzenlemek içindir. \"List.txt\" içerisine yazacağınız reg komutlarını kullanır. Hata bilgilerini \"Log.txt\" dosyasında görebilirsiniz.\r\n" +
             "     Satırlara sağ tıklayarak onları Ignore List'e ekleyebilir veya listeden çıkarabilirsiniz. Bu liste \"Ignore.txt\" dosyasında tutulur. Jump to RegEdit, satırın anahtarını RegEdit'te açar.\r\n" +
             "     Kolon başlığına sağ tıklayarak veya Columns ile kolonları gizleyebilir ya da gösterebilirsiniz. Detail penceresi Esc ile kapanır.\r\n" +
-            "     Compliance Details, satırın RegEdit ile uyumlu olup olmadığını, değilse nedenini söyler. Başka bir satırla aynı anahtara veya değere dokunan satırlar sarı görünür.\r\n" +
+            "     Ctrl+F, Find kutusunu açar ve yalnızca görünen kolonlarında bu yazı geçen satırları gösterir. Esc kutuyu kapatır.\r\n" +
+            "     Details, satırın RegEdit ile uyumlu olup olmadığını, değilse nedenini söyler. Uyumsuz satırlarda Details kırmızı, başka bir satırla aynı anahtara veya değere dokunan satırlarda turuncu yazılır.\r\n" +
             "     Komutların ne işe yaradığı konusunda bilginiz yoksa lütfen çalıştırmayınız. Bilgisayarınızı çalışmaz hale getirebilir.\r\n\r\n" +
             "     This software is for batch checking and editing RegEdit records. It uses the reg commands you write in \"List.txt\". You can see the error information in the \"Log.txt\" file.\r\n" +
             "     Right-click rows to add them to or remove them from the Ignore List, which is kept in \"Ignore.txt\". Jump to RegEdit opens the key of a row in RegEdit.\r\n" +
             "     Right-click a column header or press Columns to hide or show columns. The Detail window closes with Esc.\r\n" +
-            "     Compliance Details tells whether a row matches RegEdit and, if not, why. Rows that change the same key or value as another line show in yellow.\r\n" +
+            "     Ctrl+F opens the Find box, which shows only the rows with that text in a shown column. Esc closes it.\r\n" +
+            "     Details tells whether a row matches RegEdit and, if not, why. Details is red for a row that does not match, and orange for a row that changes the same key or value as another line.\r\n" +
             "     If you do not know what the commands do, please do not run them. It can render your computer inoperable.";
 
         public static void ReadListFile()

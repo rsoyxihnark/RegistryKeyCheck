@@ -5,35 +5,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
-        Title="RegistryKey Check" MinHeight="700" MinWidth="1300" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="RegistryKey Check" MinHeight="700" MinWidth="1300" Background="{StaticResource WindowBrush}" FocusManager.FocusedElement="{Binding ElementName=DataGridRegCommands}" Loaded="Window_Loaded" Closing="Window_Closing">
+    <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.Find" CanExecute="Find_CanExecute" Executed="Find_Executed" />
+    </Window.CommandBindings>
     <Window.Resources>
         <local:BlankNullConverter x:Key="BlankNull" />
     </Window.Resources>
     <Grid>
         <TabControl>
-            <TabItem Header="RegistryKey Commands">
+            <TabItem x:Name="TabItemRegCommands" Header="RegistryKey Commands">
                 <Grid PreviewMouseLeftButtonDown="RegCommandsGrid_PreviewMouseLeftButtonDown">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="26" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="60" />
                     </Grid.RowDefinitions>
-                    <StackPanel x:Name="StackPanelFilters" Height="26" Orientation="Horizontal" Margin="1,0,0,0">
-                        <TextBox x:Name="TextBoxFilterUID" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegUID, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegUID, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterListCommand" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListCommand, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListCommand, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterFullPath" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegFullPath, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegFullPath, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterAvailableSubKey" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegAvailableSubKey, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegAvailableSubKey, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterListValueName" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueName, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListValueName, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterAvailableValueName" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegAvailableValueName, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegAvailableValueName, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterListValueType" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueType, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListValueType, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterRegEditValueType" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegRegEditValueType, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegRegEditValueType, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterListValueData" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListValueData, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListValueData, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterRegEditValueData" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegRegEditValueData, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegRegEditValueData, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterExecuteResult" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegExecuteResult, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterListMatchWithRegEdit" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegListMatchWithRegEdit, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegListMatchWithRegEdit, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
-                        <TextBox x:Name="TextBoxFilterComplianceDetails" Height="26" VerticalContentAlignment="Center" Width="{Binding ActualWidth, ElementName=dgColumnRegComplianceDetails, Mode=OneWay}" Visibility="{Binding Visibility, ElementName=dgColumnRegComplianceDetails, Mode=OneWay}" TextChanged="TextBoxFilter_TextChanged" />
+                    <StackPanel x:Name="PanelFind" Orientation="Horizontal" Margin="0,0,0,4" Visibility="Collapsed">
+                        <Label Content="Find" VerticalAlignment="Center" />
+                        <TextBox x:Name="TextBoxFind" Width="320" Height="24" VerticalContentAlignment="Center" TextChanged="TextBoxFind_TextChanged" PreviewKeyDown="TextBoxFind_PreviewKeyDown" />
                     </StackPanel>
-                    <DataGrid x:Name="DataGridRegCommands" RowHeaderWidth="0" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" ColumnReordered="DataGridRegCommands_ColumnReordered">
+                    <DataGrid x:Name="DataGridRegCommands" RowHeaderWidth="0" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
                         <DataGrid.Resources>
                             <ContextMenu x:Key="RowMenu">
                                 <MenuItem Header="Jump to RegEdit" Click="MenuJumpToRegEdit_Click" />
@@ -41,32 +33,9 @@
                                 <MenuItem Header="Add to Ignore List" Click="MenuAddToIgnoreList_Click" />
                                 <MenuItem Header="Remove from Ignore List" Click="MenuRemoveFromIgnoreList_Click" />
                             </ContextMenu>
-                            <Style TargetType="DataGridCell">
-                                <Style.Triggers>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="#706060FF" />
-                                        <Setter Property="Foreground" Value="#FF000000" />
-                                        <Setter Property="BorderThickness" Value="1" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
                         </DataGrid.Resources>
                         <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow">
-                                <Style.Triggers>
-                                    <DataTrigger Value="False" Binding="{Binding ListMatchWithRegEdit}">
-                                        <Setter Property="Background" Value="#FFD05050" />
-                                    </DataTrigger>
-                                    <DataTrigger Value="True" Binding="{Binding ListMatchWithRegEdit}">
-                                        <Setter Property="Background" Value="#FF50D050" />
-                                    </DataTrigger>
-                                    <DataTrigger Value="Ignored" Binding="{Binding ListMatchWithRegEdit}">
-                                        <Setter Property="Background" Value="#FFC8C8C8" />
-                                    </DataTrigger>
-                                    <DataTrigger Value="True" Binding="{Binding HasListWarning}">
-                                        <Setter Property="Background" Value="#FFF0D040" />
-                                    </DataTrigger>
-                                </Style.Triggers>
+                            <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                                 <Setter Property="ContextMenu" Value="{StaticResource RowMenu}" />
                                 <EventSetter Event="MouseDoubleClick" Handler="DataGridRegCommands_Row_MouseDoubleClick" />
                                 <EventSetter Event="PreviewMouseRightButtonDown" Handler="DataGridRegCommands_Row_PreviewMouseRightButtonDown" />
@@ -74,23 +43,36 @@
                         </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn x:Name="dgColumnRegUID" Header="UID" Width="40" Binding="{Binding ListId}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListCommand" Header="List Command" Width="95" Binding="{Binding ListCommand}" />
-                            <DataGridTextColumn x:Name="dgColumnRegFullPath" Header="Full Path" Width="315*" Binding="{Binding ListFullPath, Mode=OneWay}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListCommand" Header="List Command" Width="95" Visibility="Collapsed" Binding="{Binding ListCommand}" />
+                            <DataGridTextColumn x:Name="dgColumnRegFullPath" Header="Path" Width="315*" Binding="{Binding ListFullPath, Mode=OneWay}" />
                             <DataGridTextColumn x:Name="dgColumnRegAvailableSubKey" Header="SubKey Available?" Width="115" Visibility="Collapsed" Binding="{Binding AvailableSubKey}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="List Value Name" Width="130*" Binding="{Binding ListValueName, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="Value" Width="130*" Binding="{Binding ListValueName, Converter={StaticResource BlankNull}}" />
                             <DataGridTextColumn x:Name="dgColumnRegAvailableValueName" Header="Value Name Available?" Width="140" Visibility="Collapsed" Binding="{Binding AvailableValueName, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListValueType" Header="List Value Type" Width="100" Binding="{Binding ListValueType, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueType" Header="RegEdit Value Type" Width="120" Binding="{Binding RegEditValueType, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListValueData" Header="List Value Data" Width="125*" Binding="{Binding ListValueData, Converter={StaticResource BlankNull}}" />
-                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueData" Header="RegEdit Value Data" Width="125*" Binding="{Binding RegEditValueData, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueType" Header="List Value Type" Width="100" Visibility="Collapsed" Binding="{Binding ListValueType, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueType" Header="Registry Value Type" Width="125" Visibility="Collapsed" Binding="{Binding RegEditValueType, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueData" Header="Expected" Width="125*" Binding="{Binding ListValueData, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegRegEditValueData" Header="Actual" Width="125*" Binding="{Binding RegEditValueData, Converter={StaticResource BlankNull}}" />
                             <DataGridTextColumn x:Name="dgColumnRegExecuteResult" Header="Execute Result" Width="95" Visibility="Collapsed" Binding="{Binding ExecuteResult}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListMatchWithRegEdit" Header="List Match with RegEdit" Width="145" Visibility="Collapsed" Binding="{Binding ListMatchWithRegEdit}" />
-                            <DataGridTextColumn x:Name="dgColumnRegComplianceDetails" Header="Compliance Details" Width="210*" Binding="{Binding ComplianceDetails, Mode=OneWay}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListMatchWithRegEdit" Header="List Match with Registry" Width="150" Visibility="Collapsed" Binding="{Binding ListMatchWithRegEdit}" />
+                            <DataGridTextColumn x:Name="dgColumnRegComplianceDetails" Header="Details" Width="210*" Binding="{Binding ComplianceDetails, Mode=OneWay}">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{x:Static DataGridTextColumn.DefaultElementStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Value="False" Binding="{Binding ListMatchWithRegEdit}">
+                                                <Setter Property="Foreground" Value="{StaticResource RedBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Value="True" Binding="{Binding HasListWarning}">
+                                                <Setter Property="Foreground" Value="{StaticResource OrangeBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                     <Button x:Name="ButtonReadListFile" Grid.Row="2" Content="Read List.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,10,0" VerticalAlignment="Top" Width="160" Click="ButtonReadListFile_Click" />
                     <Button x:Name="ButtonQueryFromRegEdit" Grid.Row="2" Content="Query RegEdit" HorizontalAlignment="Right" Height="40" Margin="0,10,180,0" VerticalAlignment="Top" Width="160" Click="ButtonQueryFromRegEdit_Click" />
-                    <Button x:Name="ButtonExecuteMissingCommands" Background="#FFFFA500" Grid.Row="2" Content="Execute Missing Commands" HorizontalAlignment="Right" Height="40" Margin="0,10,350,0" VerticalAlignment="Top" Width="160" Click="ButtonExecuteMissingCommands_Click" />
+                    <Button x:Name="ButtonExecuteMissingCommands" Background="#FFFFA500" Foreground="#FF1B1F2B" Grid.Row="2" Content="Execute Missing Commands" HorizontalAlignment="Right" Height="40" Margin="0,10,350,0" VerticalAlignment="Top" Width="160" Click="ButtonExecuteMissingCommands_Click" />
                     <Button x:Name="ButtonOpenListFile" Grid.Row="2" Content="Open List.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,520,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenListFile_Click" />
                     <Button x:Name="ButtonOpenLogFile" Grid.Row="2" Content="Open Log.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,690,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenLogFile_Click" />
                     <Button x:Name="ButtonFilterFalses" VerticalContentAlignment="Top" Grid.Row="2" Content="Apply False Filter" HorizontalAlignment="Right" Height="21" Margin="0,8,860,0" VerticalAlignment="Top" Width="100" Click="ButtonFilterFalses_Click" />
@@ -104,7 +86,7 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Non RegistryKey Commands">
-                <DataGrid x:Name="DataGridNonRegCommands" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                <DataGrid x:Name="DataGridNonRegCommands" RowHeaderWidth="0" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="UID" Width="40" Binding="{Binding ListId}" />
                         <DataGridTextColumn Header="List Line String" Width="*" Binding="{Binding ListLineString}" />

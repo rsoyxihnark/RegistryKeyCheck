@@ -6,25 +6,26 @@
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
         x:Name="DetailWin"
-        Title="Detail" Height="470" Width="800" Loaded="DetailWin_Loaded" PreviewKeyDown="DetailWin_PreviewKeyDown">
+        Title="Detail" Height="470" Width="800" Background="{StaticResource WindowBrush}" Loaded="DetailWin_Loaded" PreviewKeyDown="DetailWin_PreviewKeyDown">
     <Grid>
         <Label Content="UID" Margin="10,10,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="List Command" Margin="10,40,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
-        <Label Content="Full Path" Margin="10,70,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Path" Margin="10,70,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="SubKey Available?" Margin="10,120,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
-        <Label Content="List Value Name" Margin="10,150,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Value" Margin="10,150,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="Value Name Available?" Margin="10,180,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="List Value Type" Margin="10,210,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
-        <Label Content="RegEdit Value Type" Margin="10,240,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
-        <Label Content="List Value Data" Margin="10,270,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
-        <Label Content="RegEdit Value Data" Margin="10,300,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Registry Value Type" Margin="10,240,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Expected" Margin="10,270,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Actual" Margin="10,300,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <Label Content="Execute Result" Margin="10,330,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
-        <Label Content="List Match with RegEdit" Margin="10,360,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
-        <Label Content="Compliance Details" Margin="10,390,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="List Match with Registry" Margin="10,360,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
+        <Label Content="Details" Margin="10,390,0,0" Height="20" Width="80" FontSize="8" HorizontalAlignment="Left" VerticalAlignment="Top" HorizontalContentAlignment="Right" />
         <TextBox x:Name="TextBoxUID" Margin="100,10,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -32,8 +33,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxListCommand" Margin="100,40,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -41,8 +43,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxListFullPath" Margin="100,70,0,0" Height="40" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -50,8 +53,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxAvailableSubKey" Margin="100,120,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -59,8 +63,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxListValueName" Margin="100,150,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -68,8 +73,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxAvailableValueName" Margin="100,180,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -77,8 +83,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxListValueType" Margin="100,210,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -86,8 +93,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxRegEditValueType" Margin="100,240,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -95,8 +103,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxListValueData" Margin="100,270,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -104,8 +113,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxRegEditValueData" Margin="100,300,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -113,8 +123,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxExecuteResult" Margin="100,330,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -122,8 +133,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxListMatchWithRegEdit" Margin="100,360,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>
@@ -131,8 +143,9 @@
         </TextBox>
         <TextBox x:Name="TextBoxComplianceDetails" Margin="100,390,0,0" Height="20" Width="680" HorizontalAlignment="Left" VerticalAlignment="Top">
             <TextBox.Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="IsReadOnly" Value="True" />
+                    <Setter Property="Background" Value="Transparent" />
                     <Setter Property="BorderThickness" Value="0" />
                     <Setter Property="TextWrapping" Value="Wrap" />
                 </Style>

@@ -114,14 +114,49 @@ jobs:
       - name: Open with List.txt beside the exe
         shell: powershell
         run: |
-          Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, PresentationCore, PresentationFramework, WindowsBase
+          Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, PresentationCore, PresentationFramework, WindowsBase, System.Windows.Forms
+          Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+          using System;
+          using System.Drawing;
+          using System.Drawing.Imaging;
+          using System.Runtime.InteropServices;
+          public static class WindowShot
+          {
+              [StructLayout(LayoutKind.Sequential)]
+              private struct Rect { public int Left, Top, Right, Bottom; }
+              [DllImport("user32.dll")]
+              private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
+              [DllImport("user32.dll")]
+              private static extern bool PrintWindow(IntPtr hwnd, IntPtr hdc, uint flags);
+              [DllImport("user32.dll")]
+              public static extern bool SetForegroundWindow(IntPtr hwnd);
+              public static void Save(IntPtr hwnd, string path)
+              {
+                  Rect r;
+                  GetWindowRect(hwnd, out r);
+                  using (Bitmap bitmap = new Bitmap(r.Right - r.Left, r.Bottom - r.Top))
+                  {
+                      using (Graphics graphics = Graphics.FromImage(bitmap))
+                      {
+                          IntPtr hdc = graphics.GetHdc();
+                          PrintWindow(hwnd, hdc, 2);
+                          graphics.ReleaseHdc(hdc);
+                      }
+                      bitmap.Save(path, ImageFormat.Png);
+                  }
+              }
+          }
+          '@
           $dir = Join-Path $env:RUNNER_TEMP 'smokelist'
+          $shots = Join-Path $env:RUNNER_TEMP 'screenshots'
           $key = 'HKCU:\Software\RegistryKeyCheckSmoke'
           New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          New-Item -ItemType Directory -Path $shots -Force | Out-Null
           Copy-Item 'dist\RegistryKeyCheck.exe' $dir
           New-Item -Path $key -Force | Out-Null
           New-ItemProperty -Path $key -Name 'Here' -Value '1' -PropertyType String -Force | Out-Null
           Set-Content -Path (Join-Path $dir 'List.txt') -Value @(
+            'reg add "HKCU\Software\RegistryKeyCheckSmoke" /v "Here" /t REG_SZ /d "1" /f',
             'reg add "HKCU\Software\RegistryKeyCheckSmoke" /v "Here" /t REG_SZ /d "1" /f',
             'reg add "HKCU\Software\RegistryKeyCheckSmoke" /v "Missing" /t REG_SZ /d "1" /f',
             'reg delete "HKCU\Software\RegistryKeyCheckSmoke\Gone" /f'
@@ -129,32 +164,47 @@ jobs:
           $auto = [System.Windows.Automation.AutomationElement]
           $scope = [System.Windows.Automation.TreeScope]
           $types = [System.Windows.Automation.ControlType]
+          function Find-Id([string]$id) { $window.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::AutomationIdProperty, $id))) }
+          function Read-Label([string]$word) {
+            $texts = @($window.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Text))) | ForEach-Object { $_.Current.Name })
+            @($texts | Where-Object { $_ -match "^$word \d+$" })[0]
+          }
+          function Wait-Until([scriptblock]$ok) {
+            $end = (Get-Date).AddSeconds(20)
+            while (-not (& $ok) -and (Get-Date) -lt $end) { Start-Sleep -Milliseconds 500 }
+            & $ok
+          }
+          function Save-Shot([string]$name) { [WindowShot]::Save([IntPtr]$window.Current.NativeWindowHandle, (Join-Path $shots "$name.png")) }
           $p = Start-Process -FilePath (Join-Path $dir 'RegistryKeyCheck.exe') -WorkingDirectory $dir -PassThru
           $deadline = (Get-Date).AddSeconds(90)
           $window = $null
           $shown = ''
           $total = ''
-          while (-not $p.HasExited -and (Get-Date) -lt $deadline -and -not ($shown -eq 'Shown 1' -and $total -eq 'Total 3')) {
+          while (-not $p.HasExited -and (Get-Date) -lt $deadline -and -not ($shown -eq 'Shown 1' -and $total -eq 'Total 4')) {
             Start-Sleep -Seconds 1
             if ($null -eq $window) {
               $window = $auto::RootElement.FindFirst($scope::Children, (New-Object System.Windows.Automation.PropertyCondition($auto::ProcessIdProperty, [int]$p.Id)))
             }
             if ($null -ne $window) {
-              $texts = @($window.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Text))) | ForEach-Object { $_.Current.Name })
-              $shown = @($texts | Where-Object { $_ -match '^Shown \d+$' })[0]
-              $total = @($texts | Where-Object { $_ -match '^Total \d+$' })[0]
+              $shown = Read-Label 'Shown'
+              $total = Read-Label 'Total'
             }
           }
-          $expected = @('UID', 'List Command', 'Full Path', 'List Value Name', 'List Value Type', 'RegEdit Value Type', 'List Value Data', 'RegEdit Value Data', 'Compliance Details')
+          $expected = @('UID', 'Path', 'Value', 'Expected', 'Actual', 'Details')
           $seen = @{}
+          $grid = $null
           if ($null -ne $window) {
-            foreach ($header in $window.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::HeaderItem)))) {
+            $grid = Find-Id 'DataGridRegCommands'
+          }
+          if ($null -ne $grid) {
+            foreach ($header in $grid.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::HeaderItem)))) {
               if (-not $header.Current.IsOffscreen -and $header.Current.Name -and -not $seen.ContainsKey($header.Current.Name)) {
                 $seen[$header.Current.Name] = $header.Current.BoundingRectangle.Width
               }
             }
           }
           $absent = @($expected | Where-Object { -not $seen.ContainsKey($_) })
+          $extra = @($seen.Keys | Where-Object { $expected -notcontains $_ })
           $cut = @()
           if ($seen.ContainsKey('UID')) {
             $scale = $seen['UID'] / 40
@@ -164,17 +214,53 @@ jobs:
               if ($seen[$name] / $scale -lt $text.Width + 12) { $cut += $name }
             }
           }
-          $listMatch = $seen.ContainsKey('List Match with RegEdit')
+          $started = -not $p.HasExited -and $shown -eq 'Shown 1' -and $total -eq 'Total 4'
+          $reset = $false
+          $found = $false
+          $closed = $false
+          if ($started) {
+            try {
+              Save-Shot 'start'
+              (Find-Id 'ButtonAllFiltersReset').GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+              $reset = Wait-Until { (Read-Label 'Shown') -eq 'Shown 4' }
+              Save-Shot 'all'
+              [WindowShot]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle) | Out-Null
+              $grid.SetFocus()
+              [System.Windows.Forms.SendKeys]::SendWait('^f')
+              if (Wait-Until { $null -ne (Find-Id 'TextBoxFind') }) {
+                (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue('Missing')
+                $found = Wait-Until { (Read-Label 'Shown') -eq 'Shown 1' }
+                Save-Shot 'find'
+                [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
+                $closed = Wait-Until { (Read-Label 'Shown') -eq 'Shown 4' -and $null -eq (Find-Id 'TextBoxFind') }
+              }
+            }
+            catch {
+              Write-Host "Driving the window failed: $_"
+            }
+          }
           $running = -not $p.HasExited
           if ($running) { Stop-Process -Id $p.Id -Force }
           $written = $null -ne (Get-ItemProperty -Path $key -Name 'Missing' -ErrorAction SilentlyContinue)
           Remove-Item -Path $key -Recurse -Force
-          Write-Host "running=$running, $shown, $total, headers: $(($seen.Keys | Sort-Object) -join ', ')"
-          if (-not ($running -and $shown -eq 'Shown 1' -and $total -eq 'Total 3')) { Write-Error 'RegistryKey Check did not read List.txt, run Query RegEdit and show only the False row at start'; exit 1 }
+          Write-Host "running=$running, $shown, $total, headers: $(($seen.Keys | Sort-Object) -join ', '), reset=$reset, found=$found, closed=$closed"
+          if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query RegEdit and show only the False row at start'; exit 1 }
           if ($absent.Count -gt 0 -or $cut.Count -gt 0) { Write-Error "Headers missing: $($absent -join ', '). Headers cut off: $($cut -join ', ')"; exit 1 }
-          if ($listMatch) { Write-Error 'The List Match with RegEdit column was shown at start'; exit 1 }
+          if ($extra.Count -gt 0) { Write-Error "Columns shown at start that should be hidden: $($extra -join ', ')"; exit 1 }
+          if (-not $reset) { Write-Error 'All Filters Reset did not show every row'; exit 1 }
+          if (-not $found) { Write-Error 'Ctrl+F did not open the Find box or the Find box did not show only the rows with that text'; exit 1 }
+          if (-not $closed) { Write-Error 'Esc did not close the Find box and show every row again'; exit 1 }
+          if (-not $running) { Write-Error 'RegistryKey Check closed by itself'; exit 1 }
           if ($written) { Write-Error 'Opening RegistryKey Check wrote a value from List.txt into the registry'; exit 1 }
-          Write-Host 'RegistryKey Check read List.txt, ran Query RegEdit and showed only the False row, with every header in full'
+          Write-Host 'RegistryKey Check read List.txt, showed only the False row with every header in full, and Ctrl+F found the row with that text'
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: ignore
 
       - name: Publish release
         if: steps.gate.outputs.publish == 'true'

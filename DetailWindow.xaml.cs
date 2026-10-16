@@ -7,6 +7,7 @@ namespace RegistryKey_Check
     {
         public DetailWindow()
         {
+            App.UseDarkTitleBar(this);
             InitializeComponent();
         }
 
