@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+- RegistryKey Check now needs the .NET 10 Desktop Runtime installed, and the exe is now under 1 MB instead of about 67 MB.
+
 ## 2.9.1
 
 - Fixed the list losing its sort order when you type in the Find box, press Compliant or Non-Compliant, or run Query Registry.
