@@ -66,22 +66,26 @@ namespace RegistryKey_Check
             bool listFound = File.Exists(filePathList);
             try
             {
+                if (File.Exists(filePathLog) && new FileInfo(filePathLog).Length == 0)
+                {
+                    File.Delete(filePathLog);
+                }
+            }
+            catch (Exception)
+            {
+            }
+            try
+            {
                 if (!File.Exists(filePathList))
                 {
                     using (StreamWriter swList = new StreamWriter(filePathList, append: true))
                     {
                     }
                 }
-                if (!File.Exists(filePathLog))
-                {
-                    using (StreamWriter swLog = new StreamWriter(filePathLog, append: true))
-                    {
-                    }
-                }
             }
             catch (Exception ex)
             {
-                ViewModels.WriteLog("List.txt or Log.txt could not be created beside RegistryKey Check. WindowLoaded", ex);
+                ViewModels.WriteLog("List.txt could not be created beside RegistryKey Check. WindowLoaded", ex);
             }
             try
             {

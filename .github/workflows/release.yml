@@ -103,12 +103,14 @@ jobs:
           Copy-Item 'dist\RegistryKeyCheck.exe' $dir
           $p = Start-Process -FilePath (Join-Path $dir 'RegistryKeyCheck.exe') -WorkingDirectory $dir -PassThru
           $deadline = (Get-Date).AddSeconds(90)
-          while (-not $p.HasExited -and (Get-Date) -lt $deadline -and -not ((Test-Path (Join-Path $dir 'List.txt')) -and (Test-Path (Join-Path $dir 'Log.txt')))) { Start-Sleep -Seconds 1 }
+          while (-not $p.HasExited -and (Get-Date) -lt $deadline -and -not (Test-Path (Join-Path $dir 'List.txt'))) { Start-Sleep -Seconds 1 }
           Start-Sleep -Seconds 5
           $running = -not $p.HasExited
           if ($running) { Stop-Process -Id $p.Id -Force }
-          $loaded = (Test-Path (Join-Path $dir 'List.txt')) -and (Test-Path (Join-Path $dir 'Log.txt'))
+          $loaded = Test-Path (Join-Path $dir 'List.txt')
+          $logMade = Test-Path (Join-Path $dir 'Log.txt')
           if (-not ($running -and $loaded)) { Write-Error "RegistryKey Check did not open its main window (running=$running, loaded=$loaded)"; exit 1 }
+          if ($logMade) { Write-Error 'RegistryKey Check made a Log.txt although nothing went wrong'; exit 1 }
           Write-Host 'RegistryKey Check started and opened its main window'
 
       - name: Open with List.txt beside the exe
@@ -153,6 +155,7 @@ jobs:
           New-Item -ItemType Directory -Path $dir -Force | Out-Null
           New-Item -ItemType Directory -Path $shots -Force | Out-Null
           Copy-Item 'dist\RegistryKeyCheck.exe' $dir
+          New-Item -ItemType File -Path (Join-Path $dir 'Log.txt') -Force | Out-Null
           New-Item -Path $key -Force | Out-Null
           New-ItemProperty -Path $key -Name 'Here' -Value '1' -PropertyType String -Force | Out-Null
           Set-Content -Path (Join-Path $dir 'List.txt') -Value @(
@@ -247,6 +250,7 @@ jobs:
           $running = -not $p.HasExited
           if ($running) { Stop-Process -Id $p.Id -Force }
           $written = $null -ne (Get-ItemProperty -Path $key -Name 'Missing' -ErrorAction SilentlyContinue)
+          $emptyLogKept = Test-Path (Join-Path $dir 'Log.txt')
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, $shown, $total, headers: $(($seen.Keys | Sort-Object) -join ', '), lit=$lit, unlit=$unlit, reset=$reset, found=$found, closed=$closed"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry and show only the False row at start'; exit 1 }
@@ -259,6 +263,7 @@ jobs:
           if (-not $closed) { Write-Error 'Esc did not close the Find box and show every row again'; exit 1 }
           if (-not $running) { Write-Error 'RegistryKey Check closed by itself'; exit 1 }
           if ($written) { Write-Error 'Opening RegistryKey Check wrote a value from List.txt into the registry'; exit 1 }
+          if ($emptyLogKept) { Write-Error 'RegistryKey Check kept an empty Log.txt or wrote one although nothing went wrong'; exit 1 }
           Write-Host 'RegistryKey Check read List.txt, showed only the False row with every header in full, and Ctrl+F found the row with that text'
 
       - name: Keep the screenshots

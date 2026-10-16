@@ -173,18 +173,20 @@ namespace RegistryKey_Check
                 }
             }
             Dictionary<ModelRegCommand, string> keys = rows.ToDictionary(mo => mo, KeyIdentity);
-            Dictionary<string, ModelRegCommand> values = new Dictionary<string, ModelRegCommand>(StringComparer.OrdinalIgnoreCase);
-            foreach (ModelRegCommand mo in rows.Where(mo => mo.ListValueName != "This_field_is_NULL"))
+            foreach (IGrouping<string, ModelRegCommand> value in rows.Where(mo => mo.ListValueName != "This_field_is_NULL").GroupBy(mo => keys[mo] + "\n" + mo.ListValueName, StringComparer.OrdinalIgnoreCase))
             {
-                string value = keys[mo] + "\n" + mo.ListValueName;
-                if (values.TryGetValue(value, out ModelRegCommand? first))
+                List<ModelRegCommand> same = value.ToList();
+                for (int i = 0; i < same.Count; i++)
                 {
-                    Warn(first, mo, "value");
-                    Warn(mo, first, "value");
-                }
-                else
-                {
-                    values[value] = mo;
+                    for (int j = i + 1; j < same.Count; j++)
+                    {
+                        if (same[i].ListCommand == "reg delete" && same[j].ListCommand == "reg add")
+                        {
+                            continue;
+                        }
+                        Warn(same[i], same[j], "value");
+                        Warn(same[j], same[i], "value");
+                    }
                 }
             }
             foreach (ModelRegCommand delete in rows.Where(mo => mo.ListCommand == "reg delete" && mo.ListValueName == "This_field_is_NULL"))
@@ -193,7 +195,7 @@ namespace RegistryKey_Check
                 string under = key + "\\";
                 foreach (ModelRegCommand mo in rows)
                 {
-                    if (mo == delete)
+                    if (mo == delete || (mo.ListCommand == "reg add" && mo.ListId > delete.ListId))
                     {
                         continue;
                     }
@@ -206,6 +208,93 @@ namespace RegistryKey_Check
                         Warn(delete, mo, "key");
                         Warn(mo, delete, "key");
                     }
+                }
+            }
+        }
+
+        private static List<ModelRegCommand> LaterWrites(ModelRegCommand reset, List<ModelRegCommand> rows, Dictionary<ModelRegCommand, string> keys)
+        {
+            string key = keys[reset];
+            return rows.Where(mo => mo.ListId > reset.ListId && mo.ListCommand == "reg add" && Rewrites(reset, key, mo, keys[mo])).ToList();
+        }
+
+        private static bool Rewrites(ModelRegCommand reset, string key, ModelRegCommand write, string writeKey)
+        {
+            bool sameKey = string.Equals(writeKey, key, StringComparison.OrdinalIgnoreCase);
+            if (reset.ListValueName != "This_field_is_NULL")
+            {
+                return sameKey && string.Equals(write.ListValueName, reset.ListValueName, StringComparison.OrdinalIgnoreCase);
+            }
+            if (reset.DeleteAllValues)
+            {
+                return sameKey && write.ListValueName != "This_field_is_NULL";
+            }
+            return sameKey || writeKey.StartsWith(key + "\\", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool HoldsOnlyLaterWrites(ModelRegCommand reset, List<ModelRegCommand> writes, Dictionary<ModelRegCommand, string> keys)
+        {
+            if (reset.ListValueName != "This_field_is_NULL")
+            {
+                return true;
+            }
+            using RegistryKey? key = RootKey(reset.ListBaseKey, reset.ListView)?.OpenSubKey(reset.ListSubKey);
+            return key == null || HoldsOnlyLaterWrites(key, keys[reset], writes, keys, !reset.DeleteAllValues);
+        }
+
+        private static bool HoldsOnlyLaterWrites(RegistryKey key, string path, List<ModelRegCommand> writes, Dictionary<ModelRegCommand, string> keys, bool subKeys)
+        {
+            HashSet<string> names = new HashSet<string>(writes.Where(mo => mo.ListValueName != "This_field_is_NULL" && string.Equals(keys[mo], path, StringComparison.OrdinalIgnoreCase)).Select(mo => mo.ListValueName), StringComparer.OrdinalIgnoreCase);
+            if (key.GetValueNames().Any(name => !names.Contains(name)))
+            {
+                return false;
+            }
+            if (!subKeys)
+            {
+                return true;
+            }
+            foreach (string name in key.GetSubKeyNames())
+            {
+                string child = path + "\\" + name;
+                if (!writes.Any(mo => string.Equals(keys[mo], child, StringComparison.OrdinalIgnoreCase) || keys[mo].StartsWith(child + "\\", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return false;
+                }
+                using RegistryKey? sub = key.OpenSubKey(name);
+                if (sub != null && !HoldsOnlyLaterWrites(sub, child, writes, keys, true))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static void MarkResets()
+        {
+            List<ModelRegCommand> rows = ObsColl_RegCommands.Where(mo => mo.ListMatchWithRegEdit != "Ignored").ToList();
+            Dictionary<ModelRegCommand, string> keys = rows.ToDictionary(mo => mo, KeyIdentity);
+            foreach (ModelRegCommand reset in rows.Where(mo => mo.ListCommand == "reg delete" && mo.ListMatchWithRegEdit == "False" && RootKey(mo.ListBaseKey) != null))
+            {
+                try
+                {
+                    List<ModelRegCommand> writes = LaterWrites(reset, rows, keys);
+                    if (writes.Count == 0)
+                    {
+                        continue;
+                    }
+                    if (HoldsOnlyLaterWrites(reset, writes, keys))
+                    {
+                        reset.ListMatchWithRegEdit = "True";
+                        reset.ComplianceReason = ComplianceReasonOf(reset);
+                    }
+                    else
+                    {
+                        reset.ComplianceReason = reset.DeleteAllValues ? "Key has values that no later line writes" : "Key has values or subkeys that no later line writes";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    WriteLog("MarkResets", ex);
                 }
             }
         }
@@ -620,6 +709,7 @@ namespace RegistryKey_Check
                     AppendLog(ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
                 }
             }
+            MarkResets();
         }
 
         private static string ComplianceReasonOf(ModelRegCommand mo)
@@ -700,12 +790,15 @@ namespace RegistryKey_Check
 
         public static async Task ExecuteMissingCommands()
         {
+            List<ModelRegCommand> rows = ObsColl_RegCommands.Where(mo => mo.ListMatchWithRegEdit != "Ignored").ToList();
+            Dictionary<ModelRegCommand, string> keys = rows.ToDictionary(mo => mo, KeyIdentity);
+            HashSet<ModelRegCommand> rewrites = new HashSet<ModelRegCommand>();
             foreach (ModelRegCommand mo in ObsColl_RegCommands)
             {
                 mo.ExecuteResult = string.Empty;
                 try
                 {
-                    if (mo.ListMatchWithRegEdit == "False")
+                    if (mo.ListMatchWithRegEdit == "False" || rewrites.Contains(mo))
                     {
                         if (RootKey(mo.ListBaseKey) == null)
                         {
@@ -796,6 +889,10 @@ namespace RegistryKey_Check
                             }
                         }
                         mo.ExecuteResult = "successful";
+                        if (mo.ListCommand == "reg delete")
+                        {
+                            rewrites.UnionWith(LaterWrites(mo, rows, keys).Where(write => write.ListMatchWithRegEdit == "True"));
+                        }
                     }
                 }
                 catch (Exception ex)

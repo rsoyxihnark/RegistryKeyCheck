@@ -484,20 +484,34 @@ try
         $"reg add \"{w}\\Three\" /v \"D\" /d \"1\" /f",
         $"reg add \"{w}\\Three\\Child\" /v \"E\" /d \"1\" /f",
         "reg add \"HKEY_CURRENT_USER\\Software\\RegistryKeyCheckTest\\W\\Four\" /v \"F\" /d \"1\" /f",
-        "reg add \"HKCU\\Software\\RegistryKeyCheckTest\\W\\Four\" /v \"F\" /d \"2\" /f"
+        "reg add \"HKCU\\Software\\RegistryKeyCheckTest\\W\\Four\" /v \"F\" /d \"2\" /f",
+        $"reg add \"{w}\\Five\" /v \"G\" /d \"1\" /f",
+        $"reg delete \"{w}\\Five\" /f",
+        $"reg add \"{w}\\Six\" /v \"H\" /d \"1\" /f",
+        $"reg delete \"{w}\\Six\" /v \"H\" /f",
+        $"reg delete \"{w}\\Seven\" /v \"I\" /f",
+        $"reg add \"{w}\\Seven\" /v \"I\" /d \"1\" /f",
+        $"reg add \"{w}\\Seven\" /v \"I\" /d \"2\" /f"
     };
     string[] warningsW =
     {
         "List syntax warning: line 2 also changes this value",
         "List syntax warning: line 1 also changes this value",
         "",
-        "List syntax warning: line 5 also changes this key",
-        "List syntax warning: line 4 also changes this key",
-        "List syntax warning: line 7 also changes this key",
-        "List syntax warning: line 6 also changes this key",
+        "",
+        "",
+        "",
+        "",
         "",
         "List syntax warning: line 10 also changes this value",
-        "List syntax warning: line 9 also changes this value"
+        "List syntax warning: line 9 also changes this value",
+        "List syntax warning: line 12 also changes this key",
+        "List syntax warning: line 11 also changes this key",
+        "List syntax warning: line 14 also changes this value",
+        "List syntax warning: line 13 also changes this value",
+        "",
+        "List syntax warning: line 17 also changes this value",
+        "List syntax warning: line 16 also changes this value"
     };
     Run(listW, Array.Empty<string>(), false);
     for (int i = 0; i < listW.Length; i++)
@@ -508,6 +522,52 @@ try
     Run(listW, new[] { listW[1] }, false);
     Check(!Detail(listW[0]).Contains("List syntax warning"), "Ignoring line 2 clears the warning of line 1: " + Detail(listW[0]));
     Check(Detail(listW[1]) == "On the Ignore List", "Details says " + Detail(listW[1]) + " for an ignored line");
+
+    string r = @"HKCU\Software\RegistryKeyCheckTest\R";
+    string rv = @"HKCU\Software\RegistryKeyCheckTest\RV";
+    void SeedReset(bool extra)
+    {
+        Registry.CurrentUser.DeleteSubKeyTree(TestKey + @"\R", false);
+        Registry.CurrentUser.DeleteSubKeyTree(TestKey + @"\RV", false);
+        using RegistryKey seed = Registry.CurrentUser.CreateSubKey(TestKey + @"\R");
+        seed.SetValue("A", "old");
+        using RegistryKey va = Registry.CurrentUser.CreateSubKey(TestKey + @"\RV");
+        va.SetValue("X", "old");
+        va.CreateSubKey("Keep").Dispose();
+        if (extra)
+        {
+            seed.SetValue("C", "extra");
+            seed.CreateSubKey("Old").Dispose();
+            va.SetValue("Y", "extra");
+        }
+    }
+    string[] listR =
+    {
+        $"reg delete \"{r}\" /f",
+        $"reg add \"{r}\" /v \"A\" /d \"new\" /f",
+        $"reg add \"{r}\\Sub\" /v \"B\" /d \"2\" /f",
+        $"reg delete \"{rv}\" /va /f",
+        $"reg add \"{rv}\" /v \"X\" /d \"new\" /f"
+    };
+    SeedReset(true);
+    Run(listR, Array.Empty<string>(), false);
+    Check(listR.All(line => !Detail(line).Contains("List syntax warning")), "Lines written after a reg delete that resets their key have no List syntax warning: " + string.Join(" | ", listR.Select(Detail)));
+    Check(Detail(listR[0]) == "Key has values or subkeys that no later line writes" && Detail(listR[3]) == "Key has values that no later line writes", "Details says " + Detail(listR[0]) + " and " + Detail(listR[3]) + " for keys that hold more than the later lines write");
+    List<(string Line, string Status, string Data, string Result)> rowsR = Run(listR, Array.Empty<string>(), true);
+    Check(rowsR.All(row => row.Status == "True"), "Resetting keys and writing them again leaves every line True: " + string.Join(" | ", rowsR.Select(row => row.Status + " " + row.Line)));
+    using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\R"))
+    using (RegistryKey? sub = Registry.CurrentUser.OpenSubKey(TestKey + @"\R\Sub"))
+    using (RegistryKey? va = Registry.CurrentUser.OpenSubKey(TestKey + @"\RV"))
+    {
+        Check((string?)key?.GetValue("A") == "new" && key?.GetValue("C") == null && key?.OpenSubKey("Old") == null && (string?)sub?.GetValue("B") == "2", "reg delete reset the key and the later lines wrote it again");
+        Check((string?)va?.GetValue("X") == "new" && va?.GetValue("Y") == null && va?.OpenSubKey("Keep") != null, "reg delete /va reset the values, kept the subkey, and the later line wrote X again");
+    }
+    rowsR = Run(listR, Array.Empty<string>(), true);
+    Check(rowsR.All(row => row.Status == "True" && row.Result.Length == 0), "Running Execute Missing Commands again changes nothing: " + string.Join(" | ", rowsR.Select(row => row.Status + " " + row.Result + " " + row.Line)));
+    Check(Detail(listR[0]) == "Compliant" && Detail(listR[3]) == "Compliant", "Details says " + Detail(listR[0]) + " and " + Detail(listR[3]) + " for the reset lines");
+    SeedReset(false);
+    rowsR = Run(listR, Array.Empty<string>(), true);
+    Check(rowsR[0].Result.Length == 0 && rowsR[1].Result == "successful" && rowsR.All(row => row.Status == "True"), "A key holding only what the later lines write is not reset again: " + string.Join(" | ", rowsR.Select(row => row.Status + " " + row.Result + " " + row.Line)));
 
     Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     Encoding ansi = Encoding.GetEncoding(0);

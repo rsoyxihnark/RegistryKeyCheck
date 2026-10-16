@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.8.1
+
+- Fixed a List syntax warning on lines that write into a key or value after an earlier reg delete line resets it.
+- Fixed a reg delete line that resets a key staying Non-Compliant after the lines below it wrote into that key.
+- Fixed Execute Missing Commands deleting values that later lines had written when it ran a reg delete line again.
+- Details now says Key has values or subkeys that no later line writes when a reset key holds anything else.
+- The All Filters Reset button is now taller and fills the space below it.
+- Log.txt is now made only when there is something to write in it.
+- An empty Log.txt left by an older version is removed when RegistryKey Check opens.
+
 ## 2.8.0
 
 - The Apply False Filter and Apply True Filter buttons are now called Non-Compliant and Compliant.
