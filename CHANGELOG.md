@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.8.2
+
+- Fixed a lone % in a List.txt line, such as in search?q=%s, being kept although a batch file drops it.
+- A %% in a List.txt line is now read as one %, so Expected shows one % and Execute Missing Commands writes one.
+- A variable such as %USERPROFILE% in a List.txt line is now filled in anywhere in the line, and one that is not set is left out.
+- A %1 to %9 or %* in a List.txt line is now left out, the same as in a batch file run without arguments.
+- %SystemRoot% in REG_EXPAND_SZ data is now filled in like a batch file does, so write %%SystemRoot%% to keep the variable.
+- ^%SystemRoot^% in a List.txt line is now read the way a batch file reads it, where ^ does not keep the variable.
+
 ## 2.8.1
 
 - Fixed a List syntax warning on lines that write into a key or value after an earlier reg delete line resets it.

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
@@ -92,7 +93,7 @@ namespace RegistryKey_Check
             foreach (string line in ReadTextLines("List.txt"))
             {
                 ListIds++;
-                List<string> args = SplitCommandLine(CmdUnescape(line.Trim()));
+                List<string> args = SplitCommandLine(CmdUnescape(BatchPercents(line.Trim())));
                 string program = args.Count >= 3 ? args[0].TrimStart('@') : string.Empty;
                 bool isReg = program.Equals("reg", StringComparison.OrdinalIgnoreCase) || program.Equals("reg.exe", StringComparison.OrdinalIgnoreCase) || program.EndsWith("\\System32\\reg.exe", StringComparison.OrdinalIgnoreCase) || program.EndsWith("\\Sysnative\\reg.exe", StringComparison.OrdinalIgnoreCase);
                 string command = isReg ? args[1].ToLowerInvariant() : string.Empty;
@@ -299,6 +300,114 @@ namespace RegistryKey_Check
             }
         }
 
+        private static readonly Regex BatchArgument = new Regex(@"\G(?:\*|[0-9]|~[fdpnxsatz]*(?:\$[^%:]*:)?[0-9])", RegexOptions.IgnoreCase);
+
+        private static readonly Regex BatchSubstring = new Regex(@"^~(-?[0-9]+)?(,(-?[0-9]+)?)?$");
+
+        private static string BatchPercents(string line)
+        {
+            StringBuilder text = new StringBuilder(line.Length);
+            int i = 0;
+            while (i < line.Length)
+            {
+                if (line[i] != '%')
+                {
+                    text.Append(line[i]);
+                    i++;
+                    continue;
+                }
+                if (i + 1 < line.Length && line[i + 1] == '%')
+                {
+                    text.Append('%');
+                    i += 2;
+                    continue;
+                }
+                Match argument = BatchArgument.Match(line, i + 1);
+                if (argument.Success)
+                {
+                    if (argument.Value.EndsWith('0'))
+                    {
+                        text.Append(line, i, argument.Length + 1);
+                    }
+                    i += argument.Length + 1;
+                    continue;
+                }
+                int stop = line.IndexOfAny(new[] { '%', ':' }, i + 1);
+                if (stop < 0)
+                {
+                    i++;
+                    continue;
+                }
+                if (line[stop] == ':' && stop + 1 < line.Length && line[stop + 1] == '%')
+                {
+                    stop++;
+                }
+                string name = line[(i + 1)..stop];
+                string? value = name.Length > 0 ? Environment.GetEnvironmentVariable(name) : null;
+                if (line[stop] == '%')
+                {
+                    text.Append(value);
+                    i = stop + 1;
+                    continue;
+                }
+                if (value == null)
+                {
+                    i = stop + 1;
+                    continue;
+                }
+                int close = line.IndexOf('%', stop + 1);
+                string? modified = close < 0 ? null : ModifyBatchValue(value, line[(stop + 1)..close]);
+                if (modified == null)
+                {
+                    i++;
+                    continue;
+                }
+                text.Append(modified);
+                i = close + 1;
+            }
+            return text.ToString();
+        }
+
+        private static string? ModifyBatchValue(string value, string modifier)
+        {
+            Match substring = BatchSubstring.Match(modifier);
+            if (substring.Success)
+            {
+                int begin = 0;
+                int count = 0;
+                if ((substring.Groups[1].Success && !int.TryParse(substring.Groups[1].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out begin)) || (substring.Groups[3].Success && !int.TryParse(substring.Groups[3].Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out count)))
+                {
+                    return null;
+                }
+                begin = begin < 0 ? Math.Max(value.Length + begin, 0) : Math.Min(begin, value.Length);
+                if (!substring.Groups[2].Success)
+                {
+                    return value[begin..];
+                }
+                int end = Math.Min(count < 0 ? value.Length + count : begin + count, value.Length);
+                return end > begin ? value[begin..end] : string.Empty;
+            }
+            int equals = modifier.IndexOf('=');
+            if (equals < 0)
+            {
+                return null;
+            }
+            string search = modifier[..equals];
+            string replacement = modifier[(equals + 1)..];
+            bool star = search.StartsWith('*');
+            string pattern = star ? search[1..] : search;
+            if (pattern.Length == 0)
+            {
+                return null;
+            }
+            if (!star)
+            {
+                return value.Replace(pattern, replacement, StringComparison.OrdinalIgnoreCase);
+            }
+            int found = value.IndexOf(pattern, StringComparison.OrdinalIgnoreCase);
+            return found < 0 ? value : replacement + value[(found + pattern.Length)..];
+        }
+
         private static string CmdUnescape(string line)
         {
             StringBuilder text = new StringBuilder(line.Length);
@@ -498,10 +607,6 @@ namespace RegistryKey_Check
             }
             modelRegCommand.ListValueType = valueType ?? "REG_SZ";
             modelRegCommand.ListValueData = valueData ?? (modelRegCommand.ListValueType == "REG_QWORD" ? "0" : string.Empty);
-            if (modelRegCommand.ListValueType is "REG_SZ" or "REG_MULTI_SZ" or "REG_NONE")
-            {
-                modelRegCommand.ListValueData = Environment.ExpandEnvironmentVariables(modelRegCommand.ListValueData);
-            }
             if (modelRegCommand.ListValueType == "REG_BINARY")
             {
                 if (modelRegCommand.ListValueData.Length % 2 == 0)

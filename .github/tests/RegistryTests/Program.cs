@@ -32,7 +32,10 @@ int RunProcess(string file, string arguments)
 
 int RunCmd(string line)
 {
-    return RunProcess("cmd.exe", "/c " + line);
+    Directory.CreateDirectory(work);
+    string batch = Path.Combine(work, "Line.cmd");
+    File.WriteAllText(batch, "@echo off\r\n" + line + "\r\nexit /b %errorlevel%\r\n");
+    return RunProcess("cmd.exe", "/c \"" + batch + "\"");
 }
 
 RegistryKey LocalMachine(RegistryView view)
@@ -114,6 +117,8 @@ try
     }
     string expCaret = $"reg add \"{a}\" /v \"ExpCaret\" /t REG_EXPAND_SZ /d ^%SystemRoot^%\\system32 /f";
     string defaultOnlyLine = $"reg add \"{a}\\DefaultOnly\" /t REG_DWORD /d 5 /f";
+    string expPercent = $"reg add \"{a}\" /v \"ExpPercent\" /t REG_EXPAND_SZ /d %%SystemRoot%%\\system32 /f";
+    string lonePercent = $"reg add \"{a}\" /v \"Lone\" /d \"https://google.com/search?q=%s\" /f";
     string[] regExe =
     {
         $"reg add \"{a}\" /v \"KucukbuyuK\" /t REG_SZ /d \"test\" /f",
@@ -143,7 +148,14 @@ try
         $"reg add \"{a}\" /v \"MSlash\" /t REG_MULTI_SZ /s \"#\" /d \"two\\0#strings\" /f",
         $"reg add \"{a}\" /v \"MOnlySep\" /t REG_MULTI_SZ /d \"\\0\" /f",
         expCaret,
-        $"reg add \"{a}\" /v \"SzVar\" /d \"%SystemRoot%\\x\" /f"
+        $"reg add \"{a}\" /v \"SzVar\" /d \"%SystemRoot%\\x\" /f",
+        expPercent,
+        lonePercent,
+        $"reg add \"{a}\" /v \"Twice\" /d \"100%%\" /f",
+        $"reg add \"{a}\" /v \"Unset\" /d \"a%RegistryKeyCheckUnset%b\" /f",
+        $"reg add \"{a}\" /v \"Args\" /d \"x%1%*y\" /f",
+        $"reg add \"{a}\" /v \"Cut\" /d \"%SystemRoot:~0,2%\" /f",
+        $"reg add \"{a}\" /v \"Swap\" /d \"%SystemRoot:Windows=Win%\" /f"
     };
     foreach (string line in regExe)
     {
@@ -161,8 +173,10 @@ try
         Check(key.GetValue("MEmpty") is string[] mEmpty && mEmpty.Length == 0, "reg.exe wrote empty REG_MULTI_SZ data as no strings");
         Check(key.GetValue("MSlash") is string[] mSlash && mSlash.SequenceEqual(new[] { @"two\0", "strings" }), @"reg.exe split two\0#strings with /s # into two\0 and strings");
         Check(key.GetValue("MOnlySep") is string[] mOnlySep && mOnlySep.SequenceEqual(new[] { string.Empty }), @"reg.exe wrote REG_MULTI_SZ \0 as one empty string");
-        Check((string?)key.GetValue("ExpCaret", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == @"%SystemRoot%\system32", "reg.exe run from cmd kept %SystemRoot% in ExpCaret written as ^%SystemRoot^%");
-        Check((string?)key.GetValue("SzVar") == Environment.ExpandEnvironmentVariables(@"%SystemRoot%\x"), "reg.exe run from cmd filled in %SystemRoot% in SzVar: " + key.GetValue("SzVar"));
+        Check((string?)key.GetValue("ExpPercent", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == @"%SystemRoot%\system32", "reg.exe run from a batch file kept %SystemRoot% in ExpPercent written as %%SystemRoot%%");
+        Check((string?)key.GetValue("SzVar") == Environment.ExpandEnvironmentVariables(@"%SystemRoot%\x"), "reg.exe run from a batch file filled in %SystemRoot% in SzVar: " + key.GetValue("SzVar"));
+        Check((string?)key.GetValue("Lone") == "https://google.com/search?q=s", "reg.exe run from a batch file dropped the lone % of search?q=%s: " + key.GetValue("Lone"));
+        Check((string?)key.GetValue("Twice") == "100%" && (string?)key.GetValue("Unset") == "ab" && (string?)key.GetValue("Args") == "xy", "reg.exe run from a batch file read %%, an unset variable and %1 %* as " + key.GetValue("Twice") + " " + key.GetValue("Unset") + " " + key.GetValue("Args"));
     }
     using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\A\DefaultOnly"))
     {
@@ -202,7 +216,8 @@ try
         Check(status == "True", "Query Registry says " + status + " for " + line + " [" + data + "]");
         Check(Detail(line).EndsWith("Compliant"), "Details says " + Detail(line) + " for " + line);
     }
-    Check(Field(expCaret, "ListValueData") == @"%SystemRoot%\system32" && Field(expCaret, "RegEditValueData") == @"%SystemRoot%\system32", "Expected and Actual show REG_EXPAND_SZ as written: " + Field(expCaret, "ListValueData") + " | " + Field(expCaret, "RegEditValueData"));
+    Check(Field(expPercent, "ListValueData") == @"%SystemRoot%\system32" && Field(expPercent, "RegEditValueData") == @"%SystemRoot%\system32", "Expected and Actual show REG_EXPAND_SZ written as %%SystemRoot%% with the variable kept: " + Field(expPercent, "ListValueData") + " | " + Field(expPercent, "RegEditValueData"));
+    Check(Field(lonePercent, "ListValueData") == "https://google.com/search?q=s", "Expected drops the lone % of search?q=%s like a batch file: " + Field(lonePercent, "ListValueData"));
     Check(Field(defaultOnlyLine, "RegEditValueData") == "0x00000005 (5)", "A line with /t and /d but no /v checks the (Default) value: " + Field(defaultOnlyLine, "RegEditValueData"));
 
     string[] listU = { "rem first line", $"reg add \"{a}\" /v \"Attr\" /t REG_DWORD /d \"0xb0940064\" /f", "", $"reg delete \"{a}\\OnlyKey\" /f" };
@@ -230,7 +245,7 @@ try
         $"reg add \"{b}\" /v \"Bin\" /t REG_BINARY /d 0a0b /f",
         $"reg add \"{b}\" /v \"M\" /t REG_MULTI_SZ /d \"a\\0b\" /f",
         $"reg add \"{b}\\command\" /ve /d \"regedit.exe \"%1\"\" /f",
-        $"reg add \"{b}\" /v \"ExpRaw\" /t REG_EXPAND_SZ /d \"%SystemRoot%\\system32\" /f",
+        $"reg add \"{b}\" /v \"ExpRaw\" /t REG_EXPAND_SZ /d \"%%SystemRoot%%\\system32\" /f",
         $"reg add \"{b}\" /v \"MS\" /t REG_MULTI_SZ /s \",\" /d \"a,b\" /f",
         $"reg add \"{b}\" /v \"None\" /t REG_NONE /d \"deadbeef\" /f",
         $"reg delete \"{b}\" /v \"DELVAL\" /f",
@@ -277,7 +292,7 @@ try
         Check(key.GetValue("DelVal") == null, "DELVAL deleted DelVal");
         Check(key.OpenSubKey("Sub") == null, "Sub key was deleted");
         Check(key.GetValue("Ignored") == null, "Ignored row was not executed");
-        Check((string?)key.GetValue("ExpRaw", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == @"%SystemRoot%\system32", "REG_EXPAND_SZ was written with %SystemRoot% kept");
+        Check((string?)key.GetValue("ExpRaw", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == @"%SystemRoot%\system32", "REG_EXPAND_SZ written as %%SystemRoot%% was written with %SystemRoot% kept");
         Check(((string[])key.GetValue("MS")!).SequenceEqual(new[] { "a", "b" }), "REG_MULTI_SZ a,b with /s was written as a and b");
         using RegistryKey regExeKey = Registry.CurrentUser.OpenSubKey(TestKey + @"\A")!;
         Check(((byte[])key.GetValue("None")!).SequenceEqual((byte[])regExeKey.GetValue("None")!), "REG_NONE was written the same as reg.exe: " + Convert.ToHexString((byte[])regExeKey.GetValue("None")!));
@@ -286,8 +301,8 @@ try
         {
             Check(key.GetValue(name) is string[] written && regExeKey.GetValue(name) is string[] fromRegExe && written.SequenceEqual(fromRegExe), "REG_MULTI_SZ " + name + " was written the same as reg.exe");
         }
-        Check((string?)key.GetValue("ExpCaret", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == @"%SystemRoot%\system32", "REG_EXPAND_SZ written as ^%SystemRoot^% was written with %SystemRoot% kept");
-        Check((string?)key.GetValue("SzVar") == (string?)regExeKey.GetValue("SzVar"), "REG_SZ with %SystemRoot% was written the same as reg.exe run from cmd: " + key.GetValue("SzVar"));
+        Check((string?)key.GetValue("ExpCaret", null, RegistryValueOptions.DoNotExpandEnvironmentNames) == (string?)regExeKey.GetValue("ExpCaret", null, RegistryValueOptions.DoNotExpandEnvironmentNames), "REG_EXPAND_SZ written as ^%SystemRoot^% was written the same as reg.exe run from a batch file: " + key.GetValue("ExpCaret", null, RegistryValueOptions.DoNotExpandEnvironmentNames));
+        Check((string?)key.GetValue("SzVar") == (string?)regExeKey.GetValue("SzVar"), "REG_SZ with %SystemRoot% was written the same as reg.exe run from a batch file: " + key.GetValue("SzVar"));
     }
     using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\B\DefaultData"))
     {
