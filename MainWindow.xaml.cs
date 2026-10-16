@@ -28,6 +28,8 @@ namespace RegistryKey_Check
         {
             App.UseDarkTitleBar(this);
             InitializeComponent();
+            DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands;
+            DataGridNonRegCommands.ItemsSource = ViewModels.ObsColl_Non_RegCommands;
             columnTexts = new Dictionary<DataGridColumn, Func<ModelRegCommand, string>>
             {
                 [dgColumnRegUID] = s => s.ListId.ToString(),
@@ -235,8 +237,6 @@ namespace RegistryKey_Check
             {
                 ViewModels.WriteLog("ReadListFile", ex);
             }
-            DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands;
-            DataGridNonRegCommands.ItemsSource = ViewModels.ObsColl_Non_RegCommands;
             UpdateCounts();
             ButtonsEnable();
         }
@@ -314,7 +314,6 @@ namespace RegistryKey_Check
                 ViewModels.QueryFromRegEdit();
             });
             FilterObsColl_RegCommands();
-            DataGridRegCommands.Items.Refresh();
             ButtonsEnable();
         }
 
@@ -337,9 +336,9 @@ namespace RegistryKey_Check
             bool compliant = ButtonFilterTrues.IsChecked == true;
             bool nonCompliant = ButtonFilterFalses.IsChecked == true;
             List<Func<ModelRegCommand, string>> shownTexts = columnTexts.Where(p => p.Key.Visibility == Visibility.Visible).Select(p => p.Value).ToList();
-            DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands.Where((ModelRegCommand s) =>
-                ((!compliant && !nonCompliant) || (compliant && s.ListMatchWithRegEdit == "True") || (nonCompliant && s.ListMatchWithRegEdit == "False"))
-                && (find.Length == 0 || shownTexts.Any(text => text(s).Contains(find, StringComparison.OrdinalIgnoreCase))));
+            DataGridRegCommands.Items.Filter = item => item is ModelRegCommand s
+                && ((!compliant && !nonCompliant) || (compliant && s.ListMatchWithRegEdit == "True") || (nonCompliant && s.ListMatchWithRegEdit == "False"))
+                && (find.Length == 0 || shownTexts.Any(text => text(s).Contains(find, StringComparison.OrdinalIgnoreCase)));
             UpdateCounts();
         }
 
@@ -384,7 +383,6 @@ namespace RegistryKey_Check
                     ViewModels.QueryFromRegEdit();
                 });
                 FilterObsColl_RegCommands();
-                DataGridRegCommands.Items.Refresh();
             }
             ButtonsEnable();
         }

@@ -182,6 +182,7 @@ jobs:
           function Read-Toggle([string]$id) { (Find-Id $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState.ToString() }
           function Flip([string]$id) { (Find-Id $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle() }
           function Find-Focused { (Find-Id 'TextBoxFind').Current.HasKeyboardFocus }
+          function Read-FirstUid { $grid.GetCurrentPattern([System.Windows.Automation.GridPattern]::Pattern).GetItem(0, 0).GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value }
           function Save-Shot([string]$name) { [WindowShot]::Save([IntPtr]$window.Current.NativeWindowHandle, (Join-Path $shots "$name.png")) }
           $p = Start-Process -FilePath (Join-Path $dir 'RegistryKeyCheck.exe') -WorkingDirectory $dir -PassThru
           $deadline = (Get-Date).AddSeconds(90)
@@ -232,6 +233,8 @@ jobs:
           $ctrlF = $false
           $found = $false
           $cleared = $false
+          $sortedDown = $false
+          $sortKept = $false
           if ($started) {
             try {
               [WindowShot]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle) | Out-Null
@@ -256,6 +259,13 @@ jobs:
               Save-Shot 'find'
               [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
               $cleared = Wait-Until { (Count-Rows) -eq 4 -and (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -eq '' }
+              $uid = @($grid.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::HeaderItem))) | Where-Object { $_.Current.Name -eq 'UID' })[0]
+              $uid.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+              $uid.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+              $sortedDown = Wait-Until { (Count-Rows) -eq 4 -and (Read-FirstUid) -eq '4' }
+              (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue('Here')
+              $sortKept = Wait-Until { (Count-Rows) -eq 2 -and (Read-FirstUid) -eq '2' }
+              Save-Shot 'sorted'
             }
             catch {
               Write-Host "Driving the window failed: $_"
@@ -266,7 +276,7 @@ jobs:
           $written = $null -ne (Get-ItemProperty -Path $key -Name 'Missing' -ErrorAction SilentlyContinue)
           $emptyKept = @('Log.txt', 'Ignore.txt' | Where-Object { Test-Path (Join-Path $dir $_) })
           Remove-Item -Path $key -Recurse -Force
-          Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, both=$both, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared"
+          Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, both=$both, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, sortedDown=$sortedDown, sortKept=$sortKept"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           if ($absent.Count -gt 0 -or $cut.Count -gt 0) { Write-Error "Headers missing: $($absent -join ', '). Headers cut off: $($cut -join ', ')"; exit 1 }
           if ($extra.Count -gt 0) { Write-Error "Columns shown at start that should be hidden: $($extra -join ', ')"; exit 1 }
@@ -279,10 +289,12 @@ jobs:
           if (-not $ctrlF) { Write-Error 'Ctrl+F did not put the keyboard focus in the Find box'; exit 1 }
           if (-not $found) { Write-Error 'The Find box did not show only the rows with that text'; exit 1 }
           if (-not $cleared) { Write-Error 'Esc did not clear the Find box, keep it open and show every row again'; exit 1 }
+          if (-not $sortedDown) { Write-Error 'Clicking the UID header twice did not sort the rows from the last line up'; exit 1 }
+          if (-not $sortKept) { Write-Error 'Typing in the Find box lost the sort order of the rows'; exit 1 }
           if (-not $running) { Write-Error 'RegistryKey Check closed by itself'; exit 1 }
           if ($written) { Write-Error 'Opening RegistryKey Check wrote a value from List.txt into the registry'; exit 1 }
           if ($emptyKept.Count -gt 0) { Write-Error "RegistryKey Check kept or made an empty file although nothing went wrong: $($emptyKept -join ', ')"; exit 1 }
-          Write-Host 'RegistryKey Check read List.txt, counted the lines, showed only the False row with every header in full, let both filters be on together, and the Find box found the row with that text'
+          Write-Host 'RegistryKey Check read List.txt, counted the lines, showed only the False row with every header in full, let both filters be on together, the Find box found the row with that text and kept the sort order'
 
       - name: Keep the screenshots
         if: always()

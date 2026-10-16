@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.1
+
+- Fixed the list losing its sort order when you type in the Find box, press Compliant or Non-Compliant, or run Query Registry.
+
 ## 2.9.0
 
 - The Compliant and Non-Compliant buttons can now both be on at once, showing the rows of both.
