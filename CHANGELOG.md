@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.7.0
 
 - RegistryKey Check, the Detail window and the Help window now have a dark look.
 - Rows in the list are no longer colored red, green, grey or yellow.
