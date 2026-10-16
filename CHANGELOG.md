@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.7.1
+
+- Details text is now green for a row that matches.
+- The Query RegEdit button is now called Query Registry.
+- Details now says Registry instead of RegEdit, such as Key not found in Registry.
+- The Help window now says Registry instead of RegEdit and explains the green Details text.
+- Log.txt now says Registry instead of RegEdit for a base key or value type that the Registry does not have.
+
 ## 2.7.0
 
 - RegistryKey Check, the Detail window and the Help window now have a dark look.

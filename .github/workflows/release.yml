@@ -244,7 +244,7 @@ jobs:
           $written = $null -ne (Get-ItemProperty -Path $key -Name 'Missing' -ErrorAction SilentlyContinue)
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, $shown, $total, headers: $(($seen.Keys | Sort-Object) -join ', '), reset=$reset, found=$found, closed=$closed"
-          if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query RegEdit and show only the False row at start'; exit 1 }
+          if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry and show only the False row at start'; exit 1 }
           if ($absent.Count -gt 0 -or $cut.Count -gt 0) { Write-Error "Headers missing: $($absent -join ', '). Headers cut off: $($cut -join ', ')"; exit 1 }
           if ($extra.Count -gt 0) { Write-Error "Columns shown at start that should be hidden: $($extra -join ', ')"; exit 1 }
           if (-not $reset) { Write-Error 'All Filters Reset did not show every row'; exit 1 }

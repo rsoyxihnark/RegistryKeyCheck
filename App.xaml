@@ -20,6 +20,7 @@
         <SolidColorBrush x:Key="SelectionBrush" Color="#FF2F4B7C" />
         <SolidColorBrush x:Key="ThumbBrush" Color="#FF4A5468" />
         <SolidColorBrush x:Key="ThumbHoverBrush" Color="#FF5D6880" />
+        <SolidColorBrush x:Key="GreenBrush" Color="#FF5BC98C" />
         <SolidColorBrush x:Key="RedBrush" Color="#FFF06464" />
         <SolidColorBrush x:Key="OrangeBrush" Color="#FFF5A142" />
         <SolidColorBrush x:Key="{x:Static DataGrid.FocusBorderBrushKey}" Color="#FF4A8CF7" />

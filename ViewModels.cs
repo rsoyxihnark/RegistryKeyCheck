@@ -86,17 +86,19 @@ namespace RegistryKey_Check
         public static string HelpString { get; set; } =
             "RegistryKey Check\r\n" +
             "Version " + Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) + "\r\n\r\n" +
-            "     Bu yazılım RegEdit kayıtlarını toplu olarak kontrol edip düzenlemek içindir. \"List.txt\" içerisine yazacağınız reg komutlarını kullanır. Hata bilgilerini \"Log.txt\" dosyasında görebilirsiniz.\r\n" +
+            "     Bu yazılım Registry kayıtlarını toplu olarak kontrol edip düzenlemek içindir. \"List.txt\" içerisine yazacağınız reg komutlarını kullanır. Hata bilgilerini \"Log.txt\" dosyasında görebilirsiniz.\r\n" +
             "     Satırlara sağ tıklayarak onları Ignore List'e ekleyebilir veya listeden çıkarabilirsiniz. Bu liste \"Ignore.txt\" dosyasında tutulur. Jump to RegEdit, satırın anahtarını RegEdit'te açar.\r\n" +
             "     Kolon başlığına sağ tıklayarak veya Columns ile kolonları gizleyebilir ya da gösterebilirsiniz. Detail penceresi Esc ile kapanır.\r\n" +
             "     Ctrl+F, Find kutusunu açar ve yalnızca görünen kolonlarında bu yazı geçen satırları gösterir. Esc kutuyu kapatır.\r\n" +
-            "     Details, satırın RegEdit ile uyumlu olup olmadığını, değilse nedenini söyler. Uyumsuz satırlarda Details kırmızı, başka bir satırla aynı anahtara veya değere dokunan satırlarda turuncu yazılır.\r\n" +
+            "     Details, satırın Registry ile uyumlu olup olmadığını, değilse nedenini söyler. Details uyumlu satırlarda yeşil, uyumsuz satırlarda kırmızı yazılır.\r\n" +
+            "     Başka bir satırla aynı anahtara veya değere dokunan satırlarda Details turuncu yazılır.\r\n" +
             "     Komutların ne işe yaradığı konusunda bilginiz yoksa lütfen çalıştırmayınız. Bilgisayarınızı çalışmaz hale getirebilir.\r\n\r\n" +
-            "     This software is for batch checking and editing RegEdit records. It uses the reg commands you write in \"List.txt\". You can see the error information in the \"Log.txt\" file.\r\n" +
+            "     This software is for batch checking and editing Registry records. It uses the reg commands you write in \"List.txt\". You can see the error information in the \"Log.txt\" file.\r\n" +
             "     Right-click rows to add them to or remove them from the Ignore List, which is kept in \"Ignore.txt\". Jump to RegEdit opens the key of a row in RegEdit.\r\n" +
             "     Right-click a column header or press Columns to hide or show columns. The Detail window closes with Esc.\r\n" +
             "     Ctrl+F opens the Find box, which shows only the rows with that text in a shown column. Esc closes it.\r\n" +
-            "     Details tells whether a row matches RegEdit and, if not, why. Details is red for a row that does not match, and orange for a row that changes the same key or value as another line.\r\n" +
+            "     Details tells whether a row matches the Registry and, if not, why. Details is green for a row that matches and red for a row that does not.\r\n" +
+            "     Details is orange for a row that changes the same key or value as another line.\r\n" +
             "     If you do not know what the commands do, please do not run them. It can render your computer inoperable.";
 
         public static void ReadListFile()
@@ -651,17 +653,17 @@ namespace RegistryKey_Check
             }
             if (RootKey(mo.ListBaseKey) == null)
             {
-                return "Base key is not one RegEdit has";
+                return "Base key is not one the Registry has";
             }
             if (mo.ListCommand == "reg add")
             {
                 if (mo.AvailableSubKey != "It's Available")
                 {
-                    return "Key not found in RegEdit";
+                    return "Key not found in Registry";
                 }
                 if (mo.AvailableValueName != "It's Available")
                 {
-                    return "Value not found in RegEdit";
+                    return "Value not found in Registry";
                 }
                 if (mo.RegEditValueType != mo.ListValueType)
                 {
@@ -671,9 +673,9 @@ namespace RegistryKey_Check
             }
             if (mo.ListValueName != "This_field_is_NULL")
             {
-                return "Value still exists in RegEdit";
+                return "Value still exists in Registry";
             }
-            return mo.DeleteAllValues ? "Key still has values in RegEdit" : "Key still exists in RegEdit";
+            return mo.DeleteAllValues ? "Key still has values in Registry" : "Key still exists in Registry";
         }
 
         private static RegistryKey? RootKey(string listBasekey, RegistryView view = RegistryView.Default)
@@ -726,7 +728,7 @@ namespace RegistryKey_Check
                     {
                         if (RootKey(mo.ListBaseKey) == null)
                         {
-                            throw new InvalidOperationException("\"" + mo.ListBaseKey + "\" is not a base key RegEdit has.");
+                            throw new InvalidOperationException("\"" + mo.ListBaseKey + "\" is not a base key the Registry has.");
                         }
                         if (mo.ListCommand == "reg delete" && mo.DeleteAllValues)
                         {
@@ -769,7 +771,7 @@ namespace RegistryKey_Check
                         {
                             if (!valueTypes.Contains(mo.ListValueType))
                             {
-                                throw new InvalidOperationException("\"" + mo.ListValueType + "\" is not a value type RegEdit has.");
+                                throw new InvalidOperationException("\"" + mo.ListValueType + "\" is not a value type the Registry has.");
                             }
                             await Task.Run(() =>
                             {

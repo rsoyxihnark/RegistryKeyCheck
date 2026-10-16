@@ -58,6 +58,9 @@
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{x:Static DataGridTextColumn.DefaultElementStyle}">
                                         <Style.Triggers>
+                                            <DataTrigger Value="True" Binding="{Binding ListMatchWithRegEdit}">
+                                                <Setter Property="Foreground" Value="{StaticResource GreenBrush}" />
+                                            </DataTrigger>
                                             <DataTrigger Value="False" Binding="{Binding ListMatchWithRegEdit}">
                                                 <Setter Property="Foreground" Value="{StaticResource RedBrush}" />
                                             </DataTrigger>
@@ -71,7 +74,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                     <Button x:Name="ButtonReadListFile" Grid.Row="2" Content="Read List.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,10,0" VerticalAlignment="Top" Width="160" Click="ButtonReadListFile_Click" />
-                    <Button x:Name="ButtonQueryFromRegEdit" Grid.Row="2" Content="Query RegEdit" HorizontalAlignment="Right" Height="40" Margin="0,10,180,0" VerticalAlignment="Top" Width="160" Click="ButtonQueryFromRegEdit_Click" />
+                    <Button x:Name="ButtonQueryFromRegEdit" Grid.Row="2" Content="Query Registry" HorizontalAlignment="Right" Height="40" Margin="0,10,180,0" VerticalAlignment="Top" Width="160" Click="ButtonQueryFromRegEdit_Click" />
                     <Button x:Name="ButtonExecuteMissingCommands" Background="#FFFFA500" Foreground="#FF1B1F2B" Grid.Row="2" Content="Execute Missing Commands" HorizontalAlignment="Right" Height="40" Margin="0,10,350,0" VerticalAlignment="Top" Width="160" Click="ButtonExecuteMissingCommands_Click" />
                     <Button x:Name="ButtonOpenListFile" Grid.Row="2" Content="Open List.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,520,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenListFile_Click" />
                     <Button x:Name="ButtonOpenLogFile" Grid.Row="2" Content="Open Log.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,690,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenLogFile_Click" />

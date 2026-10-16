@@ -199,10 +199,10 @@ try
     }).ToArray();
     foreach ((string line, string status, string data, string result) in Run(listA, Array.Empty<string>(), false))
     {
-        Check(status == "True", "Query RegEdit says " + status + " for " + line + " [" + data + "]");
-        Check(Detail(line).EndsWith("Compliant"), "Compliance Details says " + Detail(line) + " for " + line);
+        Check(status == "True", "Query Registry says " + status + " for " + line + " [" + data + "]");
+        Check(Detail(line).EndsWith("Compliant"), "Details says " + Detail(line) + " for " + line);
     }
-    Check(Field(expCaret, "ListValueData") == @"%SystemRoot%\system32" && Field(expCaret, "RegEditValueData") == @"%SystemRoot%\system32", "List Value Data and RegEdit Value Data show REG_EXPAND_SZ as written: " + Field(expCaret, "ListValueData") + " | " + Field(expCaret, "RegEditValueData"));
+    Check(Field(expCaret, "ListValueData") == @"%SystemRoot%\system32" && Field(expCaret, "RegEditValueData") == @"%SystemRoot%\system32", "Expected and Actual show REG_EXPAND_SZ as written: " + Field(expCaret, "ListValueData") + " | " + Field(expCaret, "RegEditValueData"));
     Check(Field(defaultOnlyLine, "RegEditValueData") == "0x00000005 (5)", "A line with /t and /d but no /v checks the (Default) value: " + Field(defaultOnlyLine, "RegEditValueData"));
 
     string[] listU = { "rem first line", $"reg add \"{a}\" /v \"Attr\" /t REG_DWORD /d \"0xb0940064\" /f", "", $"reg delete \"{a}\\OnlyKey\" /f" };
@@ -247,9 +247,9 @@ try
     Dictionary<string, string> detailsB = new Dictionary<string, string>
     {
         [listB[0]] = "Value data differs",
-        [listB[1]] = "Value not found in RegEdit",
-        [listB[9]] = "Value still exists in RegEdit",
-        [listB[10]] = "Key still exists in RegEdit",
+        [listB[1]] = "Value not found in Registry",
+        [listB[9]] = "Value still exists in Registry",
+        [listB[10]] = "Key still exists in Registry",
         [ignored] = "On the Ignore List"
     };
     foreach ((string line, string status, string data, string result) in Run(listB, new[] { ignored }, false))
@@ -257,14 +257,14 @@ try
         Check(status == (line == ignored ? "Ignored" : "False"), "Before Execute Missing Commands " + status + " for " + line);
         if (detailsB.TryGetValue(line, out string? expected))
         {
-            Check(Detail(line) == expected, "Compliance Details says " + Detail(line) + " for " + line);
+            Check(Detail(line) == expected, "Details says " + Detail(line) + " for " + line);
         }
     }
     foreach ((string line, string status, string data, string result) in Run(listB, new[] { ignored }, true))
     {
         Check(status == (line == ignored ? "Ignored" : "True"), "After Execute Missing Commands " + status + " for " + line + " [" + data + "]");
         Check(result == (line == ignored ? string.Empty : "successful"), "Execute Result says " + result + " for " + line);
-        Check(Detail(line) == (line == ignored ? "On the Ignore List" : "Compliant"), "Compliance Details says " + Detail(line) + " after Execute Missing Commands for " + line);
+        Check(Detail(line) == (line == ignored ? "On the Ignore List" : "Compliant"), "Details says " + Detail(line) + " after Execute Missing Commands for " + line);
     }
     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\B")!)
     {
@@ -296,8 +296,8 @@ try
     string typeLine = $"reg add \"{b}\" /v \"Name\" /t REG_DWORD /d 1 /f";
     string noKeyLine = $"reg add \"{b}\\NoSuchKey\" /v \"X\" /d \"1\" /f";
     Run(new[] { typeLine, noKeyLine }, Array.Empty<string>(), false);
-    Check(Detail(typeLine) == "Value type differs", "Compliance Details says " + Detail(typeLine) + " for " + typeLine);
-    Check(Detail(noKeyLine) == "Key not found in RegEdit", "Compliance Details says " + Detail(noKeyLine) + " for " + noKeyLine);
+    Check(Detail(typeLine) == "Value type differs", "Details says " + Detail(typeLine) + " for " + typeLine);
+    Check(Detail(noKeyLine) == "Key not found in Registry", "Details says " + Detail(noKeyLine) + " for " + noKeyLine);
 
     string e = @"HKCU\Software\RegistryKeyCheckTest\E";
     using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\E"))
@@ -311,12 +311,12 @@ try
     foreach ((string line, string status, string data, string result) in Run(listE, Array.Empty<string>(), false))
     {
         Check(status == "False", "Before Execute Missing Commands " + status + " for " + line);
-        Check(Detail(line) == "Key still has values in RegEdit", "Compliance Details says " + Detail(line) + " for " + line);
+        Check(Detail(line) == "Key still has values in Registry", "Details says " + Detail(line) + " for " + line);
     }
     foreach ((string line, string status, string data, string result) in Run(listE, Array.Empty<string>(), true))
     {
         Check(status == "True", "After Execute Missing Commands " + status + " for " + line);
-        Check(Detail(line) == "Compliant", "Compliance Details says " + Detail(line) + " after Execute Missing Commands for " + line);
+        Check(Detail(line) == "Compliant", "Details says " + Detail(line) + " after Execute Missing Commands for " + line);
     }
     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\E")!)
     {
@@ -332,7 +332,7 @@ try
     {
         Check(result == (line == trueLine ? string.Empty : "Error"), "Execute Result says " + result + " for " + line);
     }
-    Check(Detail(misspelledDelete).EndsWith("Base key is not one RegEdit has"), "Compliance Details says " + Detail(misspelledDelete) + " for " + misspelledDelete);
+    Check(Detail(misspelledDelete).EndsWith("Base key is not one the Registry has"), "Details says " + Detail(misspelledDelete) + " for " + misspelledDelete);
     Check(Registry.CurrentUser.OpenSubKey(TestKey + @"\F") == null, "REG_FOO did not create its key");
 
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
@@ -389,8 +389,8 @@ try
     {
         Check(status == "True" && result == "successful", "Execute Missing Commands says " + status + " and " + result + " for " + line);
     }
-    Check(Detail(listH[0]).StartsWith("List syntax warning: line 2 also changes this key"), "Compliance Details says " + Detail(listH[0]) + " for " + listH[0]);
-    Check(Detail(listH[2]).StartsWith("List syntax warning: line 4 also changes this value"), "Compliance Details says " + Detail(listH[2]) + " for " + listH[2]);
+    Check(Detail(listH[0]).StartsWith("List syntax warning: line 2 also changes this key"), "Details says " + Detail(listH[0]) + " for " + listH[0]);
+    Check(Detail(listH[2]).StartsWith("List syntax warning: line 4 also changes this value"), "Details says " + Detail(listH[2]) + " for " + listH[2]);
 
     string m = @"HKCU\Software\RegistryKeyCheckTest\M";
     using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\M\Keep"))
@@ -503,11 +503,11 @@ try
     for (int i = 0; i < listW.Length; i++)
     {
         string detail = Detail(listW[i]);
-        Check(warningsW[i].Length > 0 ? detail.StartsWith(warningsW[i]) : !detail.Contains("List syntax warning"), "Compliance Details says " + detail + " for " + listW[i]);
+        Check(warningsW[i].Length > 0 ? detail.StartsWith(warningsW[i]) : !detail.Contains("List syntax warning"), "Details says " + detail + " for " + listW[i]);
     }
     Run(listW, new[] { listW[1] }, false);
     Check(!Detail(listW[0]).Contains("List syntax warning"), "Ignoring line 2 clears the warning of line 1: " + Detail(listW[0]));
-    Check(Detail(listW[1]) == "On the Ignore List", "Compliance Details says " + Detail(listW[1]) + " for an ignored line");
+    Check(Detail(listW[1]) == "On the Ignore List", "Details says " + Detail(listW[1]) + " for an ignored line");
 
     Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     Encoding ansi = Encoding.GetEncoding(0);
