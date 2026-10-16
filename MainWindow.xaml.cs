@@ -255,7 +255,6 @@ namespace RegistryKey_Check
             ButtonFilterFalses.IsEnabled = true;
             ButtonFilterTrues.IsEnabled = true;
             ButtonAllFiltersReset.IsEnabled = true;
-            ButtonHelp.IsEnabled = true;
             ButtonColumns.IsEnabled = true;
             ButtonOpenIgnoreFile.IsEnabled = true;
             ((ContextMenu)DataGridRegCommands.Resources["RowMenu"]).IsEnabled = true;
@@ -271,7 +270,6 @@ namespace RegistryKey_Check
             ButtonFilterFalses.IsEnabled = false;
             ButtonFilterTrues.IsEnabled = false;
             ButtonAllFiltersReset.IsEnabled = false;
-            ButtonHelp.IsEnabled = false;
             ButtonColumns.IsEnabled = false;
             ButtonOpenIgnoreFile.IsEnabled = false;
             ((ContextMenu)DataGridRegCommands.Resources["RowMenu"]).IsEnabled = false;
@@ -344,6 +342,8 @@ namespace RegistryKey_Check
             DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands.Where((ModelRegCommand s) =>
                 s.ListMatchWithRegEdit.Contains(matchFilter, StringComparison.OrdinalIgnoreCase)
                 && (find.Length == 0 || shownTexts.Any(text => text(s).Contains(find, StringComparison.OrdinalIgnoreCase))));
+            ButtonFilterFalses.IsChecked = matchFilter == "False";
+            ButtonFilterTrues.IsChecked = matchFilter == "True";
             LabelShown.Content = "Shown " + DataGridRegCommands.Items.Count;
             LabelTotal.Content = "Total " + ViewModels.ObsColl_RegCommands.Count;
         }
@@ -360,13 +360,13 @@ namespace RegistryKey_Check
 
         private void ButtonFilterFalses_Click(object sender, RoutedEventArgs e)
         {
-            matchFilter = "False";
+            matchFilter = matchFilter == "False" ? string.Empty : "False";
             FilterObsColl_RegCommands();
         }
 
         private void ButtonFilterTrues_Click(object sender, RoutedEventArgs e)
         {
-            matchFilter = "True";
+            matchFilter = matchFilter == "True" ? string.Empty : "True";
             FilterObsColl_RegCommands();
         }
 
@@ -400,14 +400,6 @@ namespace RegistryKey_Check
             detailWindow.ShowInTaskbar = false;
             detailWindow.Owner = Application.Current.MainWindow;
             detailWindow.ShowDialog();
-        }
-
-        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
-        {
-            HelpWindow helpWindow = new HelpWindow();
-            helpWindow.ShowInTaskbar = false;
-            helpWindow.Owner = Application.Current.MainWindow;
-            helpWindow.ShowDialog();
         }
     }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.8.0
+
+- The Apply False Filter and Apply True Filter buttons are now called Non-Compliant and Compliant.
+- The Non-Compliant button lights red and the Compliant button lights green while its filter is on.
+- Pressing a lit Non-Compliant or Compliant button again turns its filter off and shows every row.
+- The Help button and the Help window are gone.
+
 ## 2.7.1
 
 - Details text is now green for a row that matches.
