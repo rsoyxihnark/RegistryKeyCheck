@@ -228,6 +228,8 @@ try
     Check(nonRegUids.SequenceEqual(new[] { "1", "3" }), "UID of the other lines: " + string.Join(" | ", nonRegUids));
     MethodInfo shown = viewModels.GetMethod("Shown")!;
     Check((string)shown.Invoke(null, new object[] { "This_field_is_NULL" })! == string.Empty && (string)shown.Invoke(null, new object[] { "x" })! == "x", "An empty field shows as a blank cell");
+    MethodInfo valueNameShown = viewModels.GetMethod("ValueNameShown")!;
+    Check((string)valueNameShown.Invoke(null, new object[] { string.Empty })! == "(Default)" && (string)valueNameShown.Invoke(null, new object[] { "This_field_is_NULL" })! == string.Empty && (string)valueNameShown.Invoke(null, new object[] { "x" })! == "x", "The Value column shows (Default) for the default value and stays blank for a line with no value");
 
     string b = @"HKCU\Software\RegistryKeyCheckTest\B";
     using (RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\B"))
@@ -387,6 +389,14 @@ try
     viewModels.GetMethod("RemoveFromIgnoreList")!.Invoke(null, new[] { Rows() });
     string[] afterRemove = File.ReadAllLines(ignoreFile);
     Check(afterRemove.Contains("typed by hand") && afterRemove.Contains("typed by hand again") && !afterRemove.Contains(caseLine), "Remove from Ignore List kept the lines typed into Ignore.txt by hand");
+    string twin = $"reg add \"{e}\" /v \"Twin\" /d \"x\" /f";
+    Run(new[] { twin, twin.ToUpperInvariant() }, Array.Empty<string>(), false);
+    Array firstTwin = Array.CreateInstance(model, 1);
+    firstTwin.SetValue(Rows().Cast<object>().First(), 0);
+    viewModels.GetMethod("AddToIgnoreList")!.Invoke(null, new object[] { firstTwin });
+    Check(Rows().Cast<object>().All(row => Field((string)row.GetType().GetProperty("ListLineString")!.GetValue(row)!, "ListMatchWithRegEdit") == "Ignored"), "Add to Ignore List on one row also ignores the same line in other upper or lower case");
+    viewModels.GetMethod("RemoveFromIgnoreList")!.Invoke(null, new object[] { firstTwin });
+    Check(Rows().Cast<object>().All(row => Field((string)row.GetType().GetProperty("ListLineString")!.GetValue(row)!, "ListMatchWithRegEdit") == "Unknown"), "Remove from Ignore List on one row also stops ignoring the same line in other upper or lower case");
     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(TestKey + @"\B\command")!)
     {
         using RegistryKey regExeKey = Registry.CurrentUser.OpenSubKey(TestKey + @"\A\command")!;
@@ -487,6 +497,37 @@ try
     Check(rowsChain.Count == 1 && rowsChain[0].Line == listChain[4] && rowsChain[0].Status == "True" && NonRegCount() == listChain.Length - 1, "Lines that run a second command after &, && or || went to Non RegistryKey Commands, and the line piped into find was read: " + string.Join(" | ", rowsChain.Select(r => r.Line + " " + r.Status)) + ", Non RegistryKey Commands: " + NonRegCount());
     CheckZ("after lines that run a second command");
 
+    string p = @"HKCU\Software\RegistryKeyCheckTest\P";
+    string[] listGlued =
+    {
+        $"reg add \"{p}\" /v \"Url\" /d https://a.com/?x=1&y=2 /f",
+        $"reg add \"{p}\" /v \"Quoted\" /d \"x\"&rem /f",
+        $@"reg add {p}\A&B /f",
+        $"reg add \"{p}\" /v \"Escaped\" /d a^&b /f",
+        $"reg add \"{p}\" /v \"Redirect\" /d a>nul /f"
+    };
+    Check(RunCmd(listGlued[3]) == 0 && RunCmd(listGlued[4]) == 0, "reg.exe ran the lines with ^& and >nul");
+    List<(string Line, string Status, string Data, string Result)> rowsGlued = Run(listGlued, Array.Empty<string>(), false);
+    Check(rowsGlued.Count == 2 && rowsGlued.All(r => r.Status == "True") && NonRegCount() == 3, "Lines with & right against a word went to Non RegistryKey Commands, and ^& and >nul were read the way a batch file reads them: " + string.Join(" | ", rowsGlued.Select(r => r.Line + " " + r.Status + " " + r.Data)));
+
+    string[] listBatchOnly =
+    {
+        $"reg add \"{p}\" /v \"Dp0\" /d \"%~dp0x.exe\" /f",
+        $"reg add \"{p}\" /v \"Self\" /d \"%0\" /f",
+        $"reg add \"{p}\" /v \"Cd\" /d \"%CD%\\x.exe\" /f",
+        $"reg add \"{p}\" /v \"Date\" /d \"%DATE%\" /f",
+        $"reg add \"{p}\" /v \"Part\" /d \"%TIME:~0,5%\" /f",
+        $"reg add \"{p}\" /v \"Text\" /d \"%%~dp0\" /f",
+        $"reg add \"{p}\" /v \"Logged\" /d \"1\" /f >>\"%~dp0install.log\" 2>&1"
+    };
+    Run(listBatchOnly, Array.Empty<string>(), false);
+    Check(Rows().Cast<object>().Count() == 2 && NonRegCount() == 5 && Field(listBatchOnly[5], "ListValueData") == "%~dp0" && Field(listBatchOnly[6], "ListValueData") == "1", "Lines with %~dp0, %0, %CD%, %DATE% or %TIME:~0,5% in their data went to Non RegistryKey Commands, %%~dp0 was read as the text %~dp0, and %~dp0 in a log file name did not matter: " + NonRegCount());
+    Environment.SetEnvironmentVariable("HIGHESTNUMANODENUMBER", "7");
+    string numaLine = $"reg add \"{p}\" /v \"Numa\" /d \"%HIGHESTNUMANODENUMBER%\" /f";
+    Run(new[] { numaLine }, Array.Empty<string>(), false);
+    Environment.SetEnvironmentVariable("HIGHESTNUMANODENUMBER", null);
+    Check(Field(numaLine, "ListValueData") == "7", "A variable named like one only a batch file has is read like any other variable when it is set: " + Field(numaLine, "ListValueData"));
+
     string w = @"HKCU\Software\RegistryKeyCheckTest\W";
     string[] listW =
     {
@@ -583,6 +624,38 @@ try
     SeedReset(false);
     rowsR = Run(listR, Array.Empty<string>(), true);
     Check(rowsR[0].Result.Length == 0 && rowsR[1].Result == "successful" && rowsR.All(row => row.Status == "True"), "A key holding only what the later lines write is not reset again: " + string.Join(" | ", rowsR.Select(row => row.Status + " " + row.Result + " " + row.Line)));
+
+    string o = @"HKCU\Software\RegistryKeyCheckTest\O";
+    void SeedO()
+    {
+        Registry.CurrentUser.DeleteSubKeyTree(TestKey + @"\O", false);
+        using RegistryKey seed = Registry.CurrentUser.CreateSubKey(TestKey + @"\O");
+        seed.SetValue("B", "2");
+    }
+    string StateO()
+    {
+        using RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\O");
+        return key == null ? "no key" : string.Join(", ", key.GetValueNames().OrderBy(name => name).Select(name => name + "=" + key.GetValue(name))) + " | " + string.Join(", ", key.GetSubKeyNames().OrderBy(name => name));
+    }
+    string[] listO =
+    {
+        $"reg add \"{o}\" /v \"A\" /d \"1\" /f",
+        $"reg delete \"{o}\" /v \"A\" /f",
+        $"reg add \"{o}\" /v \"B\" /d \"1\" /f",
+        $"reg add \"{o}\" /v \"B\" /d \"2\" /f",
+        $"reg add \"{o}\\Gone\" /v \"C\" /d \"1\" /f",
+        $"reg delete \"{o}\\Gone\" /f"
+    };
+    SeedO();
+    foreach (string line in listO)
+    {
+        Check(RunCmd(line) == 0, "reg.exe ran " + line);
+    }
+    string batchO = StateO();
+    SeedO();
+    List<(string Line, string Status, string Data, string Result)> rowsO = Run(listO, Array.Empty<string>(), true);
+    Check(StateO() == batchO, "Execute Missing Commands left O the same as running its lines one by one in a batch file: " + StateO() + " against " + batchO);
+    Check(rowsO[1].Status == "True" && rowsO[3].Status == "True" && rowsO[5].Status == "True", "The last line that changes each value or key is True after Execute Missing Commands: " + string.Join(" | ", rowsO.Select(r => r.Status + " " + r.Result + " " + r.Line)));
 
     string lastIgnored = $"reg add \"{w}\" /v \"Last\" /d \"1\" /f";
     Run(new[] { lastIgnored }, new[] { lastIgnored }, false);

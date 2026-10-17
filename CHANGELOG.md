@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.1.0
+
+- The Value column and the Detail window now show (Default) for the default value of a key, the way RegEdit does.
+- The window title now shows the version you are running, such as RegistryKey Check 3.1.0.
+- Fixed Add to Ignore List and Remove from Ignore List changing only the rows you picked when List.txt has the same line more than once.
+- Fixed Execute Missing Commands keeping what a line wrote when a later line in List.txt deletes or rewrites it.
+- Fixed a reg line with & right against other text, such as ?x=1&y=2, being run instead of showing on the Non RegistryKey Commands tab.
+- Fixed |, < or > right against other text, such as /d a>nul, not being read the way a batch file reads them.
+- Fixed a reg line with %~dp0, %CD% or %DATE% being checked and run instead of showing on the Non RegistryKey Commands tab.
+- Fixed clicking in the Find box clearing the rows you had selected.
+
 ## 3.0.0
 
 - RegistryKey Check now needs the .NET 10 Desktop Runtime installed, and the exe is now under 1 MB instead of about 67 MB.
@@ -13,8 +24,6 @@
 - The Compliant and Non-Compliant buttons can now both be on at once, showing the rows of both.
 - Shown and Total at the bottom left are now the number of lines, with compliant in green and noncompliant in red.
 - The Find box is now always open and has the keyboard focus when RegistryKey Check opens.
-- Esc in the Find box now clears it and leaves it open.
-- All Filters Reset now clears the Find box and leaves it open.
 - Ignore.txt is now made only when it has a line in it, and is removed when the last line leaves the Ignore List.
 - Open Ignore.txt no longer makes an empty Ignore.txt by itself.
 - An empty Ignore.txt is removed when RegistryKey Check opens.
@@ -50,13 +59,12 @@
 - Details text is now green for a row that matches.
 - The Query RegEdit button is now called Query Registry.
 - Details now says Registry instead of RegEdit, such as Key not found in Registry.
-- The Help window now says Registry instead of RegEdit and explains the green Details text.
 - Log.txt now says Registry instead of RegEdit for a base key or value type that the Registry does not have.
 
 ## 2.7.0
 
-- RegistryKey Check, the Detail window and the Help window now have a dark look.
-- Rows in the list are no longer colored red, green, grey or yellow.
+- RegistryKey Check and the Detail window now have a dark look.
+- Rows in the list are no longer colored red or green.
 - Details text is now red for a row that does not match, and orange for a row with a List syntax warning.
 - The row under the mouse is now highlighted.
 - The Full Path, List Value Name and Compliance Details columns are now called Path, Value and Details.
@@ -65,11 +73,10 @@
 - List Command, List Value Type and Registry Value Type are now hidden until you tick them in Columns.
 - The Detail window now uses the new column names, such as Path, Expected and Actual.
 - The filter boxes above the columns are gone.
-- Ctrl+F opens a Find box that shows only the rows with that text in a shown column, and Esc closes it.
-- All Filters Reset now also clears and closes the Find box.
+- Ctrl+F opens a Find box that shows only the rows with that text in a shown column, and Esc clears it.
+- All Filters Reset now also clears the Find box.
 - The Columns menu now closes after you tick or untick a column.
 - The Non RegistryKey Commands tab no longer shows a grey strip at the left of each row.
-- The Help window now explains Ctrl+F and the red and orange Details text.
 
 ## 2.6.0
 
@@ -79,8 +86,7 @@
 ## 2.5.1
 
 - Read List.txt, Add to Ignore List and Remove from Ignore List now run faster on long lists.
-- List Value Data and RegEdit Value Data now show REG_EXPAND_SZ data as written, such as %SystemRoot%\system32 instead of C:\Windows\system32.
-- Hiding a column in Columns now clears its filter box, so no hidden filter keeps rows out of the list.
+- List Value Data and RegEdit Value Data now show REG_EXPAND_SZ data as written, such as %SystemRoot%\system32.
 - A reg line that runs a second command after &, && or || now shows on the Non RegistryKey Commands tab and is never run.
 - Fixed reg delete with two backslashes right after the base key deleting everything under that base key.
 - Fixed a key path ending in two backslashes being run although reg.exe refuses it.
@@ -109,9 +115,8 @@
 ## 2.4.0
 
 - The new Compliance Details column says Compliant for a row that matches RegEdit, and why a row does not, such as Value data differs.
-- A row that changes the same key or value as another line shows in yellow, with a List syntax warning in Compliance Details.
+- A row that changes the same key or value as another line shows a List syntax warning in Compliance Details.
 - The Detail window now shows Compliance Details.
-- The Help window now explains Compliance Details and the yellow rows.
 - Lines that start with reg.exe, @reg or the full path of reg.exe in System32 are now read the same as lines that start with reg.
 - A reg line with a switch or word that reg add or reg delete does not take now shows on the Non RegistryKey Commands tab and is never run.
 - Execute Missing Commands now closes each registry key it opens as soon as it is done with it.
@@ -125,15 +130,12 @@
 - Fixed a reg delete line with a misspelled base key, such as HKEY_LOCAL_MACHIN, showing True as if the key were already gone.
 - Fixed Jump to RegEdit opening the 64-bit key instead of the 32-bit one for a /reg:32 line under HKEY_LOCAL_MACHINE.
 - Fixed Jump to RegEdit opening the key of the first selected row instead of the row you right-clicked.
-- Fixed the column filter boxes not filtering after text was pasted or cut with the mouse.
 - Fixed the row right-click menu staying usable while Query RegEdit or Execute Missing Commands was running.
 
 ## 2.3.0
 
 - Query RegEdit now runs faster on long lists.
 - Execute Result now stays blank for a row Execute Missing Commands did not have to change.
-- The Help window now explains the Ignore List, Jump to RegEdit, Columns and closing the Detail window with Esc.
-- The Help window now shows a scroll bar when its text does not fit.
 - Fixed reg delete with /va deleting the whole key with its subkeys instead of only its values.
 - Fixed /reg:32 and /reg:64 being ignored, so every row was checked and changed in the 64-bit registry.
 - Fixed REG_EXPAND_SZ data with variables other than %SystemRoot%, such as %ProgramFiles%, never matching RegEdit.
@@ -149,14 +151,14 @@
 - Fixed Query RegEdit and Execute Missing Commands closing RegistryKey Check when Log.txt could not be written.
 - Fixed Open List.txt, Open Log.txt and Open Ignore.txt closing RegistryKey Check when Notepad could not be opened.
 - Fixed a column width set by double clicking the line between two headers not coming back when RegistryKey Check opens again.
-- Fixed missing spaces and a stray comma in the Help window, the Execute Missing Commands warning and Log.txt.
+- Fixed a stray comma in the Execute Missing Commands warning and a missing space in Log.txt.
 
 ## 2.0.1
 
 - Right-click a column header or press Columns to hide or show any column, such as SubKey Available? or List Match with RegEdit.
 - Right-click a row and choose Jump to RegEdit to open RegEdit at the key of that row.
 - Right-click rows to add them to or remove them from the Ignore List, which is kept in Ignore.txt beside List.txt.
-- Rows on the Ignore List show as Ignored in grey and are skipped by Query RegEdit and Execute Missing Commands.
+- Rows on the Ignore List show as Ignored and are skipped by Query RegEdit and Execute Missing Commands.
 - Open Ignore.txt opens the Ignore List in Notepad.
 - RegistryKey Check now remembers its window size and position and the width, order and visibility of each column.
 - The Detail window now closes with Esc.
@@ -179,7 +181,6 @@
 
 - RegistryKey Check now comes as a single exe, with no DLL files to keep beside it.
 - RegistryKey Check now runs on .NET 10 and needs Windows 10 or later.
-- Fixed the Help window showing version 1.0.1 instead of the version you are running.
 - Fixed Execute Missing Commands refreshing the list before all the commands had run.
 - Fixed REG_BINARY values being written and checked as text instead of as the hex bytes written in List.txt.
 - Fixed Read List.txt crashing on a REG_MULTI_SZ line with only one character of data.

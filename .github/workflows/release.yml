@@ -27,6 +27,7 @@ jobs:
           fail() { echo "::error::$1"; exit 1; }
           vkey() { printf '%s\n' "$1" | awk -F. '{printf "%09d%09d%09d\n", $1, $2, $3}'; }
           srcver() { git show "$1:RegistryKey Check.csproj" 2>/dev/null | tr -d '\r' | sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' | head -1 || true; }
+          bodyextra() { git log -1 --format=%b "$1" | tr -d '\r' | sed 's/[[:space:]]*$//' | grep -v '^- ' | grep -v '^$' || true; }
           head=$(git rev-parse HEAD)
           if [ -n "${BEFORE:-}" ] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null && git merge-base --is-ancestor "$BEFORE" "$head"; then
             commits=$(git rev-list --reverse "$BEFORE..$head")
@@ -47,6 +48,7 @@ jobs:
                 if [ -n "$program" ]; then
                   printf '%s\n' "$changed" | grep -qx 'CHANGELOG.md' || fail "Commit $c is [no release] and changes the program but leaves CHANGELOG.md untouched"
                 fi
+                [ -z "$(bodyextra "$c")" ] || fail "The commit body of $c has lines that are not changelog entries"
                 continue ;;
               "["[0-9]*"]"*) ;;
               *) fail "Commit $c must start with [x.y.z] or [no release]: $subject" ;;
@@ -64,6 +66,7 @@ jobs:
             [ -n "$entries" ] || fail "CHANGELOG.md has no entries under $ver"
             body=$(git log -1 --format=%b "$c" | tr -d '\r' | sed 's/[[:space:]]*$//' | grep '^- ' || true)
             [ "$entries" = "$body" ] || fail "The commit body of $c does not match the $ver section of CHANGELOG.md"
+            [ -z "$(bodyextra "$c")" ] || fail "The commit body of $c has lines that are not changelog entries, so they would be published in the release notes"
             if git rev-parse -q --verify "refs/tags/v$ver" >/dev/null; then
               [ "$(git rev-list -n 1 "v$ver")" = "$c" ] || fail "Version $ver has already been released from another commit"
               continue
@@ -235,8 +238,10 @@ jobs:
           $cleared = $false
           $sortedDown = $false
           $sortKept = $false
+          $title = ''
           if ($started) {
             try {
+              $title = $window.Current.Name
               [WindowShot]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle) | Out-Null
               $focused = Wait-Until { Find-Focused }
               $lit = (Read-Toggle 'ButtonFilterFalses') + '/' + (Read-Toggle 'ButtonFilterTrues')
@@ -276,8 +281,11 @@ jobs:
           $written = $null -ne (Get-ItemProperty -Path $key -Name 'Missing' -ErrorAction SilentlyContinue)
           $emptyKept = @('Log.txt', 'Ignore.txt' | Where-Object { Test-Path (Join-Path $dir $_) })
           Remove-Item -Path $key -Recurse -Force
-          Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, both=$both, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, sortedDown=$sortedDown, sortKept=$sortKept"
+          Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
+          Write-Host "both=$both, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, sortedDown=$sortedDown, sortKept=$sortKept"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
+          $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
+          if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
           if ($absent.Count -gt 0 -or $cut.Count -gt 0) { Write-Error "Headers missing: $($absent -join ', '). Headers cut off: $($cut -join ', ')"; exit 1 }
           if ($extra.Count -gt 0) { Write-Error "Columns shown at start that should be hidden: $($extra -join ', ')"; exit 1 }
           if (-not $focused) { Write-Error 'The Find box did not have the keyboard focus at start'; exit 1 }

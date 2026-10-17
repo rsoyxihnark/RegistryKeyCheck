@@ -233,6 +233,19 @@ namespace RegistryKey_Check
             return sameKey || writeKey.StartsWith(key + "\\", StringComparison.OrdinalIgnoreCase);
         }
 
+        private static bool Undoes(ModelRegCommand done, string doneKey, ModelRegCommand later, string laterKey)
+        {
+            if (done.ListCommand == "reg delete")
+            {
+                return later.ListCommand == "reg add" && Rewrites(done, doneKey, later, laterKey);
+            }
+            if (later.ListCommand == "reg delete")
+            {
+                return Rewrites(later, laterKey, done, doneKey);
+            }
+            return done.ListValueName != "This_field_is_NULL" && string.Equals(laterKey, doneKey, StringComparison.OrdinalIgnoreCase) && string.Equals(later.ListValueName, done.ListValueName, StringComparison.OrdinalIgnoreCase);
+        }
+
         private static bool HoldsOnlyLaterWrites(ModelRegCommand reset, List<ModelRegCommand> writes, Dictionary<ModelRegCommand, string> keys)
         {
             if (reset.ListValueName != "This_field_is_NULL")
@@ -304,6 +317,10 @@ namespace RegistryKey_Check
 
         private static readonly Regex BatchSubstring = new Regex(@"^~(-?[0-9]+)?(,(-?[0-9]+)?)?$");
 
+        private static readonly HashSet<string> batchOnlyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "CD", "DATE", "TIME", "RANDOM", "ERRORLEVEL", "CMDEXTVERSION", "CMDCMDLINE", "HIGHESTNUMANODENUMBER", "__CD__", "__APPDIR__" };
+
+        private const char BatchOnly = '\uFFFF';
+
         private static string BatchPercents(string line)
         {
             StringBuilder text = new StringBuilder(line.Length);
@@ -327,7 +344,7 @@ namespace RegistryKey_Check
                 {
                     if (argument.Value.EndsWith('0'))
                     {
-                        text.Append(line, i, argument.Length + 1);
+                        text.Append(BatchOnly);
                     }
                     i += argument.Length + 1;
                     continue;
@@ -344,6 +361,13 @@ namespace RegistryKey_Check
                 }
                 string name = line[(i + 1)..stop];
                 string? value = name.Length > 0 ? Environment.GetEnvironmentVariable(name) : null;
+                if (value == null && batchOnlyNames.Contains(name))
+                {
+                    text.Append(BatchOnly);
+                    int end = line[stop] == '%' ? stop : line.IndexOf('%', stop + 1);
+                    i = (end < 0 ? stop : end) + 1;
+                    continue;
+                }
                 if (line[stop] == '%')
                 {
                     text.Append(value);
@@ -412,9 +436,11 @@ namespace RegistryKey_Check
         {
             StringBuilder text = new StringBuilder(line.Length);
             bool quoted = false;
+            bool afterOperator = false;
             for (int i = 0; i < line.Length; i++)
             {
                 char c = line[i];
+                bool operatorChar = false;
                 if (c == '"')
                 {
                     quoted = !quoted;
@@ -423,7 +449,17 @@ namespace RegistryKey_Check
                 {
                     c = line[++i];
                 }
+                else if (!quoted && c is '&' or '|' or '<' or '>')
+                {
+                    operatorChar = true;
+                    bool handle = c is '<' or '>' && text.Length > 0 && char.IsDigit(text[^1]) && (text.Length == 1 || char.IsWhiteSpace(text[^2]));
+                    if (text.Length > 0 && !char.IsWhiteSpace(text[^1]) && !afterOperator && !handle)
+                    {
+                        text.Append(' ');
+                    }
+                }
                 text.Append(c);
+                afterOperator = operatorChar;
             }
             return text.ToString();
         }
@@ -587,6 +623,10 @@ namespace RegistryKey_Check
                 {
                     return null;
                 }
+            }
+            if (new[] { keyPath, valueName, valueType, valueData, valueSeparator }.Any(part => part != null && part.Contains(BatchOnly)))
+            {
+                return null;
             }
             if (modelRegCommand.DeleteAllValues && valueName != null)
             {
@@ -931,7 +971,7 @@ namespace RegistryKey_Check
                             }
                             RootKey(mo.ListBaseKey, mo.ListView)?.DeleteSubKeyTree(mo.ListSubKey, throwOnMissingSubKey: false);
                         }
-                        else if (mo.ListCommand == "reg delete" && mo.AvailableValueName == "It's Available")
+                        else if (mo.ListCommand == "reg delete")
                         {
                             await Task.Run(() =>
                             {
@@ -994,10 +1034,7 @@ namespace RegistryKey_Check
                             }
                         }
                         mo.ExecuteResult = "successful";
-                        if (mo.ListCommand == "reg delete")
-                        {
-                            rewrites.UnionWith(LaterWrites(mo, rows, keys).Where(write => write.ListMatchWithRegEdit == "True"));
-                        }
+                        rewrites.UnionWith(rows.Where(later => later.ListId > mo.ListId && later.ListMatchWithRegEdit == "True" && Undoes(mo, keys[mo], later, keys[later])));
                     }
                 }
                 catch (Exception ex)
@@ -1127,6 +1164,7 @@ namespace RegistryKey_Check
                 mo.ListMatchWithRegEdit = "Ignored";
                 mo.ComplianceReason = "On the Ignore List";
             }
+            ApplyIgnoreList();
             SaveIgnoreFile();
             MarkListWarnings();
         }
@@ -1147,8 +1185,27 @@ namespace RegistryKey_Check
                     mo.ComplianceReason = string.Empty;
                 }
             }
+            ApplyIgnoreList();
             SaveIgnoreFile();
             MarkListWarnings();
+        }
+
+        private static void ApplyIgnoreList()
+        {
+            foreach (ModelRegCommand mo in ObsColl_RegCommands)
+            {
+                bool ignored = ignoreLookup.Contains(mo.ListLineString);
+                if (ignored && mo.ListMatchWithRegEdit != "Ignored")
+                {
+                    mo.ListMatchWithRegEdit = "Ignored";
+                    mo.ComplianceReason = "On the Ignore List";
+                }
+                else if (!ignored && mo.ListMatchWithRegEdit == "Ignored")
+                {
+                    mo.ListMatchWithRegEdit = "Unknown";
+                    mo.ComplianceReason = string.Empty;
+                }
+            }
         }
 
         private static void SaveIgnoreFile()
@@ -1173,6 +1230,11 @@ namespace RegistryKey_Check
         public static string Shown(string text)
         {
             return text == "This_field_is_NULL" ? string.Empty : text;
+        }
+
+        public static string ValueNameShown(string name)
+        {
+            return name.Length == 0 ? "(Default)" : Shown(name);
         }
 
         public static void WriteNote(string method, string text)

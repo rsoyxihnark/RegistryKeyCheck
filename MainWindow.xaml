@@ -46,7 +46,7 @@
                             <DataGridTextColumn x:Name="dgColumnRegListCommand" Header="List Command" Width="95" Visibility="Collapsed" Binding="{Binding ListCommand}" />
                             <DataGridTextColumn x:Name="dgColumnRegFullPath" Header="Path" Width="315*" Binding="{Binding ListFullPath, Mode=OneWay}" />
                             <DataGridTextColumn x:Name="dgColumnRegAvailableSubKey" Header="SubKey Available?" Width="115" Visibility="Collapsed" Binding="{Binding AvailableSubKey}" />
-                            <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="Value" Width="130*" Binding="{Binding ListValueName, Converter={StaticResource BlankNull}}" />
+                            <DataGridTextColumn x:Name="dgColumnRegListValueName" Header="Value" Width="130*" Binding="{Binding ListValueNameShown, Mode=OneWay}" />
                             <DataGridTextColumn x:Name="dgColumnRegAvailableValueName" Header="Value Name Available?" Width="140" Visibility="Collapsed" Binding="{Binding AvailableValueName, Converter={StaticResource BlankNull}}" />
                             <DataGridTextColumn x:Name="dgColumnRegListValueType" Header="List Value Type" Width="100" Visibility="Collapsed" Binding="{Binding ListValueType, Converter={StaticResource BlankNull}}" />
                             <DataGridTextColumn x:Name="dgColumnRegRegEditValueType" Header="Registry Value Type" Width="125" Visibility="Collapsed" Binding="{Binding RegEditValueType, Converter={StaticResource BlankNull}}" />

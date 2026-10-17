@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,6 +29,7 @@ namespace RegistryKey_Check
         {
             App.UseDarkTitleBar(this);
             InitializeComponent();
+            Title = "RegistryKey Check " + Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
             DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands;
             DataGridNonRegCommands.ItemsSource = ViewModels.ObsColl_Non_RegCommands;
             columnTexts = new Dictionary<DataGridColumn, Func<ModelRegCommand, string>>
@@ -36,7 +38,7 @@ namespace RegistryKey_Check
                 [dgColumnRegListCommand] = s => s.ListCommand,
                 [dgColumnRegFullPath] = s => s.ListFullPath,
                 [dgColumnRegAvailableSubKey] = s => s.AvailableSubKey,
-                [dgColumnRegListValueName] = s => ViewModels.Shown(s.ListValueName),
+                [dgColumnRegListValueName] = s => s.ListValueNameShown,
                 [dgColumnRegAvailableValueName] = s => ViewModels.Shown(s.AvailableValueName),
                 [dgColumnRegListValueType] = s => ViewModels.Shown(s.ListValueType),
                 [dgColumnRegRegEditValueType] = s => ViewModels.Shown(s.RegEditValueType),
@@ -216,7 +218,7 @@ namespace RegistryKey_Check
             DependencyObject? element = e.OriginalSource as DependencyObject;
             while (element != null)
             {
-                if (element is DataGridRow || element is DataGridColumnHeader || element is ScrollBar || element is ButtonBase || element is Thumb)
+                if (element is DataGridRow || element is DataGridColumnHeader || element is ScrollBar || element is ButtonBase || element is Thumb || element is TextBoxBase)
                 {
                     return;
                 }

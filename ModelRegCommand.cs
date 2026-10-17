@@ -25,6 +25,8 @@ namespace RegistryKey_Check
 
         public string ListValueName { get; set; } = "This_field_is_NULL";
 
+        public string ListValueNameShown => ViewModels.ValueNameShown(ListValueName);
+
         public string AvailableValueName { get; set; } = "This_field_is_NULL";
 
         public string ListValueType { get; set; } = "This_field_is_NULL";
