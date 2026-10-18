@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -941,6 +942,7 @@ namespace RegistryKey_Check
             foreach (ModelRegCommand mo in ObsColl_RegCommands)
             {
                 mo.ExecuteResult = string.Empty;
+                mo.ExecuteRefusal = string.Empty;
                 try
                 {
                     if (mo.ListMatchWithRegEdit == "False" || rewrites.Contains(mo))
@@ -1039,10 +1041,18 @@ namespace RegistryKey_Check
                 }
                 catch (Exception ex)
                 {
-                    AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- ExecuteMethod " + DateTime.Now.ToString() + "\n");
-                    AppendLog("     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
-                    AppendLog(ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
-                    mo.ExecuteResult = "Error";
+                    mo.ExecuteRefusal = RefusedByWindows(ex);
+                    if (mo.ExecuteRefusal.Length > 0)
+                    {
+                        mo.ExecuteResult = "refused";
+                    }
+                    else
+                    {
+                        AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- ExecuteMethod " + DateTime.Now.ToString() + "\n");
+                        AppendLog("     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
+                        AppendLog(ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+                        mo.ExecuteResult = "Error";
+                    }
                 }
                 finally
                 {
@@ -1050,6 +1060,15 @@ namespace RegistryKey_Check
                     registryKey = null;
                 }
             }
+        }
+
+        private static string RefusedByWindows(Exception ex)
+        {
+            if (ex is UnauthorizedAccessException || ex is SecurityException || ex is IOException)
+            {
+                return "Windows refused it: " + ex.Message.Trim().TrimEnd('.');
+            }
+            return string.Empty;
         }
 
         private static ulong ListNumber(ModelRegCommand mo)

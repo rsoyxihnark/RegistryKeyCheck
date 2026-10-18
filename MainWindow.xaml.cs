@@ -373,19 +373,16 @@ namespace RegistryKey_Check
         private async void ButtonExecuteMissingCommands_Click(object sender, RoutedEventArgs e)
         {
             ButtonsDisable();
-            if (MessageBox.Show("   Dikkat! Bu işlem bilgisayarınızı çalışmaz hale getirebilir.\nDevam etmek istediğinizden emin misiniz?\n\n   Attention! This action may render your computer inoperable.\nAre you sure you want to continue?", "Warning!", MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
+            await Task.Run(() =>
             {
-                await Task.Run(() =>
-                {
-                    ViewModels.QueryFromRegEdit();
-                });
-                await Task.Run(() => ViewModels.ExecuteMissingCommands());
-                await Task.Run(() =>
-                {
-                    ViewModels.QueryFromRegEdit();
-                });
-                FilterObsColl_RegCommands();
-            }
+                ViewModels.QueryFromRegEdit();
+            });
+            await Task.Run(() => ViewModels.ExecuteMissingCommands());
+            await Task.Run(() =>
+            {
+                ViewModels.QueryFromRegEdit();
+            });
+            FilterObsColl_RegCommands();
             ButtonsEnable();
         }
 

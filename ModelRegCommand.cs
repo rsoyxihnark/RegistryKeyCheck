@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.Win32;
 
 namespace RegistryKey_Check
@@ -43,6 +44,8 @@ namespace RegistryKey_Check
 
         public string ExecuteResult { get; set; } = string.Empty;
 
+        public string ExecuteRefusal { get; set; } = string.Empty;
+
         public string ListMatchWithRegEdit { get; set; } = string.Empty;
 
         public string ListLineString { get; set; } = string.Empty;
@@ -55,6 +58,6 @@ namespace RegistryKey_Check
 
         public bool HasListWarning => ListWarning.Length > 0;
 
-        public string ComplianceDetails => ListWarning.Length == 0 ? ComplianceReason : ComplianceReason.Length == 0 ? ListWarning : ListWarning + ". " + ComplianceReason;
+        public string ComplianceDetails => string.Join(". ", new[] { ListWarning, ComplianceReason, ExecuteRefusal }.Where(text => text.Length > 0));
     }
 }

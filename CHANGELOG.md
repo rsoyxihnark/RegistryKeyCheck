@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.0
+
+- Execute Missing Commands no longer asks you to confirm before it runs.
+- Details now says when Windows refused a line, such as access to the key being denied.
+- A line Windows refuses no longer writes an error into Log.txt.
+
 ## 3.1.0
 
 - The Value column and the Detail window now show (Default) for the default value of a key, the way RegEdit does.
