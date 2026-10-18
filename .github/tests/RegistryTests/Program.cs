@@ -353,19 +353,24 @@ try
     Check(Registry.CurrentUser.OpenSubKey(TestKey + @"\F") == null, "REG_FOO did not create its key");
 
     MethodInfo refusedByWindows = viewModels.GetMethod("RefusedByWindows", BindingFlags.NonPublic | BindingFlags.Static)!;
-    string Refused(Exception ex)
+    string Refused(string baseKey, Exception ex)
     {
-        return (string)refusedByWindows.Invoke(null, new object[] { ex })!;
+        object refusedModel = Activator.CreateInstance(model)!;
+        model.GetProperty("ListBaseKey")!.SetValue(refusedModel, baseKey);
+        return (string)refusedByWindows.Invoke(null, new object[] { refusedModel, ex })!;
     }
-    string denied = Refused(new UnauthorizedAccessException(@"Access to the registry key 'HKEY_CLASSES_ROOT\csc' is denied."));
-    Check(denied == @"Windows refused it: Access to the registry key 'HKEY_CLASSES_ROOT\csc' is denied", "A line Windows will not let through says why: " + denied);
-    Check(Refused(new IOException("The parameter is incorrect.")) == "Windows refused it: The parameter is incorrect", "A key Windows will not make says why: " + Refused(new IOException("The parameter is incorrect.")));
-    Check(Refused(new InvalidOperationException("broken")).Length == 0, "A fault in RegistryKey Check still goes to Log.txt: " + Refused(new InvalidOperationException("broken")));
+    string denied = Refused("HKCR", new UnauthorizedAccessException(@"Access to the registry key 'HKEY_CLASSES_ROOT\csc' is denied."));
+    Check(denied == "Access denied.", "A line Windows will not let through says Access denied: " + denied);
+    string noSid = Refused("HKEY_USERS", new IOException("The parameter is incorrect."));
+    Check(noSid == "SID Key not found in Registry. Parameter is incorrect.", "A line under a SID the Registry does not have says so: " + noSid);
+    string badMake = Refused("HKCU", new IOException("The parameter is incorrect."));
+    Check(badMake == "Parameter is incorrect.", "A key Windows will not make says what Windows said: " + badMake);
+    Check(Refused("HKCU", new InvalidOperationException("broken")).Length == 0, "A fault in RegistryKey Check still goes to Log.txt: " + Refused("HKCU", new InvalidOperationException("broken")));
     object refusedRow = Activator.CreateInstance(model)!;
     model.GetProperty("ComplianceReason")!.SetValue(refusedRow, "Key still exists in Registry");
     model.GetProperty("ExecuteRefusal")!.SetValue(refusedRow, denied);
     string refusedDetails = (string)model.GetProperty("ComplianceDetails")!.GetValue(refusedRow)!;
-    Check(refusedDetails == "Key still exists in Registry. " + denied, "Details says why the line is not compliant and why Windows refused it: " + refusedDetails);
+    Check(refusedDetails == "Access denied.", "Details says only why Windows refused the line: " + refusedDetails);
 
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
     {

@@ -58,6 +58,6 @@ namespace RegistryKey_Check
 
         public bool HasListWarning => ListWarning.Length > 0;
 
-        public string ComplianceDetails => string.Join(". ", new[] { ListWarning, ComplianceReason, ExecuteRefusal }.Where(text => text.Length > 0));
+        public string ComplianceDetails => string.Join(". ", new[] { ListWarning, ExecuteRefusal.Length > 0 ? ExecuteRefusal : ComplianceReason }.Where(text => text.Length > 0));
     }
 }

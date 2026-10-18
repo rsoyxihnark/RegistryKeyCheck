@@ -1041,7 +1041,7 @@ namespace RegistryKey_Check
                 }
                 catch (Exception ex)
                 {
-                    mo.ExecuteRefusal = RefusedByWindows(ex);
+                    mo.ExecuteRefusal = RefusedByWindows(mo, ex);
                     if (mo.ExecuteRefusal.Length > 0)
                     {
                         mo.ExecuteResult = "refused";
@@ -1062,13 +1062,22 @@ namespace RegistryKey_Check
             }
         }
 
-        private static string RefusedByWindows(Exception ex)
+        private static string RefusedByWindows(ModelRegCommand mo, Exception ex)
         {
-            if (ex is UnauthorizedAccessException || ex is SecurityException || ex is IOException)
+            if (ex is UnauthorizedAccessException || ex is SecurityException)
             {
-                return "Windows refused it: " + ex.Message.Trim().TrimEnd('.');
+                return "Access denied.";
             }
-            return string.Empty;
+            if (ex is not IOException)
+            {
+                return string.Empty;
+            }
+            string message = ex.Message.Trim();
+            if (message.Length > 4 && message.StartsWith("The ", StringComparison.Ordinal))
+            {
+                message = char.ToUpperInvariant(message[4]) + message[5..];
+            }
+            return BaseKeyName(mo.ListBaseKey) == "HKEY_USERS" ? "SID Key not found in Registry. " + message : message;
         }
 
         private static ulong ListNumber(ModelRegCommand mo)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.1
+
+- Details now says Access denied when Windows will not let a line through.
+- Details now says SID Key not found in Registry when a line names a user SID the Registry does not have.
+
 ## 3.2.0
 
 - Execute Missing Commands no longer asks you to confirm before it runs.
