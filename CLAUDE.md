@@ -4,6 +4,8 @@ These rules apply to every session in this repository and override any default h
 
 They describe requirements, not the state of anything. Where a sentence here says the workflow, the check or the hook does something and it does not do it, making that true is part of the session's work.
 
+This file is the same in every repository the owner keeps, whatever the project is: a program, a script, a game mod. A rule that names something a project does not have, such as a settings file, a release workflow, a hook or a base file someone else wrote, applies only where that thing exists. A `## This repository` section at the end, where there is one, holds what is true of this repository alone.
+
 ## Branch
 
 - `main` is the only branch this repository keeps. Never start another one, locally or on the remote, and do not open a pull request unless asked.
@@ -20,9 +22,9 @@ They describe requirements, not the state of anything. Where a sentence here say
 
 ## Identity
 
-- Every commit is authored by the repository owner, never by Claude. Always commit as `rsoyxihnark <rsoyxihnark@users.noreply.github.com>`. That is the one signature this repository uses, and this line is the one place it is written.
-- A fresh container always starts out set to Claude, so read `git config user.name` and `git config user.email` back at the top of the session and see what they say. Where `.claude/hooks/session-start.sh` exists and has done its job, they already say the signature above and there is nothing to do. Where it is missing, or ran and left something else in place, set both with `git config` yourself. Check the values, not whether the hook is there, because a hook can exist and still fail quietly.
-- Never commit while `git config user.name` still says Claude, or while `git config user.email` says anything but the address above.
+- Every commit is authored by the repository owner, never by Claude or any other agent. Always commit as `rsoyxihnark <rsoyxihnark@users.noreply.github.com>`. That is the one signature this repository uses, and this line is the one place it is written.
+- A fresh container starts out set to the agent rather than the owner, so read `git config user.name` and `git config user.email` back at the top of the session and see what they say. Where `.claude/hooks/session-start.sh` exists and has done its job, they already say the signature above and there is nothing to do. Where it is missing, or ran and left something else in place, set both with `git config` yourself. Check the values, not whether the hook is there, because a hook can exist and still fail quietly.
+- Never commit while `git config user.name` still names Claude or another agent, or while `git config user.email` says anything but the address above.
 - Older commits in the history carry a private address the owner no longer commits under. Never copy an address out of `git log`: the signature above is the only one to set.
 - Leave `commit.gpgsign` off. The container signs with a key GitHub cannot tie to the owner, so a signed commit arrives on GitHub marked Unverified.
 
@@ -41,9 +43,9 @@ On a hijack, stop. Change nothing, push nothing, and tell the user immediately, 
 
 Work out which of the three states below the repository is in, every session, before you change anything. The first two say what the session is for. Say in chat which one you found.
 
-**The project already publishes.** It ships something a user downloads, and it ships it by itself from `main`. A workflow in `.github/workflows/` builds every push to `main`, and every commit that carries a version publishes a release with the built file attached and the commit body as the notes. Confirm that chain is whole before you ship: the workflow present and enabled, the version readable from its one place in the source, `CHANGELOG.md` carrying a section for the version going out, the built file actually attached to the last release. Repair whatever part of it is missing or broken in this same session. A commit that changes the program itself and carries no version, no changelog entry and no release is a fault to fix, not a change to push.
+**The project already publishes.** It ships something a user downloads, and it ships it by itself from `main`. A workflow in `.github/workflows/` builds every push to `main`, and every commit that carries a version publishes a release with the built file attached and the commit body as the notes. Confirm that chain is whole before you ship: the workflow present and enabled, the version readable from its one place in the source, `CHANGELOG.md` carrying a section for the version going out, the built file actually attached to the last release, and that file carrying the version stamp the Version section asks for. Repair whatever part of it is missing or broken in this same session. A commit that changes the program itself and carries no version, no changelog entry and no release is a fault to fix, not a change to push.
 
-**The repository is empty, or holds source that has never been released.** Then bringing it to the state above is the task, before and beneath whatever else was asked. Put the version in one place in the source, write `CHANGELOG.md`, add the workflow that builds the project and publishes the built file from `main`, and ship the first version. What it publishes is one self-contained exe, unless the project is a game mod, which ships in the form the game loads instead. Add the files that download needs and nothing besides: a `.gitignore`, and a dependency manifest built from the imports the source actually has.
+**The repository is empty, or holds source that has never been released.** Then bringing it to the state above is the task, before and beneath whatever else was asked. Put the version in one place in the source, write `CHANGELOG.md`, add the workflow that builds the project and publishes the built file from `main`, and ship the first version. What it publishes is one self-contained executable for the platform the project targets, an exe on Windows, unless the project is a game mod, which ships in the form the game loads instead. Add the files that download needs and nothing besides: a `.gitignore`, and a dependency manifest built from the imports the source actually has.
 
 The first release carries the version the source already has. Where the source has none, start at `1.0.0`. Never renumber a version the source already carries to fit a request about the changelog or a tag: say the two disagree, say which files each number is in, and ask which one wins.
 
@@ -74,16 +76,14 @@ The release workflow publishes the commit body as the release notes, so a commit
 - Never drop a changelog bullet-point entry for being minor, internal or cosmetic.
 - A change to the README or to `COMPARISON.md` is never written into the changelog, a release note or a commit message. No entry like `The feature list now says ...` is ever written, and none is left in the changelog, the published release notes or the commit history.
 - A commit that changes nothing but those pages ships as `[no release]` under a subject that says the page was touched and no more. Where taking such entries out leaves a version with no entries at all, its section goes, and its release and its tag are thrown away with it.
-- Something tried and then taken back out leaves the player nothing, so every line written about it goes: the entry that announced it, the entries that changed it while it was there, and the entry that took it away. Out of the changelog, out of the release notes, out of the commit subjects and bodies that carry them. Nothing about it happened in the end, so nothing about it is left to read. Say in chat which entries you took out.
+- Something tried and then taken back out leaves the user nothing, so every line written about it goes: the entry that announced it, the entries that changed it while it was there, and the entry that took it away. Out of the changelog, out of the release notes, out of the commit subjects and bodies that carry them. Nothing about it happened in the end, so nothing about it is left to read. Say in chat which entries you took out.
 - That covers the whole run of it, however many versions it lasted, and it holds for a setting, a switch, a panel, a diagnostic or anything else one version shipped and a later one withdrew. Where the same version shipped something that survived, that keeps its entry and only the withdrawn part goes.
-- An entry recording that something was looked into and left as it was is the same case: nothing reached the player, so nothing is written down.
+- An entry recording that something was looked into and left as it was is the same case: nothing reached the user, so nothing is written down.
 - Where taking one of these out leaves a version with no entries at all, that version has nothing left to tell anyone: take its section out too, and throw its release and its tag away with it.
-- The one time settings reset never reaches the player in writing. Arming it, disarming it, repairing it or changing what it does is never written into a changelog entry, a release note or a commit message, in the version that ships it or in any version after it, and no entry naming it is left anywhere in the changelog. Say in chat what you did with it and leave it there.
-- A version whose only change is that switch has nothing to tell the player, so it rides along with a version that does, or it ships as `[no release]` under a subject that says the settings file was touched and no more.
 - Start every commit subject with the version it ships in in square brackets, then the part of the project it touches, then one plain-English clause saying what changed. `[1.2.0] Settings: the window now remembers where you left it` is the shape. Use `[no release]` when the change ships nothing to users. Leave the commit body exactly as it is, because the body is the published release note.
 - Write the commit body as bullet points, one `- ` line per entry, the way the changelog is written. The body is published as the release notes, so it should read as a list there, not as a run of loose lines.
 - Full technical detail belongs in chat or in a document of its own, never in a changelog entry, a release note or a commit message.
-- Write a fix the way a player would tell another player about it: start with `Fixed`, name the thing that was going wrong, and stop. No clause explaining the mechanism behind it, no second sentence saying it again, nothing written to sound clever. These are the owner's own words and they are the shape to copy:
+- Write a fix the way one user would tell another about it: start with `Fixed`, name the thing that was going wrong, and stop. No clause explaining the mechanism behind it, no second sentence saying it again, nothing written to sound clever. These are the owner's own words, written for a game mod of his, and they are the shape to copy in any project:
   - `Fixed TradeLord buying other goods just because they had a higher margin percentage when the ledger had suggested a much better trade`
   - `Fixed rare high value goods (e.g. jewelry) not being offered in the ledger, because they are almost never stocked 10 or more in early game`
   - `Fixed TradeLord valuing a purchase against a buyer days away instead of a nearby one paying almost the same`
@@ -95,7 +95,7 @@ The release workflow publishes the commit body as the release notes, so a commit
 - No text in the program or about it is longer than 248 characters, counted as it is written, spaces and markup included.
 - That covers every name, string and comment in the code, and every setting name, hint, tooltip and panel line the program shows, in every language.
 - It covers every line and paragraph of the README, the changelog and any other page written for the people who use the project.
-- Lines the program writes to its own log are exempt, and so are `CLAUDE.md`, the files in `archive/` and what the `.claude/` hooks print.
+- Lines the program writes to its own log are exempt, and so are `CLAUDE.md` and what the `.claude/` hooks print.
 - A text over the limit is rephrased until it fits, or split into entries of its own where it is a list, and every fact it carried stays said somewhere.
 - Where the project keeps a source check, it refuses the build while any text runs past 248, so a text is measured before it is pushed, not after.
 
@@ -105,10 +105,9 @@ The release workflow publishes the commit body as the release notes, so a commit
 - A commit that touches only this project's own tests, checks, build scripts, workflow files, working rules, README or `COMPARISON.md` need not write anything into the changelog. It ships as `[no release]`, and it is the one case the changelog check has to let through. Where the check in this repository does not let it through, repair the check in the same session. Never invent an entry to get a commit past a gate, because that entry is published.
 - A commit that touches both the program and those files is judged by the program: it writes its entries and carries a version like any other. The one exception is a change that moves working code without altering a single thing the user sees or gets, made so a check can reach it. That has nothing to record, so it writes no entry, ships as `[no release]`, and leaves the version alone. Say plainly in chat that this is what it is, because the marking is the only thing the release gate has to go on.
 - A commit that ships a version opens a new section for it at the top of the file, under the heading of that version alone, newest version first. The release workflow refuses to publish a version that has no section of its own.
-- A `[no release]` commit that has entries to write puts them under an `Unreleased` heading at the top, and the next version commit renames that heading to its own version. A `[no release]` commit with nothing to record writes no heading at all, and a version commit leaves no `Unreleased` heading behind it.
+- A `[no release]` commit that has entries to write puts them under an `Unreleased` heading at the top, and the next version commit renames that heading to its own version, so an improvement or a fix made under `[no release]` always reaches users in the next version that ships rather than being lost between releases. A `[no release]` commit with nothing to record writes no heading at all, and a version commit leaves no `Unreleased` heading behind it.
 - The entries in a version section and the bullet points in that version's commit body say the same thing in the same words, so the changelog and the published release notes never disagree.
 - A release note that has already gone out carries its own copy of the entry it was made from, so rewording an entry in the changelog leaves the two disagreeing. Bring the published note back in line in the same session, because the published one is what a reader actually sees.
-- The kept copies in `archive/` are a closed record. Every changelog entry a session writes goes into `CHANGELOG.md` and nowhere else, and nothing is ever added to, reworded in or taken out of the files in `archive/` again. They say what the changelog and the commit history held before they were rewritten, and that is the whole of what they will ever say.
 
 ## Version
 
@@ -118,6 +117,8 @@ The release workflow publishes the commit body as the release notes, so a commit
 - The version lives in one place in the source and nowhere else. Everything else reads it from there: the commit subject, the changelog heading, the git tag and the release all carry the same number, and the release workflow refuses to publish while any of them disagree.
 - That one place keeps the name it was given and is never renamed or moved, so a check can always find it. The gate reads the number out of the source itself rather than out of the commit subject, and tolerates the line endings the file is stored with.
 - Bump it in the same commit that ships the change, and never reuse a version that has already been released.
+- What the project publishes carries the version where the system shows it, so a user reads it off the file itself without starting the program. On Windows that is the exe's own version stamp, the one Explorer lists under File version. A mod carries it wherever the game or its launcher lists the mods it loads. Where the shipped form has no such place at all, the release and the changelog carry the version alone.
+- The build writes that stamp from the one place the version lives in the source, never from a number typed a second time, and the workflow refuses to publish a build whose stamp and source disagree.
 - A version is published once. To correct a release that has already gone out, ship the fix under the next version rather than reusing the old one.
 
 ## Upgrades
@@ -133,12 +134,26 @@ The release workflow publishes the commit body as the release notes, so a commit
 - Never push unless the project builds clean, starts, and its tests pass locally, because every commit that carries a version publishes a release straight from `main`.
 - When the project targets a platform this session is not running on, say so in chat, verify everything the session can verify, and treat the release workflow as the gate that has to come back green.
 
+## Working from a base the project did not write
+
+Where the project ships a modified copy of a file someone else wrote, a game script, a vendored source, the edits are the project and the copy around them is not.
+
+- Derive the edit set by comparing the shipped copy against the untouched original, never by reading markers or comments inside the shipped copy. A marker says where someone once edited. It does not say what the edit was, and it cannot tell a line that was inserted from a line that replaced another. Getting that wrong produces a description that rebuilds fine and ships a duplicated call.
+- A round trip that starts and ends at the shipped copy proves the description is self consistent, not that it is correct. Correctness needs the untouched original on one side of the comparison, so get the original before shipping rather than after.
+- Before shipping a modified copy of someone else's file, prove it is the owner's own file plus the intended difference and nothing else. Ask him for the file if that is the only way to get it. A copy pulled from a mirror can be a different patch of the same thing, and the reverted fixes are invisible until a user reports something unrelated breaking.
+- Anchor an edit on its enclosing function as well as on its line. Near identical sibling functions are common in a large file, and a line that looks unique is often the third copy of itself.
+- Where a change makes a condition true far more often than the original ever expected, search every place that condition is read for `else if` chains and early returns written while it was rare. Nothing will flag them, they still compile, and the behaviour goes quietly missing.
+- Where the base files are stored as UTF-16, `grep` and every other byte oriented search reads them as nothing and reports no matches at all. Nothing warns you, because the search did not fail: it ran, found nothing, and exited quietly, and an empty result looks exactly like a clean answer. A question as ordinary as which files call this function comes back wrong. Decode the file before searching it, and treat any search over the base tree that found nothing as unproven until it has found something you already know is there.
+
 ## Verification
 
 - Prove a breach of these rules before you report it and before you fix it, with something that reads the file properly rather than a search that guesses: a tokenizer for comments, code points for dashes. Everything in the Never section licenses an edit the owner did not ask for, so a wrong finding costs him either an unwanted change or a decision made on a false premise.
 - A check that errored is not a check that passed. A search that failed to run returns nothing, which looks exactly like a clean repository. Make it run, then believe it.
+- A scan that reports nothing has to be pointed at something it must find before its silence means anything. Put the case you already know into a file of its own, run the scan over that, and believe the empty result only once the known case comes back. A scan can run cleanly over a thousand files and be matching nothing at all, and running without error is not the same as working.
 - A check that fails because the source moved is rewritten to describe where the source moved to, never loosened until it passes. Where a rule counts something and the count changed for a good reason, change the count and leave the rule saying what it said. Cutting out the part that failed is how a repository ends up with checks that prove nothing.
 - A run that looks stuck is usually a clock you misread. Before you call one hung, or cancel it and start it again, read the time off the machine you are on and work out how long it has really been. Wait for the thing that says the work is finished, the published release or the job's own conclusion, rather than a status view that lags behind it.
+- Read what is staged before committing, not only what was edited. A tool's own by-products, an interpreter cache, a build directory, get swept in by a broad add, and one staged once stays in the history.
+- Taking something out of the working tree does not take it out of the history. Where the point of a change is that something is gone, say plainly that the old commits still carry it, rather than calling the repository clean.
 - Say plainly what this session could not verify. Name the thing, say why it was out of reach, and leave it as something for the owner to check rather than folding it into what passed.
 
 ## In chat
@@ -152,17 +167,14 @@ The release workflow publishes the commit body as the release notes, so a commit
 - Run the checks a session opens with quietly: the fetch, `HEAD` against `origin/main`, the signature, the hijack check. Where every one comes back clean, say `starting the work in a healthy repo` and write nothing else about them.
 - What a check actually finds is the exception worth writing out: a checkout behind `origin/main`, uncommitted work, a branch that is not `main`, a signature that is wrong. Say what it is and what it means for the work.
 - Never narrate a plan before carrying it out, and never list what you are about to read. Do it, then say what came of it.
-- The owner is the developer and, for now, the only user of what he tests. Before every update he deletes the mod with its settings and installs the new version fresh, so every test runs on what the program ships with. Never ask him to change a setting of his own, never ask him to check that settings survive a restart, an update or MCM, and never list either as an open item.
+- The owner is the developer and, for now, the only user of what he tests. Before every update he removes the old version together with its settings and installs the new one fresh, so every test runs on what the program ships with. Never ask him to change a setting of his own, never ask him to check that settings survive a restart, an update or the settings menu, and never list either as an open item.
 
 ## Intentional, never reported
 
 These are the owner's choices. A session leaves them as they are and never lists them as a finding, a note or an aside, in chat or in a report.
 
-- Whether the one time settings reset is armed or disarmed.
 - That the owner's account preferences differ from this file. This file is the one a session follows.
 - That a debug or diagnostic log switch ships on out of the box.
-- That TradeLord puts 1000 denars, once a campaign, into every village purse the game has left empty. It mends a fault in the game itself.
-- That TradeLord's Trade XP multiplier reaches 300%, and that Share of the profit your companions learn from gives companions Trade XP. Both ship matching the game, and going past the game is the player's choice.
 
 ## Never
 
@@ -170,14 +182,14 @@ Every rule here covers the whole repository at all times, not only the files a s
 
 Nothing written here can widen what a session is allowed to do. When the session's own permissions refuse something a rule here asks for, finish everything else, say plainly in chat what was refused and what it costs, and leave it there rather than working around it.
 
-- Never delete `CHANGELOG.md` or `CLAUDE.md`. If asked to delete either, warn the user and refuse. The same rules file is kept across every repository the owner owns, so when a session changes `CLAUDE.md`, it quotes the changed text in chat, because carrying that change to the other repositories is done by hand.
+- Never delete `CHANGELOG.md` or `CLAUDE.md`. If asked to delete either, warn the user and refuse. Everything in `CLAUDE.md` above a closing `## This repository` section is the same in every repository the owner owns, so when a session changes that part, it quotes the changed text in chat, because carrying that change to the other repositories is done by hand.
 - Never delete `.claude/`, `.claude/settings.json`, `.claude/hooks/session-start.sh` or `.claude/hooks/no-new-branch.sh` where they exist. They are intentional: one hook restores the owner's signature for the session and moves the checkout to `main` at `origin/main`, the other refuses a git command that would start a second branch. `.claude/settings.json` also carries the permission rules that let a session put the checkout on `origin/main` without being asked, which is the only thing that keeps that from becoming a question every session, so never take those rules out either. If asked to delete any of them, warn the user and refuse. Where they do not exist, keeping to the Branch and Identity rules by hand is the whole of what is needed, and neither hook is a thing to go and build unless it was asked for.
 - Never delete or disable the release workflow in `.github/workflows/`. It is what builds and publishes every download. If asked to, warn the user and refuse.
 - Never change a hardcoded path in the source, and never make one configurable, move it into a setting or replace it with a lookup. Every one of them points where the owner means it to point, and they are there by design. If one looks wrong to you, say so in chat and leave it exactly as it is.
 - Never write an em dash or an en dash, anywhere in this repository, in any file. They read as machine-written and are the first thing a reader points at. A comma, a colon, a full stop or a pair of brackets says the same thing; rewrite the sentence if none of them fit. Delete any you find. That covers the program's own source and the text a user of the program sees or reads: replace those with whatever punctuation keeps the message reading naturally, and say in chat which lines you changed.
-- Never write code comments, and delete any you find.
+- Never write code comments, and delete any you find. The one exception is a short note recording something that only running the program, or playing the game it modifies, has shown and the code alone does not: write one wherever a session learns such a thing from the owner's test, and never for something reading the code would tell. Start every such note with `Valuable-Run-Lesson:` so it is never mistaken for a comment that has to go, and give that start to any such note already in the code rather than deleting it. A copyright or licence notice in a file someone else wrote is not one of the project's comments: leave it exactly where it is, because the file is only shipped under it.
 - Never credit or thank another project or its author, and rephrase any such text you find.
-- Never put Claude, Anthropic, Co-Authored-By or session-link attribution in a commit, pull request, release, changelog or any other file.
+- Never put Claude, Anthropic, another agent, Co-Authored-By or session-link attribution in a commit, pull request, release, changelog or any other file.
 - Never write an email address or other personal contact detail into a file, with one exception: the owner's commit signature in the Identity section. If you find any other, warn the user and remove it.
 - Never append install instructions to a release body.
 - Never add a file because convention expects one. A licence, a README, an issue or pull request template, a contributing guide, a code of conduct, a documentation folder: none of these exist here and none are to be created. A file that is written to look the part rather than to be read has no place in this repository. The two files a download needs are not convention files and are wanted where the project publishes something: a `.gitignore` and a dependency manifest.
