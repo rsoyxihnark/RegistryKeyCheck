@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.3.0
 
 - The list now starts sorted by Path from A to Z instead of by UID.
 - The Compliant and Non-Compliant buttons now stay the way you left them when you close and open RegistryKey Check.
