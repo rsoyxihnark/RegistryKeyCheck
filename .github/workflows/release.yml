@@ -94,6 +94,14 @@ jobs:
           mkdir -p dist
           cp "out/RegistryKey Check.exe" dist/RegistryKeyCheck.exe
 
+      - name: Check the version stamp
+        shell: pwsh
+        run: |
+          $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
+          $info = (Get-Item 'dist\RegistryKeyCheck.exe').VersionInfo
+          if ($info.FileVersion -ne "$version.0" -or $info.ProductVersion -ne $version) { Write-Error "The exe is stamped $($info.FileVersion) and $($info.ProductVersion), but RegistryKey Check.csproj says $version"; exit 1 }
+          Write-Host "The exe is stamped $($info.FileVersion), the same as RegistryKey Check.csproj"
+
       - name: Test against the registry
         shell: bash
         run: dotnet run --project .github/tests/RegistryTests -c Release -- "bin/Release/net10.0-windows/win-x64/RegistryKey Check.dll"
@@ -166,7 +174,7 @@ jobs:
             'reg add "HKCU\Software\RegistryKeyCheckSmoke" /v "Here" /t REG_SZ /d "1" /f',
             'reg add "HKCU\Software\RegistryKeyCheckSmoke" /v "Here" /t REG_SZ /d "1" /f',
             'reg add "HKCU\Software\RegistryKeyCheckSmoke" /v "Missing" /t REG_SZ /d "1" /f',
-            'reg delete "HKCU\Software\RegistryKeyCheckSmoke\Gone" /f'
+            'reg delete "HKCU\Software\RegistryKeyCheckAbsent" /f'
           )
           $auto = [System.Windows.Automation.AutomationElement]
           $scope = [System.Windows.Automation.TreeScope]
@@ -186,7 +194,65 @@ jobs:
           function Flip([string]$id) { (Find-Id $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle() }
           function Find-Focused { (Find-Id 'TextBoxFind').Current.HasKeyboardFocus }
           function Read-FirstUid { $grid.GetCurrentPattern([System.Windows.Automation.GridPattern]::Pattern).GetItem(0, 0).GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value }
+          function Read-Uids {
+            $cells = $grid.GetCurrentPattern([System.Windows.Automation.GridPattern]::Pattern)
+            if ($cells.Current.RowCount -eq 0) { return '' }
+            @(0..($cells.Current.RowCount - 1) | ForEach-Object { $cells.GetItem($_, 0).GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value }) -join ' '
+          }
           function Save-Shot([string]$name) { [WindowShot]::Save([IntPtr]$window.Current.NativeWindowHandle, (Join-Path $shots "$name.png")) }
+          function Set-Find([string]$text) { (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($text) }
+          function Is-Idle { (Find-Id 'ButtonQueryFromRegEdit').Current.IsEnabled }
+          function Use-RowMenu([string]$name) {
+            [WindowShot]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle) | Out-Null
+            $row = $grid.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::DataItem)))
+            $row.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+            $grid.GetCurrentPattern([System.Windows.Automation.GridPattern]::Pattern).GetItem(0, 0).SetFocus()
+            [System.Windows.Forms.SendKeys]::SendWait('+{F10}')
+            $end = (Get-Date).AddSeconds(10)
+            while ((Get-Date) -lt $end) {
+              foreach ($top in $auto::RootElement.FindAll($scope::Children, (New-Object System.Windows.Automation.PropertyCondition($auto::ProcessIdProperty, [int]$p.Id)))) {
+                $item = $top.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::NameProperty, $name)))
+                if ($null -ne $item) {
+                  $item.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+                  return
+                }
+              }
+              Start-Sleep -Milliseconds 300
+            }
+            throw "The row menu did not show $name"
+          }
+          function Open-App {
+            $script:p = Start-Process -FilePath (Join-Path $dir 'RegistryKeyCheck.exe') -WorkingDirectory $dir -PassThru
+            $script:window = $null
+            $script:grid = $null
+            $end = (Get-Date).AddSeconds(90)
+            while (-not $p.HasExited -and (Get-Date) -lt $end) {
+              Start-Sleep -Seconds 1
+              if ($null -eq $window) {
+                $script:window = $auto::RootElement.FindFirst($scope::Children, (New-Object System.Windows.Automation.PropertyCondition($auto::ProcessIdProperty, [int]$p.Id)))
+              }
+              if ($null -ne $window -and $null -eq $grid) {
+                $script:grid = Find-Id 'DataGridRegCommands'
+              }
+              if ($null -ne $grid -and (Read-Count 'noncompliant') -eq '1 noncompliant' -and (Is-Idle)) {
+                return
+              }
+            }
+            throw 'RegistryKey Check did not open again'
+          }
+          function Close-App {
+            $window.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+            $p.WaitForExit(20000)
+          }
+          function Read-Filters {
+            $file = Join-Path $dir 'Settings.json'
+            if (-not (Test-Path $file)) { return 'no Settings.json' }
+            $json = Get-Content $file -Raw | ConvertFrom-Json
+            $names = @($json.PSObject.Properties.Name)
+            $nonCompliant = if ($names -contains 'NonCompliantFilter') { [string]$json.NonCompliantFilter } else { '-' }
+            $compliant = if ($names -contains 'CompliantFilter') { [string]$json.CompliantFilter } else { '-' }
+            "$nonCompliant/$compliant"
+          }
           $p = Start-Process -FilePath (Join-Path $dir 'RegistryKeyCheck.exe') -WorkingDirectory $dir -PassThru
           $deadline = (Get-Date).AddSeconds(90)
           $window = $null
@@ -230,14 +296,19 @@ jobs:
           $focused = $false
           $lit = ''
           $both = $false
+          $pathOrder = ''
           $compliantOnly = $false
           $reset = $false
           $unlit = ''
           $ctrlF = $false
           $found = $false
           $cleared = $false
+          $sortedUp = $false
           $sortedDown = $false
           $sortKept = $false
+          $ignored = $false
+          $unignored = $false
+          $remembered = ''
           $title = ''
           if ($started) {
             try {
@@ -248,6 +319,7 @@ jobs:
               Save-Shot 'start'
               Flip 'ButtonFilterTrues'
               $both = Wait-Until { (Count-Rows) -eq 4 -and (Read-Toggle 'ButtonFilterFalses') -eq 'On' -and (Read-Toggle 'ButtonFilterTrues') -eq 'On' }
+              $pathOrder = Read-Uids
               Save-Shot 'both'
               Flip 'ButtonFilterFalses'
               $compliantOnly = Wait-Until { (Count-Rows) -eq 3 -and (Read-Toggle 'ButtonFilterFalses') -eq 'Off' -and (Read-Toggle 'ButtonFilterTrues') -eq 'On' }
@@ -266,23 +338,60 @@ jobs:
               $cleared = Wait-Until { (Count-Rows) -eq 4 -and (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -eq '' }
               $uid = @($grid.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::HeaderItem))) | Where-Object { $_.Current.Name -eq 'UID' })[0]
               $uid.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+              $sortedUp = Wait-Until { (Read-Uids) -eq '1 2 3 4' }
               $uid.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-              $sortedDown = Wait-Until { (Count-Rows) -eq 4 -and (Read-FirstUid) -eq '4' }
-              (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue('Here')
+              $sortedDown = Wait-Until { (Read-Uids) -eq '4 3 2 1' }
+              Set-Find 'Here'
               $sortKept = Wait-Until { (Count-Rows) -eq 2 -and (Read-FirstUid) -eq '2' }
               Save-Shot 'sorted'
+              Set-Find 'Missing'
+              Wait-Until { (Count-Rows) -eq 1 } | Out-Null
+              Use-RowMenu 'Add to Ignore List'
+              $ignored = Wait-Until { (Read-Count 'noncompliant') -eq '0 noncompliant' -and (Read-Count 'compliant') -eq '3 compliant' -and (Is-Idle) -and (Test-Path (Join-Path $dir 'Ignore.txt')) }
+              Save-Shot 'ignored'
+              Use-RowMenu 'Remove from Ignore List'
+              $unignored = Wait-Until { (Read-Count 'noncompliant') -eq '1 noncompliant' -and (Is-Idle) -and -not (Test-Path (Join-Path $dir 'Ignore.txt')) }
+              Save-Shot 'unignored'
+              Set-Find ''
             }
             catch {
               Write-Host "Driving the window failed: $_"
             }
           }
           $running = -not $p.HasExited
-          if ($running) { Stop-Process -Id $p.Id -Force }
+          if ($started -and $running) {
+            try {
+              $closed = Close-App
+              $saved = Read-Filters
+              Open-App
+              $litAgain = (Read-Toggle 'ButtonFilterFalses') + '/' + (Read-Toggle 'ButtonFilterTrues')
+              $all = Wait-Until { (Count-Rows) -eq 4 }
+              $remembered = "$closed $saved $litAgain $all"
+              Flip 'ButtonFilterFalses'
+              Flip 'ButtonFilterTrues'
+              Wait-Until { (Read-Toggle 'ButtonFilterFalses') -eq 'On' -and (Read-Toggle 'ButtonFilterTrues') -eq 'On' } | Out-Null
+              $closed = Close-App
+              $saved = Read-Filters
+              Open-App
+              $litAgain = (Read-Toggle 'ButtonFilterFalses') + '/' + (Read-Toggle 'ButtonFilterTrues')
+              $remembered += " | $closed $saved $litAgain"
+              Flip 'ButtonFilterTrues'
+              Wait-Until { (Read-Toggle 'ButtonFilterTrues') -eq 'Off' } | Out-Null
+              $closed = Close-App
+              $saved = Read-Filters
+              $remembered += " | $closed $saved"
+            }
+            catch {
+              Write-Host "Closing and opening again failed: $_"
+            }
+          }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
           $written = $null -ne (Get-ItemProperty -Path $key -Name 'Missing' -ErrorAction SilentlyContinue)
           $emptyKept = @('Log.txt', 'Ignore.txt' | Where-Object { Test-Path (Join-Path $dir $_) })
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
-          Write-Host "both=$both, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, sortedDown=$sortedDown, sortKept=$sortKept"
+          Write-Host "both=$both, pathOrder=$pathOrder, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, sortedUp=$sortedUp, sortedDown=$sortedDown, sortKept=$sortKept"
+          Write-Host "ignored=$ignored, unignored=$unignored, remembered=$remembered"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
           if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
@@ -291,18 +400,23 @@ jobs:
           if (-not $focused) { Write-Error 'The Find box did not have the keyboard focus at start'; exit 1 }
           if ($lit -ne 'On/Off') { Write-Error "Non-Compliant was not the only lit filter button at start: $lit"; exit 1 }
           if (-not $both) { Write-Error 'Compliant and Non-Compliant on together did not show the rows of both'; exit 1 }
+          if ($pathOrder -ne '4 1 2 3') { Write-Error "The rows did not start sorted by Path from A to Z: $pathOrder"; exit 1 }
           if (-not $compliantOnly) { Write-Error 'Compliant alone did not show only the compliant rows'; exit 1 }
           if (-not $reset) { Write-Error 'All Filters Reset did not show every row'; exit 1 }
           if ($unlit -ne 'Off/Off') { Write-Error "All Filters Reset left a filter button lit: $unlit"; exit 1 }
           if (-not $ctrlF) { Write-Error 'Ctrl+F did not put the keyboard focus in the Find box'; exit 1 }
           if (-not $found) { Write-Error 'The Find box did not show only the rows with that text'; exit 1 }
           if (-not $cleared) { Write-Error 'Esc did not clear the Find box, keep it open and show every row again'; exit 1 }
+          if (-not $sortedUp) { Write-Error 'Clicking the UID header once did not sort the rows from the first line down'; exit 1 }
           if (-not $sortedDown) { Write-Error 'Clicking the UID header twice did not sort the rows from the last line up'; exit 1 }
           if (-not $sortKept) { Write-Error 'Typing in the Find box lost the sort order of the rows'; exit 1 }
+          if (-not $ignored) { Write-Error 'Add to Ignore List did not take the row out of the noncompliant count'; exit 1 }
+          if (-not $unignored) { Write-Error 'Remove from Ignore List did not show the row as noncompliant again without Query Registry'; exit 1 }
+          if ($remembered -ne 'True False/- Off/Off True | True -/True On/On | True -/-') { Write-Error "Compliant and Non-Compliant were not remembered, or Settings.json kept them in the default state: $remembered"; exit 1 }
           if (-not $running) { Write-Error 'RegistryKey Check closed by itself'; exit 1 }
           if ($written) { Write-Error 'Opening RegistryKey Check wrote a value from List.txt into the registry'; exit 1 }
           if ($emptyKept.Count -gt 0) { Write-Error "RegistryKey Check kept or made an empty file although nothing went wrong: $($emptyKept -join ', ')"; exit 1 }
-          Write-Host 'RegistryKey Check read List.txt, counted the lines, showed only the False row with every header in full, let both filters be on together, the Find box found the row with that text and kept the sort order'
+          Write-Host 'RegistryKey Check read List.txt, sorted it by Path, showed only the False row, let both filters be on together, found and sorted rows, updated the Ignore List at once and remembered the filters'
 
       - name: Keep the screenshots
         if: always()

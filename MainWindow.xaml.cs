@@ -25,6 +25,8 @@ namespace RegistryKey_Check
 
         private bool filtersResetting;
 
+        private bool filtersRestored;
+
         public MainWindow()
         {
             App.UseDarkTitleBar(this);
@@ -32,6 +34,10 @@ namespace RegistryKey_Check
             Title = "RegistryKey Check " + Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
             DataGridRegCommands.ItemsSource = ViewModels.ObsColl_RegCommands;
             DataGridNonRegCommands.ItemsSource = ViewModels.ObsColl_Non_RegCommands;
+            DataGridRegCommands.Items.SortDescriptions.Add(new SortDescription(nameof(ModelRegCommand.ListFullPath), ListSortDirection.Ascending));
+            DataGridRegCommands.Items.SortDescriptions.Add(new SortDescription(nameof(ModelRegCommand.ListId), ListSortDirection.Ascending));
+            dgColumnRegFullPath.SortDirection = ListSortDirection.Ascending;
+            dgColumnRegUID.SortDirection = null;
             columnTexts = new Dictionary<DataGridColumn, Func<ModelRegCommand, string>>
             {
                 [dgColumnRegUID] = s => s.ListId.ToString(),
@@ -105,13 +111,20 @@ namespace RegistryKey_Check
             {
                 ButtonReadListFile_Click(sender, e);
                 await QueryRegEdit();
-                ButtonFilterFalses.IsChecked = true;
             }
+            ButtonFilterFalses.IsChecked = settings.NonCompliantFilter ?? true;
+            ButtonFilterTrues.IsChecked = settings.CompliantFilter ?? false;
+            filtersRestored = true;
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             settings.ReadWindow(this);
+            if (filtersRestored)
+            {
+                settings.NonCompliantFilter = ButtonFilterFalses.IsChecked == true ? null : false;
+                settings.CompliantFilter = ButtonFilterTrues.IsChecked == true ? true : null;
+            }
             settings.RegColumns = AppSettings.ReadColumns(DataGridRegCommands);
             settings.NonRegColumns = AppSettings.ReadColumns(DataGridNonRegCommands);
             settings.Save();
@@ -199,18 +212,20 @@ namespace RegistryKey_Check
             }
         }
 
-        private void MenuAddToIgnoreList_Click(object sender, RoutedEventArgs e)
+        private async void MenuAddToIgnoreList_Click(object sender, RoutedEventArgs e)
         {
             ViewModels.AddToIgnoreList(SelectedRows());
             DataGridRegCommands.Items.Refresh();
             UpdateCounts();
+            await QueryRegEdit();
         }
 
-        private void MenuRemoveFromIgnoreList_Click(object sender, RoutedEventArgs e)
+        private async void MenuRemoveFromIgnoreList_Click(object sender, RoutedEventArgs e)
         {
             ViewModels.RemoveFromIgnoreList(SelectedRows());
             DataGridRegCommands.Items.Refresh();
             UpdateCounts();
+            await QueryRegEdit();
         }
 
         private void RegCommandsGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

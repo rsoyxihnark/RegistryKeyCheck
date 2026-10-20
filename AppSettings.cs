@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -38,6 +39,12 @@ namespace RegistryKey_Check
         public List<ColumnSetting> RegColumns { get; set; } = new List<ColumnSetting>();
 
         public List<ColumnSetting> NonRegColumns { get; set; } = new List<ColumnSetting>();
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? NonCompliantFilter { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? CompliantFilter { get; set; }
 
         public static AppSettings Load()
         {

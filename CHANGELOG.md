@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- The list now starts sorted by Path from A to Z instead of by UID.
+- The Compliant and Non-Compliant buttons now stay the way you left them when you close and open RegistryKey Check.
+- Fixed Add to Ignore List and Remove from Ignore List not updating the rows until you ran Query Registry.
+
 ## 3.2.1
 
 - Details now says Access denied when Windows will not let a line through.
