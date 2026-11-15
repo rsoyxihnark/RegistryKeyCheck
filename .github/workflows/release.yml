@@ -214,7 +214,12 @@ jobs:
           }
           function Save-Shot([string]$name) { [WindowShot]::Save([IntPtr]$window.Current.NativeWindowHandle, (Join-Path $shots "$name.png")) }
           function Set-Find([string]$text) { (Find-Id 'TextBoxFind').GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($text) }
-          function Find-Detail { $auto::RootElement.FindFirst($scope::Children, (New-Object System.Windows.Automation.AndCondition((New-Object System.Windows.Automation.PropertyCondition($auto::ProcessIdProperty, [int]$p.Id)), (New-Object System.Windows.Automation.PropertyCondition($auto::NameProperty, 'Detail'))))) }
+          function Find-Detail {
+            $named = New-Object System.Windows.Automation.AndCondition((New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Window)), (New-Object System.Windows.Automation.PropertyCondition($auto::NameProperty, 'Detail')))
+            $found = $window.FindFirst($scope::Children, $named)
+            if ($null -eq $found) { $found = $auto::RootElement.FindFirst($scope::Children, (New-Object System.Windows.Automation.AndCondition($named, (New-Object System.Windows.Automation.PropertyCondition($auto::ProcessIdProperty, [int]$p.Id))))) }
+            $found
+          }
           function Is-Idle { (Find-Id 'ButtonQueryFromRegEdit').Current.IsEnabled }
           function Use-RowMenu([string]$name) {
             [WindowShot]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle) | Out-Null
