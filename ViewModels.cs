@@ -9,7 +9,6 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
 
@@ -26,16 +25,6 @@ namespace RegistryKey_Check
         private static readonly HashSet<string> ignoreLookup = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         private static readonly string[] valueTypes = { "REG_SZ", "REG_EXPAND_SZ", "REG_MULTI_SZ", "REG_DWORD", "REG_QWORD", "REG_BINARY", "REG_NONE" };
-
-        public static int RegCommandIds;
-
-        public static int ListIds;
-
-        public static int DisplayingIDs;
-
-        private static RegistryKey? registryKey;
-
-        private static RegistryValueKind registryValueKind;
 
         private sealed class QueryKey
         {
@@ -88,12 +77,12 @@ namespace RegistryKey_Check
         {
             ObsColl_RegCommands.Clear();
             ObsColl_Non_RegCommands.Clear();
-            RegCommandIds = 0;
-            ListIds = 0;
+            int regCommandIds = 0;
+            int listIds = 0;
             ReadIgnoreFile();
             foreach (string line in ReadTextLines("List.txt"))
             {
-                ListIds++;
+                listIds++;
                 List<string> args = SplitCommandLine(CmdUnescape(BatchPercents(line.Trim())));
                 string program = args.Count >= 3 ? args[0].TrimStart('@') : string.Empty;
                 bool isReg = program.Equals("reg", StringComparison.OrdinalIgnoreCase) || program.Equals("reg.exe", StringComparison.OrdinalIgnoreCase) || program.EndsWith("\\System32\\reg.exe", StringComparison.OrdinalIgnoreCase) || program.EndsWith("\\Sysnative\\reg.exe", StringComparison.OrdinalIgnoreCase);
@@ -101,8 +90,8 @@ namespace RegistryKey_Check
                 ModelRegCommand? modelRegCommand = command == "add" || command == "delete" ? ReadRegCommand(args, command) : null;
                 if (modelRegCommand != null)
                 {
-                    modelRegCommand.RegCommandId = ++RegCommandIds;
-                    modelRegCommand.ListId = ListIds;
+                    modelRegCommand.RegCommandId = ++regCommandIds;
+                    modelRegCommand.ListId = listIds;
                     modelRegCommand.ListLineString = line.Trim();
                     modelRegCommand.ListMatchWithRegEdit = ignoreLookup.Contains(modelRegCommand.ListLineString) ? "Ignored" : "Unknown";
                     modelRegCommand.ComplianceReason = modelRegCommand.ListMatchWithRegEdit == "Ignored" ? "On the Ignore List" : string.Empty;
@@ -111,7 +100,7 @@ namespace RegistryKey_Check
                 else
                 {
                     ModelNonRegCommand modelNonRegCommand = new ModelNonRegCommand();
-                    modelNonRegCommand.ListId = ListIds;
+                    modelNonRegCommand.ListId = listIds;
                     modelNonRegCommand.ListLineString = line;
                     ObsColl_Non_RegCommands.Add(modelNonRegCommand);
                 }
@@ -738,7 +727,7 @@ namespace RegistryKey_Check
                             {
                                 mo.ReturnObject = openedKey.GetValue(mo.ListValueName, string.Empty, RegistryValueOptions.DoNotExpandEnvironmentNames)!;
                                 mo.AvailableValueName = "It's Available";
-                                registryValueKind = openedKey.GetValueKind(mo.ListValueName);
+                                RegistryValueKind registryValueKind = openedKey.GetValueKind(mo.ListValueName);
                                 if (registryValueKind == RegistryValueKind.String)
                                 {
                                     mo.RegEditValueType = "REG_SZ";
@@ -922,19 +911,7 @@ namespace RegistryKey_Check
             }
         }
 
-        private static bool AvailableSubKeyMethodTrue(string listBasekey, string listSubKey, RegistryView view)
-        {
-            registryKey = RootKey(listBasekey, view)?.OpenSubKey(listSubKey, writable: true);
-            return registryKey != null;
-        }
-
-        private static bool CreateSubKeyMethod(string listBasekey, string listSubKey, RegistryView view)
-        {
-            registryKey = RootKey(listBasekey, view)?.CreateSubKey(listSubKey, writable: true);
-            return registryKey != null;
-        }
-
-        public static async Task ExecuteMissingCommands()
+        public static void ExecuteMissingCommands()
         {
             List<ModelRegCommand> rows = ObsColl_RegCommands.Where(mo => mo.ListMatchWithRegEdit != "Ignored").ToList();
             Dictionary<ModelRegCommand, string> keys = rows.ToDictionary(mo => mo, KeyIdentity);
@@ -943,25 +920,20 @@ namespace RegistryKey_Check
             {
                 mo.ExecuteResult = string.Empty;
                 mo.ExecuteRefusal = string.Empty;
+                RegistryKey? key = null;
                 try
                 {
                     if (mo.ListMatchWithRegEdit == "False" || rewrites.Contains(mo))
                     {
-                        if (RootKey(mo.ListBaseKey) == null)
-                        {
-                            throw new InvalidOperationException("\"" + mo.ListBaseKey + "\" is not a base key the Registry has.");
-                        }
+                        RegistryKey root = RootKey(mo.ListBaseKey, mo.ListView) ?? throw new InvalidOperationException("\"" + mo.ListBaseKey + "\" is not a base key the Registry has.");
                         if (mo.ListCommand == "reg delete" && mo.DeleteAllValues)
                         {
-                            await Task.Run(() =>
+                            key = root.OpenSubKey(mo.ListSubKey, writable: true);
+                            if (key != null)
                             {
-                                AvailableSubKeyMethodTrue(mo.ListBaseKey, mo.ListSubKey, mo.ListView);
-                            });
-                            if (registryKey != null)
-                            {
-                                foreach (string name in registryKey.GetValueNames())
+                                foreach (string name in key.GetValueNames())
                                 {
-                                    registryKey.DeleteValue(name);
+                                    key.DeleteValue(name);
                                 }
                             }
                         }
@@ -971,68 +943,55 @@ namespace RegistryKey_Check
                             {
                                 throw new InvalidOperationException("A whole base key cannot be deleted.");
                             }
-                            RootKey(mo.ListBaseKey, mo.ListView)?.DeleteSubKeyTree(mo.ListSubKey, throwOnMissingSubKey: false);
+                            root.DeleteSubKeyTree(mo.ListSubKey, throwOnMissingSubKey: false);
                         }
                         else if (mo.ListCommand == "reg delete")
                         {
-                            await Task.Run(() =>
-                            {
-                                AvailableSubKeyMethodTrue(mo.ListBaseKey, mo.ListSubKey, mo.ListView);
-                            });
-                            if (registryKey != null)
-                            {
-                                registryKey.DeleteValue(mo.ListValueName, throwOnMissingValue: false);
-                            }
+                            key = root.OpenSubKey(mo.ListSubKey, writable: true);
+                            key?.DeleteValue(mo.ListValueName, throwOnMissingValue: false);
                         }
                         else if (mo.ListCommand == "reg add" && mo.ListValueName == "This_field_is_NULL")
                         {
-                            CreateSubKeyMethod(mo.ListBaseKey, mo.ListSubKey, mo.ListView);
+                            key = root.CreateSubKey(mo.ListSubKey, writable: true);
                         }
-                        else if (mo.ListCommand == "reg add" && mo.ListValueName != "This_field_is_NULL")
+                        else if (mo.ListCommand == "reg add")
                         {
                             if (!valueTypes.Contains(mo.ListValueType))
                             {
                                 throw new InvalidOperationException("\"" + mo.ListValueType + "\" is not a value type the Registry has.");
                             }
-                            await Task.Run(() =>
+                            key = root.CreateSubKey(mo.ListSubKey, writable: true);
+                            if (mo.ListValueType == "REG_SZ")
                             {
-                                CreateSubKeyMethod(mo.ListBaseKey, mo.ListSubKey, mo.ListView);
-                            });
-                            if (registryKey != null && mo.ListValueType == "REG_SZ")
-                            {
-                                registryKey.SetValue(mo.ListValueName, mo.ListValueData, RegistryValueKind.String);
+                                key.SetValue(mo.ListValueName, mo.ListValueData, RegistryValueKind.String);
                             }
-                            else if (registryKey != null && mo.ListValueType == "REG_DWORD")
+                            else if (mo.ListValueType == "REG_DWORD")
                             {
-                                registryKey.SetValue(mo.ListValueName, unchecked((int)(uint)ListNumber(mo)), RegistryValueKind.DWord);
+                                key.SetValue(mo.ListValueName, unchecked((int)(uint)ListNumber(mo)), RegistryValueKind.DWord);
                             }
-                            else if (registryKey != null && mo.ListValueType == "REG_MULTI_SZ")
+                            else if (mo.ListValueType == "REG_MULTI_SZ")
                             {
                                 if (mo.ListValueStrings.Length > 1 && mo.ListValueStrings.Contains(string.Empty))
                                 {
                                     throw new FormatException("\"" + mo.ListValueData + "\" has an empty string, which reg.exe does not write in REG_MULTI_SZ data.");
                                 }
-                                registryKey.SetValue(mo.ListValueName, mo.ListValueStrings, RegistryValueKind.MultiString);
+                                key.SetValue(mo.ListValueName, mo.ListValueStrings, RegistryValueKind.MultiString);
                             }
-                            else if (registryKey != null && mo.ListValueType == "REG_BINARY")
+                            else if (mo.ListValueType == "REG_BINARY")
                             {
-                                registryKey.SetValue(mo.ListValueName, Convert.FromHexString(mo.ListValueData), RegistryValueKind.Binary);
+                                key.SetValue(mo.ListValueName, Convert.FromHexString(mo.ListValueData), RegistryValueKind.Binary);
                             }
-                            else if (registryKey != null && mo.ListValueType == "REG_EXPAND_SZ")
+                            else if (mo.ListValueType == "REG_EXPAND_SZ")
                             {
-                                registryKey.SetValue(mo.ListValueName, mo.ListValueData, RegistryValueKind.ExpandString);
+                                key.SetValue(mo.ListValueName, mo.ListValueData, RegistryValueKind.ExpandString);
                             }
-                            else if (registryKey != null && mo.ListValueType == "REG_QWORD")
+                            else if (mo.ListValueType == "REG_QWORD")
                             {
-                                registryKey.SetValue(mo.ListValueName, unchecked((long)ListNumber(mo)), RegistryValueKind.QWord);
+                                key.SetValue(mo.ListValueName, unchecked((long)ListNumber(mo)), RegistryValueKind.QWord);
                             }
-                            else if (registryKey != null && mo.ListValueType == "REG_NONE")
+                            else if (mo.ListValueType == "REG_NONE")
                             {
-                                registryKey.SetValue(mo.ListValueName, Encoding.Unicode.GetBytes(mo.ListValueData + "\0"), RegistryValueKind.None);
-                            }
-                            else
-                            {
-                                throw new InvalidOperationException("The key could not be created.");
+                                key.SetValue(mo.ListValueName, Encoding.Unicode.GetBytes(mo.ListValueData + "\0"), RegistryValueKind.None);
                             }
                         }
                         mo.ExecuteResult = "successful";
@@ -1056,8 +1015,7 @@ namespace RegistryKey_Check
                 }
                 finally
                 {
-                    registryKey?.Dispose();
-                    registryKey = null;
+                    key?.Dispose();
                 }
             }
         }

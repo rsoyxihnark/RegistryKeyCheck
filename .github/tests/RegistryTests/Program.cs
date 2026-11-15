@@ -92,7 +92,7 @@ List<(string Line, string Status, string Data, string Result)> Run(string[] list
     viewModels.GetMethod("QueryFromRegEdit")!.Invoke(null, null);
     if (execute)
     {
-        ((Task)viewModels.GetMethod("ExecuteMissingCommands")!.Invoke(null, null)!).GetAwaiter().GetResult();
+        viewModels.GetMethod("ExecuteMissingCommands")!.Invoke(null, null);
         viewModels.GetMethod("QueryFromRegEdit")!.Invoke(null, null);
     }
     List<(string, string, string, string)> rows = new List<(string, string, string, string)>();
@@ -367,10 +367,18 @@ try
     Check(badMake == "Parameter is incorrect.", "A key Windows will not make says what Windows said: " + badMake);
     Check(Refused("HKCU", new InvalidOperationException("broken")).Length == 0, "A fault in RegistryKey Check still goes to Log.txt: " + Refused("HKCU", new InvalidOperationException("broken")));
     object refusedRow = Activator.CreateInstance(model)!;
+    model.GetProperty("ListMatchWithRegEdit")!.SetValue(refusedRow, "False");
     model.GetProperty("ComplianceReason")!.SetValue(refusedRow, "Key still exists in Registry");
     model.GetProperty("ExecuteRefusal")!.SetValue(refusedRow, denied);
     string refusedDetails = (string)model.GetProperty("ComplianceDetails")!.GetValue(refusedRow)!;
     Check(refusedDetails == "Access denied.", "Details says only why Windows refused the line: " + refusedDetails);
+    model.GetProperty("ListMatchWithRegEdit")!.SetValue(refusedRow, "True");
+    model.GetProperty("ComplianceReason")!.SetValue(refusedRow, "Compliant");
+    string fixedDetails = (string)model.GetProperty("ComplianceDetails")!.GetValue(refusedRow)!;
+    model.GetProperty("ListMatchWithRegEdit")!.SetValue(refusedRow, "Ignored");
+    model.GetProperty("ComplianceReason")!.SetValue(refusedRow, "On the Ignore List");
+    string ignoredDetails = (string)model.GetProperty("ComplianceDetails")!.GetValue(refusedRow)!;
+    Check(fixedDetails == "Compliant" && ignoredDetails == "On the Ignore List", "Details stops saying why Windows refused a line once it is Compliant or ignored: " + fixedDetails + " | " + ignoredDetails);
 
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
     {
@@ -690,7 +698,7 @@ try
     File.WriteAllLines(Path.Combine(work, "Ignore.txt"), new[] { "M\u00fczik typed by hand" }, ansi);
     viewModels.GetMethod("ReadListFile")!.Invoke(null, null);
     viewModels.GetMethod("QueryFromRegEdit")!.Invoke(null, null);
-    ((Task)viewModels.GetMethod("ExecuteMissingCommands")!.Invoke(null, null)!).GetAwaiter().GetResult();
+    viewModels.GetMethod("ExecuteMissingCommands")!.Invoke(null, null);
     using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(TestKey + @"\N"))
     {
         Check((string?)key?.GetValue("M\u00fczik") == "\u00dc", "List.txt saved in code page " + ansi.CodePage + " wrote the value with its letters intact");

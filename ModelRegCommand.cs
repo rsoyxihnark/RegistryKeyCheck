@@ -30,17 +30,27 @@ namespace RegistryKey_Check
 
         public string AvailableValueName { get; set; } = "This_field_is_NULL";
 
+        public string AvailableValueNameShown => ViewModels.Shown(AvailableValueName);
+
         public string ListValueType { get; set; } = "This_field_is_NULL";
+
+        public string ListValueTypeShown => ViewModels.Shown(ListValueType);
 
         public string RegEditValueType { get; set; } = "This_field_is_NULL";
 
+        public string RegEditValueTypeShown => ViewModels.Shown(RegEditValueType);
+
         public string ListValueData { get; set; } = "This_field_is_NULL";
+
+        public string ListValueDataShown => ViewModels.Shown(ListValueData);
 
         public string[] ListValueStrings { get; set; } = Array.Empty<string>();
 
         public object ReturnObject { get; set; } = "This_field_is_NULL";
 
         public string RegEditValueData { get; set; } = "This_field_is_NULL";
+
+        public string RegEditValueDataShown => ViewModels.Shown(RegEditValueData);
 
         public string ExecuteResult { get; set; } = string.Empty;
 
@@ -58,6 +68,6 @@ namespace RegistryKey_Check
 
         public bool HasListWarning => ListWarning.Length > 0;
 
-        public string ComplianceDetails => string.Join(". ", new[] { ListWarning, ExecuteRefusal.Length > 0 ? ExecuteRefusal : ComplianceReason }.Where(text => text.Length > 0));
+        public string ComplianceDetails => string.Join(". ", new[] { ListWarning, ExecuteRefusal.Length > 0 && ListMatchWithRegEdit == "False" ? ExecuteRefusal : ComplianceReason }.Where(text => text.Length > 0));
     }
 }

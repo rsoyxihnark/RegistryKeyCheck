@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.1
+
+- Fixed Details still saying why Windows refused a line, such as Access denied, after the line became Compliant or went on the Ignore List.
+- Fixed rows with a blank cell, such as in Expected or Actual, landing in the middle of the list instead of first when sorted by that column.
+
 ## 3.3.0
 
 - The list now starts sorted by Path from A to Z instead of by UID.

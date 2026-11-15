@@ -45,11 +45,11 @@ namespace RegistryKey_Check
                 [dgColumnRegFullPath] = s => s.ListFullPath,
                 [dgColumnRegAvailableSubKey] = s => s.AvailableSubKey,
                 [dgColumnRegListValueName] = s => s.ListValueNameShown,
-                [dgColumnRegAvailableValueName] = s => ViewModels.Shown(s.AvailableValueName),
-                [dgColumnRegListValueType] = s => ViewModels.Shown(s.ListValueType),
-                [dgColumnRegRegEditValueType] = s => ViewModels.Shown(s.RegEditValueType),
-                [dgColumnRegListValueData] = s => ViewModels.Shown(s.ListValueData),
-                [dgColumnRegRegEditValueData] = s => ViewModels.Shown(s.RegEditValueData),
+                [dgColumnRegAvailableValueName] = s => s.AvailableValueNameShown,
+                [dgColumnRegListValueType] = s => s.ListValueTypeShown,
+                [dgColumnRegRegEditValueType] = s => s.RegEditValueTypeShown,
+                [dgColumnRegListValueData] = s => s.ListValueDataShown,
+                [dgColumnRegRegEditValueData] = s => s.RegEditValueDataShown,
                 [dgColumnRegExecuteResult] = s => s.ExecuteResult,
                 [dgColumnRegListMatchWithRegEdit] = s => s.ListMatchWithRegEdit,
                 [dgColumnRegComplianceDetails] = s => s.ComplianceDetails
@@ -392,7 +392,7 @@ namespace RegistryKey_Check
             {
                 ViewModels.QueryFromRegEdit();
             });
-            await Task.Run(() => ViewModels.ExecuteMissingCommands());
+            await Task.Run(ViewModels.ExecuteMissingCommands);
             await Task.Run(() =>
             {
                 ViewModels.QueryFromRegEdit();
@@ -405,12 +405,11 @@ namespace RegistryKey_Check
         {
             if (((DataGridRow)sender).Item is ModelRegCommand x)
             {
-                ViewModels.DisplayingIDs = x.RegCommandId - 1;
+                DetailWindow detailWindow = new DetailWindow(x);
+                detailWindow.ShowInTaskbar = false;
+                detailWindow.Owner = Application.Current.MainWindow;
+                detailWindow.ShowDialog();
             }
-            DetailWindow detailWindow = new DetailWindow();
-            detailWindow.ShowInTaskbar = false;
-            detailWindow.Owner = Application.Current.MainWindow;
-            detailWindow.ShowDialog();
         }
     }
 }

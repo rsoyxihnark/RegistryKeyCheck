@@ -5,8 +5,11 @@ namespace RegistryKey_Check
 {
     public partial class DetailWindow : Window
     {
-        public DetailWindow()
+        private readonly ModelRegCommand mo;
+
+        public DetailWindow(ModelRegCommand mo)
         {
+            this.mo = mo;
             App.UseDarkTitleBar(this);
             InitializeComponent();
         }
@@ -21,17 +24,16 @@ namespace RegistryKey_Check
 
         private void DetailWin_Loaded(object sender, RoutedEventArgs e)
         {
-            ModelRegCommand mo = ViewModels.ObsColl_RegCommands[ViewModels.DisplayingIDs];
             TextBoxUID.Text = mo.ListId.ToString();
             TextBoxListCommand.Text = mo.ListCommand;
             TextBoxListFullPath.Text = mo.ListFullPath;
             TextBoxAvailableSubKey.Text = mo.AvailableSubKey;
             TextBoxListValueName.Text = mo.ListValueNameShown;
-            TextBoxAvailableValueName.Text = ViewModels.Shown(mo.AvailableValueName);
-            TextBoxListValueType.Text = ViewModels.Shown(mo.ListValueType);
-            TextBoxRegEditValueType.Text = ViewModels.Shown(mo.RegEditValueType);
-            TextBoxListValueData.Text = ViewModels.Shown(mo.ListValueData);
-            TextBoxRegEditValueData.Text = ViewModels.Shown(mo.RegEditValueData);
+            TextBoxAvailableValueName.Text = mo.AvailableValueNameShown;
+            TextBoxListValueType.Text = mo.ListValueTypeShown;
+            TextBoxRegEditValueType.Text = mo.RegEditValueTypeShown;
+            TextBoxListValueData.Text = mo.ListValueDataShown;
+            TextBoxRegEditValueData.Text = mo.RegEditValueDataShown;
             TextBoxExecuteResult.Text = mo.ExecuteResult;
             TextBoxListMatchWithRegEdit.Text = mo.ListMatchWithRegEdit;
             TextBoxComplianceDetails.Text = mo.ComplianceDetails;
