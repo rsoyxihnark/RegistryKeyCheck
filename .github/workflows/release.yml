@@ -327,6 +327,9 @@ jobs:
           $sortedDown = $false
           $sortKept = $false
           $detailShown = ''
+          $labelCount = 0
+          $labelsCut = @()
+          $labelNeed = 0
           $ignored = $false
           $unignored = $false
           $remembered = ''
@@ -379,6 +382,14 @@ jobs:
               if ($opened) {
                 $detail = Find-Detail
                 $shown = @('TextBoxUID', 'TextBoxListValueData', 'TextBoxRegEditValueData' | ForEach-Object { $detail.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::AutomationIdProperty, $_))).GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value }) -join '/'
+                $detailScale = $detail.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::AutomationIdProperty, 'TextBoxUID'))).Current.BoundingRectangle.Width / 660
+                $labels = @($detail.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Text))) | Where-Object { $_.Current.ClassName -eq 'Label' })
+                $labelCount = $labels.Count
+                foreach ($label in $labels) {
+                  $text = New-Object System.Windows.Media.FormattedText($label.Current.Name, [System.Globalization.CultureInfo]::InvariantCulture, [System.Windows.FlowDirection]::LeftToRight, $typeface, 8, [System.Windows.Media.Brushes]::Black)
+                  $labelNeed = [Math]::Max($labelNeed, [Math]::Ceiling($text.Width + 10))
+                  if ($label.Current.BoundingRectangle.Width / $detailScale -lt $text.Width + 10) { $labelsCut += $label.Current.Name }
+                }
                 [WindowShot]::Save([IntPtr]$detail.Current.NativeWindowHandle, (Join-Path $shots 'detail.png'))
                 [WindowShot]::SetForegroundWindow([IntPtr]$detail.Current.NativeWindowHandle) | Out-Null
                 [System.Windows.Forms.SendKeys]::SendWait('{ESC}')
@@ -430,7 +441,7 @@ jobs:
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
           Write-Host "both=$both, pathOrder=$pathOrder, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, blankFirst=$blankFirst, sortedUp=$sortedUp, sortedDown=$sortedDown, sortKept=$sortKept"
-          Write-Host "detailShown=$detailShown, ignored=$ignored, unignored=$unignored, remembered=$remembered"
+          Write-Host "detailShown=$detailShown, labels=$labelCount, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
           if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
@@ -451,6 +462,7 @@ jobs:
           if (-not $sortedDown) { Write-Error 'Clicking the UID header twice did not sort the rows from the last line up'; exit 1 }
           if (-not $sortKept) { Write-Error 'Typing in the Find box lost the sort order of the rows'; exit 1 }
           if ($detailShown -ne 'True 3/1/ True') { Write-Error "Double clicking a row did not open the Detail window with its UID, Expected and a blank Actual, or Esc did not close it: $detailShown"; exit 1 }
+          if ($labelCount -ne 13 -or $labelsCut.Count -gt 0) { Write-Error "The Detail window showed $labelCount of its 13 labels, and these were cut off: $($labelsCut -join ', ')"; exit 1 }
           if (-not $ignored) { Write-Error 'Add to Ignore List did not take the row out of the noncompliant count'; exit 1 }
           if (-not $unignored) { Write-Error 'Remove from Ignore List did not show the row as noncompliant again without Query Registry'; exit 1 }
           if ($remembered -ne 'True False/- Off/Off True | True -/True On/On | True -/-') { Write-Error "Compliant and Non-Compliant were not remembered, or Settings.json kept them in the default state: $remembered"; exit 1 }

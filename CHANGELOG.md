@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.3
+
+- Fixed the Value Name Available? and List Match with Registry labels being cut off in the Detail window.
+
 ## 3.3.2
 
 - Fixed Details still saying why Windows refused a line, such as Access denied, after the line became Compliant or went on the Ignore List.
