@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.3.3
+## 3.3.4
 
 - Fixed the Value Name Available? and List Match with Registry labels being cut off in the Detail window.
 
