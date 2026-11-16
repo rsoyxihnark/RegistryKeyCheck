@@ -330,6 +330,7 @@ jobs:
           $labelCount = 0
           $labelsCut = @()
           $labelNeed = 0
+          $labelClasses = ''
           $ignored = $false
           $unignored = $false
           $remembered = ''
@@ -383,7 +384,10 @@ jobs:
                 $detail = Find-Detail
                 $shown = @('TextBoxUID', 'TextBoxListValueData', 'TextBoxRegEditValueData' | ForEach-Object { $detail.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::AutomationIdProperty, $_))).GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value }) -join '/'
                 $detailScale = $detail.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::AutomationIdProperty, 'TextBoxUID'))).Current.BoundingRectangle.Width / 660
-                $labels = @($detail.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Text))) | Where-Object { $_.Current.ClassName -eq 'Label' })
+                $labelNames = @('UID', 'List Command', 'Path', 'SubKey Available?', 'Value', 'Value Name Available?', 'List Value Type', 'Registry Value Type', 'Expected', 'Actual', 'Execute Result', 'List Match with Registry', 'Details')
+                $texts = @($detail.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Text))))
+                $labelClasses = @($texts | ForEach-Object { $_.Current.ClassName } | Sort-Object -Unique) -join '/'
+                $labels = @($texts | Where-Object { $labelNames -contains $_.Current.Name -and $_.Current.ClassName -ne 'TextBlock' })
                 $labelCount = $labels.Count
                 foreach ($label in $labels) {
                   $text = New-Object System.Windows.Media.FormattedText($label.Current.Name, [System.Globalization.CultureInfo]::InvariantCulture, [System.Windows.FlowDirection]::LeftToRight, $typeface, 8, [System.Windows.Media.Brushes]::Black)
@@ -441,7 +445,7 @@ jobs:
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
           Write-Host "both=$both, pathOrder=$pathOrder, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, blankFirst=$blankFirst, sortedUp=$sortedUp, sortedDown=$sortedDown, sortKept=$sortKept"
-          Write-Host "detailShown=$detailShown, labels=$labelCount, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered"
+          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
           if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
