@@ -386,23 +386,32 @@ try
     string logFile = Path.Combine(work, "Log.txt");
     long LogLength() => File.Exists(logFile) ? new FileInfo(logFile).Length : 0;
     long logBefore = LogLength();
-    RegistryAccessRule denyRead = new RegistryAccessRule(WindowsIdentity.GetCurrent().User!, RegistryRights.QueryValues, AccessControlType.Deny);
-    using (RegistryKey lockedKey = Registry.CurrentUser.CreateSubKey(TestKey + @"\Locked"))
+    void WhileDenied(string subKey, RegistryRights rights, Action run)
     {
-        RegistrySecurity security = lockedKey.GetAccessControl();
-        security.AddAccessRule(denyRead);
-        lockedKey.SetAccessControl(security);
+        RegistryAccessRule deny = new RegistryAccessRule(WindowsIdentity.GetCurrent().User!, rights, AccessControlType.Deny);
+        using RegistryKey key = Registry.CurrentUser.CreateSubKey(TestKey + @"\" + subKey);
+        RegistrySecurity security = key.GetAccessControl();
+        security.AddAccessRule(deny);
+        key.SetAccessControl(security);
         try
         {
-            Run(new[] { lockedLine }, Array.Empty<string>(), false);
+            run();
         }
         finally
         {
-            security.RemoveAccessRule(denyRead);
-            lockedKey.SetAccessControl(security);
+            security.RemoveAccessRule(deny);
+            key.SetAccessControl(security);
         }
     }
+    WhileDenied("Locked", RegistryRights.QueryValues, () => Run(new[] { lockedLine }, Array.Empty<string>(), false));
     Check(Detail(lockedLine) == "Access denied." && LogLength() == logBefore, "A key Windows will not let Query Registry read says Access denied and writes nothing into Log.txt: " + Detail(lockedLine));
+    string guardedLine = @"reg delete ""HKCU\Software\RegistryKeyCheckTest\Guarded"" /f";
+    List<(string Line, string Status, string Data, string Result)> rowsGuarded = new List<(string Line, string Status, string Data, string Result)>();
+    WhileDenied("Guarded", RegistryRights.SetValue, () => rowsGuarded = Run(new[] { guardedLine }, Array.Empty<string>(), true));
+    using (RegistryKey? guarded = Registry.CurrentUser.OpenSubKey(TestKey + @"\Guarded"))
+    {
+        Check(rowsGuarded.Count == 1 && rowsGuarded[0].Result == "refused" && Detail(guardedLine) == "Access denied." && guarded != null, "A key Windows will not let Execute Missing Commands delete says refused and Access denied: " + string.Join(" | ", rowsGuarded.Select(r => r.Status + " " + r.Result)) + " " + Detail(guardedLine));
+    }
 
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
     {

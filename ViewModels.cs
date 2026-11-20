@@ -947,7 +947,11 @@ namespace RegistryKey_Check
                             {
                                 throw new InvalidOperationException("A whole base key cannot be deleted.");
                             }
-                            root.DeleteSubKeyTree(mo.ListSubKey, throwOnMissingSubKey: false);
+                            key = root.OpenSubKey(mo.ListSubKey, writable: true);
+                            if (key != null)
+                            {
+                                root.DeleteSubKeyTree(mo.ListSubKey, throwOnMissingSubKey: false);
+                            }
                         }
                         else if (mo.ListCommand == "reg delete")
                         {

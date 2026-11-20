@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.6
+
+- Fixed Execute Missing Commands saying successful for a reg delete line Windows did not let through, instead of Access denied in Details.
+
 ## 3.3.5
 
 - Fixed Open List.txt, Open Log.txt, Open Ignore.txt and Jump to RegEdit starting a Notepad.exe or regedit.exe left beside RegistryKey Check.
