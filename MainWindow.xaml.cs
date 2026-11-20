@@ -29,6 +29,8 @@ namespace RegistryKey_Check
 
         private bool filtersRestored;
 
+        private bool executing;
+
         public MainWindow()
         {
             App.UseDarkTitleBar(this);
@@ -121,6 +123,11 @@ namespace RegistryKey_Check
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
+            if (executing && MessageBox.Show(this, "Execute Missing Commands is still running. Close RegistryKey Check now and stop it partway? Choose No to let it finish first.", "RegistryKey Check", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+            {
+                e.Cancel = true;
+                return;
+            }
             settings.ReadWindow(this);
             if (filtersRestored)
             {
@@ -389,6 +396,7 @@ namespace RegistryKey_Check
 
         private async void ButtonExecuteMissingCommands_Click(object sender, RoutedEventArgs e)
         {
+            executing = true;
             ButtonsDisable();
             await Task.Run(() =>
             {
@@ -401,6 +409,7 @@ namespace RegistryKey_Check
             });
             FilterObsColl_RegCommands();
             ButtonsEnable();
+            executing = false;
         }
 
         private void DataGridRegCommands_Row_MouseDoubleClick(object sender, MouseButtonEventArgs e)

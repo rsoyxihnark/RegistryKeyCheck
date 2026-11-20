@@ -147,6 +147,12 @@ jobs:
               private static extern bool SetCursorPos(int x, int y);
               [DllImport("user32.dll")]
               private static extern void mouse_event(uint flags, int dx, int dy, uint data, UIntPtr extra);
+              [DllImport("user32.dll")]
+              private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam);
+              public static void PostClose(IntPtr hwnd)
+              {
+                  PostMessage(hwnd, 0x10, IntPtr.Zero, IntPtr.Zero);
+              }
               public static void DoubleClick(int x, int y)
               {
                   SetCursorPos(x, y);
@@ -201,8 +207,8 @@ jobs:
             @($texts | Where-Object { $_ -match "^\d+ $word$" })[0]
           }
           function Count-Rows { @($grid.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::DataItem)))).Count }
-          function Wait-Until([scriptblock]$ok) {
-            $end = (Get-Date).AddSeconds(20)
+          function Wait-Until([scriptblock]$ok, [int]$seconds = 20) {
+            $end = (Get-Date).AddSeconds($seconds)
             while (-not (& $ok) -and (Get-Date) -lt $end) { Start-Sleep -Milliseconds 500 }
             & $ok
           }
@@ -243,8 +249,8 @@ jobs:
             }
             throw "The row menu did not show $name"
           }
-          function Open-App {
-            $script:p = Start-Process -FilePath (Join-Path $dir 'RegistryKeyCheck.exe') -WorkingDirectory $dir -PassThru
+          function Open-App([string]$from = $dir, [string]$expect = '1 noncompliant') {
+            $script:p = Start-Process -FilePath (Join-Path $from 'RegistryKeyCheck.exe') -WorkingDirectory $from -PassThru
             $script:window = $null
             $script:grid = $null
             $end = (Get-Date).AddSeconds(90)
@@ -256,11 +262,19 @@ jobs:
               if ($null -ne $window -and $null -eq $grid) {
                 $script:grid = Find-Id 'DataGridRegCommands'
               }
-              if ($null -ne $grid -and (Read-Count 'noncompliant') -eq '1 noncompliant' -and (Is-Idle)) {
+              if ($null -ne $grid -and (Read-Count 'noncompliant') -eq $expect -and (Is-Idle)) {
                 return
               }
             }
             throw 'RegistryKey Check did not open again'
+          }
+          function Find-Answer([string]$name) {
+            $button = New-Object System.Windows.Automation.AndCondition((New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Button)), (New-Object System.Windows.Automation.PropertyCondition($auto::NameProperty, $name)))
+            foreach ($top in $auto::RootElement.FindAll($scope::Children, (New-Object System.Windows.Automation.PropertyCondition($auto::ProcessIdProperty, [int]$p.Id)))) {
+              $found = $top.FindFirst($scope::Descendants, $button)
+              if ($null -ne $found) { return $found }
+            }
+            $null
           }
           function Close-App {
             $window.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
@@ -340,6 +354,7 @@ jobs:
           $launched = ''
           $fits = ''
           $fitsOk = $false
+          $prompt = ''
           $title = ''
           if ($started) {
             try {
@@ -457,13 +472,55 @@ jobs:
               Write-Host "Closing and opening again failed: $_"
             }
           }
+          if ($started -and $running) {
+            $bigDir = Join-Path $env:RUNNER_TEMP 'smokebig'
+            $bigKey = 'HKCU:\Software\RegistryKeyCheckBig'
+            try {
+              New-Item -ItemType Directory -Path $bigDir -Force | Out-Null
+              Copy-Item 'dist\RegistryKeyCheck.exe' $bigDir
+              Set-Content -Path (Join-Path $bigDir 'List.txt') -Value 'reg delete "HKCU\Software\RegistryKeyCheckBig" /f'
+              $answers = @()
+              foreach ($answer in 'No', 'Yes') {
+                $big = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\RegistryKeyCheckBig')
+                foreach ($i in 1..40000) { $big.CreateSubKey("K$i").Dispose() }
+                $big.Dispose()
+                Open-App $bigDir
+                (Find-Id 'ButtonExecuteMissingCommands').GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+                $busy = Wait-Until { -not (Is-Idle) }
+                [WindowShot]::PostClose([IntPtr]$window.Current.NativeWindowHandle)
+                $asked = Wait-Until { $null -ne (Find-Answer $answer) }
+                if ($asked) {
+                  try { (Find-Answer $answer).GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() }
+                  catch [System.Windows.Automation.ElementNotAvailableException] { }
+                }
+                if ($answer -eq 'No') {
+                  $finished = Wait-Until { -not $p.HasExited -and (Is-Idle) } 180
+                  $gone = -not (Test-Path $bigKey)
+                  $closed = Close-App
+                  $answers += "No $busy $asked $finished $gone $closed"
+                }
+                else {
+                  $answers += "Yes $busy $asked $($p.WaitForExit(20000))"
+                  Remove-Item -Path $bigKey -Recurse -Force -ErrorAction SilentlyContinue
+                }
+              }
+              $prompt = $answers -join ' | '
+            }
+            catch {
+              Write-Host "Closing while Execute Missing Commands ran failed: $_"
+            }
+            finally {
+              if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+              Remove-Item -Path $bigKey -Recurse -Force -ErrorAction SilentlyContinue
+            }
+          }
           if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
           $written = $null -ne (Get-ItemProperty -Path $key -Name 'Missing' -ErrorAction SilentlyContinue)
           $emptyKept = @('Log.txt', 'Ignore.txt' | Where-Object { Test-Path (Join-Path $dir $_) })
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
           Write-Host "both=$both, pathOrder=$pathOrder, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, blankFirst=$blankFirst, sortedUp=$sortedUp, sortedDown=$sortedDown, sortKept=$sortKept"
-          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered, launched=$launched, smallest=$fits"
+          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered, launched=$launched, smallest=$fits, prompt=$prompt"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
           if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
@@ -490,6 +547,7 @@ jobs:
           if (-not $fitsOk) { Write-Error "At its smallest RegistryKey Check does not fit a 1280 x 672 screen, or the line counts run into the buttons: $fits"; exit 1 }
           if ($launched -ne 'notepad/regedit False') { Write-Error "Jump to RegEdit and Open List.txt did not open RegEdit and Notepad from Windows, or ran the copies beside RegistryKey Check: $launched"; exit 1 }
           if ($remembered -ne 'True False/- Off/Off True | True -/True On/On | True -/-') { Write-Error "Compliant and Non-Compliant were not remembered, or Settings.json kept them in the default state: $remembered"; exit 1 }
+          if ($prompt -ne 'No True True True True True | Yes True True True') { Write-Error "Closing during Execute Missing Commands did not ask first, let it finish on No and stop it on Yes: $prompt"; exit 1 }
           if (-not $running) { Write-Error 'RegistryKey Check closed by itself'; exit 1 }
           if ($written) { Write-Error 'Opening RegistryKey Check wrote a value from List.txt into the registry'; exit 1 }
           if ($emptyKept.Count -gt 0) { Write-Error "RegistryKey Check kept or made an empty file although nothing went wrong: $($emptyKept -join ', ')"; exit 1 }

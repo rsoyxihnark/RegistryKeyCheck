@@ -298,7 +298,15 @@ namespace RegistryKey_Check
                 }
                 catch (Exception ex)
                 {
-                    WriteLog("MarkResets", ex);
+                    string refusal = RefusedByWindows(reset, ex);
+                    if (refusal.Length > 0)
+                    {
+                        reset.ComplianceReason = refusal;
+                    }
+                    else
+                    {
+                        WriteLog("MarkResets", ex);
+                    }
                 }
             }
         }

@@ -433,6 +433,15 @@ try
         string notDeleted = DeleteThrows(gone, "V");
         Check(missing == "nothing" && notDeleted == "IOException", "Execute Missing Commands passes over a value already gone and reports a value Windows did not delete: " + missing + " | " + notDeleted);
     }
+    string resetLocked = @"reg delete ""HKCU\Software\RegistryKeyCheckTest\RL"" /f";
+    string[] listResetLocked = { resetLocked, @"reg add ""HKCU\Software\RegistryKeyCheckTest\RL"" /v ""A"" /d ""new"" /f", @"reg add ""HKCU\Software\RegistryKeyCheckTest\RL\Locked"" /v ""B"" /d ""1"" /f" };
+    using (RegistryKey seedLocked = Registry.CurrentUser.CreateSubKey(TestKey + @"\RL"))
+    {
+        seedLocked.SetValue("A", "old");
+    }
+    long logBeforeReset = LogLength();
+    WhileDenied(@"RL\Locked", RegistryRights.QueryValues, () => Run(listResetLocked, Array.Empty<string>(), false));
+    Check(Detail(resetLocked) == "Access denied." && LogLength() == logBeforeReset, "A reg delete line whose key holds a subkey Windows will not let Query Registry read says Access denied and writes nothing into Log.txt: " + Detail(resetLocked));
 
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
     {
