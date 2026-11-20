@@ -1,12 +1,9 @@
 # Changelog
 
-## 3.4.0
+## 3.4.1
 
 - Closing RegistryKey Check while Execute Missing Commands runs now asks whether to stop it partway or let it finish first.
 - Fixed Query Registry writing an error into Log.txt for a reg delete line whose key holds a subkey Windows will not let it read.
-
-## 3.3.7
-
 - Fixed Execute Missing Commands saying successful when Windows did not delete a value, instead of saying why in Details.
 - Fixed the RegistryKey Check window being bigger than the screen at 150% display scaling, such as on a 1920x1080 laptop.
 - The buttons along the bottom of RegistryKey Check now sit a little closer together.
