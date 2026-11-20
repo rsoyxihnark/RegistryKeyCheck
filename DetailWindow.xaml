@@ -6,19 +6,22 @@
         xmlns:local="clr-namespace:RegistryKey_Check"
         mc:Ignorable="d"
         x:Name="DetailWin"
-        Title="Detail" Height="470" Width="800" Background="{StaticResource WindowBrush}" Loaded="DetailWin_Loaded" PreviewKeyDown="DetailWin_PreviewKeyDown">
+        Title="Detail" SizeToContent="WidthAndHeight" MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}" WindowStartupLocation="CenterOwner" Background="{StaticResource WindowBrush}" Loaded="DetailWin_Loaded" PreviewKeyDown="DetailWin_PreviewKeyDown">
     <Window.Resources>
         <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="Width" Value="110" />
             <Setter Property="Height" Value="20" />
+            <Setter Property="Margin" Value="0,5" />
             <Setter Property="FontSize" Value="8" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="HorizontalContentAlignment" Value="Right" />
         </Style>
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Grid.Column" Value="1" />
             <Setter Property="Width" Value="660" />
-            <Setter Property="Height" Value="20" />
+            <Setter Property="MinHeight" Value="20" />
+            <Setter Property="Margin" Value="0,5,4,5" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="IsReadOnly" Value="True" />
@@ -27,32 +30,53 @@
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
     </Window.Resources>
-    <Grid>
-        <Label Content="UID" Margin="0,10,0,0" />
-        <Label Content="List Command" Margin="0,40,0,0" />
-        <Label Content="Path" Margin="0,70,0,0" />
-        <Label Content="SubKey Available?" Margin="0,120,0,0" />
-        <Label Content="Value" Margin="0,150,0,0" />
-        <Label Content="Value Name Available?" Margin="0,180,0,0" />
-        <Label Content="List Value Type" Margin="0,210,0,0" />
-        <Label Content="Registry Value Type" Margin="0,240,0,0" />
-        <Label Content="Expected" Margin="0,270,0,0" />
-        <Label Content="Actual" Margin="0,300,0,0" />
-        <Label Content="Execute Result" Margin="0,330,0,0" />
-        <Label Content="List Match with Registry" Margin="0,360,0,0" />
-        <Label Content="Details" Margin="0,390,0,0" />
-        <TextBox x:Name="TextBoxUID" Margin="120,10,0,0" />
-        <TextBox x:Name="TextBoxListCommand" Margin="120,40,0,0" />
-        <TextBox x:Name="TextBoxListFullPath" Margin="120,70,0,0" Height="40" />
-        <TextBox x:Name="TextBoxAvailableSubKey" Margin="120,120,0,0" />
-        <TextBox x:Name="TextBoxListValueName" Margin="120,150,0,0" />
-        <TextBox x:Name="TextBoxAvailableValueName" Margin="120,180,0,0" />
-        <TextBox x:Name="TextBoxListValueType" Margin="120,210,0,0" />
-        <TextBox x:Name="TextBoxRegEditValueType" Margin="120,240,0,0" />
-        <TextBox x:Name="TextBoxListValueData" Margin="120,270,0,0" />
-        <TextBox x:Name="TextBoxRegEditValueData" Margin="120,300,0,0" />
-        <TextBox x:Name="TextBoxExecuteResult" Margin="120,330,0,0" />
-        <TextBox x:Name="TextBoxListMatchWithRegEdit" Margin="120,360,0,0" />
-        <TextBox x:Name="TextBoxComplianceDetails" Margin="120,390,0,0" />
-    </Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="0,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="120" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Label Content="UID" Grid.Row="0" />
+            <Label Content="List Command" Grid.Row="1" />
+            <Label Content="Path" Grid.Row="2" />
+            <Label Content="SubKey Available?" Grid.Row="3" />
+            <Label Content="Value" Grid.Row="4" />
+            <Label Content="Value Name Available?" Grid.Row="5" />
+            <Label Content="List Value Type" Grid.Row="6" />
+            <Label Content="Registry Value Type" Grid.Row="7" />
+            <Label Content="Expected" Grid.Row="8" />
+            <Label Content="Actual" Grid.Row="9" />
+            <Label Content="Execute Result" Grid.Row="10" />
+            <Label Content="List Match with Registry" Grid.Row="11" />
+            <Label Content="Details" Grid.Row="12" />
+            <TextBox x:Name="TextBoxUID" Grid.Row="0" />
+            <TextBox x:Name="TextBoxListCommand" Grid.Row="1" />
+            <TextBox x:Name="TextBoxListFullPath" Grid.Row="2" />
+            <TextBox x:Name="TextBoxAvailableSubKey" Grid.Row="3" />
+            <TextBox x:Name="TextBoxListValueName" Grid.Row="4" />
+            <TextBox x:Name="TextBoxAvailableValueName" Grid.Row="5" />
+            <TextBox x:Name="TextBoxListValueType" Grid.Row="6" />
+            <TextBox x:Name="TextBoxRegEditValueType" Grid.Row="7" />
+            <TextBox x:Name="TextBoxListValueData" Grid.Row="8" />
+            <TextBox x:Name="TextBoxRegEditValueData" Grid.Row="9" />
+            <TextBox x:Name="TextBoxExecuteResult" Grid.Row="10" />
+            <TextBox x:Name="TextBoxListMatchWithRegEdit" Grid.Row="11" />
+            <TextBox x:Name="TextBoxComplianceDetails" Grid.Row="12" />
+        </Grid>
+    </ScrollViewer>
 </Window>

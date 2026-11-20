@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.7
+
+- Fixed Execute Missing Commands saying successful when Windows did not delete a value, instead of saying why in Details.
+- Fixed the RegistryKey Check window being bigger than the screen at 150% display scaling, such as on a 1920x1080 laptop.
+- The buttons along the bottom of RegistryKey Check now sit a little closer together.
+- RegistryKey Check now opens in the middle of the screen the first time you start it.
+- Fixed long values, such as a long Path, Expected or Details, being cut off in the Detail window.
+- The Detail window now opens in the middle of the RegistryKey Check window.
+
 ## 3.3.6
 
 - Fixed Execute Missing Commands saying successful for a reg delete line Windows did not let through, instead of Access denied in Details.

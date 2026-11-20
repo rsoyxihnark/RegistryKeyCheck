@@ -412,6 +412,27 @@ try
     {
         Check(rowsGuarded.Count == 1 && rowsGuarded[0].Result == "refused" && Detail(guardedLine) == "Access denied." && guarded != null, "A key Windows will not let Execute Missing Commands delete says refused and Access denied: " + string.Join(" | ", rowsGuarded.Select(r => r.Status + " " + r.Result)) + " " + Detail(guardedLine));
     }
+    MethodInfo deleteValue = viewModels.GetMethod("DeleteValue", BindingFlags.NonPublic | BindingFlags.Static)!;
+    string DeleteThrows(RegistryKey key, string name)
+    {
+        try
+        {
+            deleteValue.Invoke(null, new object[] { key, name });
+            return "nothing";
+        }
+        catch (TargetInvocationException ex)
+        {
+            return ex.InnerException!.GetType().Name;
+        }
+    }
+    using (RegistryKey gone = Registry.CurrentUser.CreateSubKey(TestKey + @"\Gone"))
+    {
+        gone.SetValue("V", "1");
+        string missing = DeleteThrows(gone, "NotThere");
+        Registry.CurrentUser.DeleteSubKeyTree(TestKey + @"\Gone");
+        string notDeleted = DeleteThrows(gone, "V");
+        Check(missing == "nothing" && notDeleted == "IOException", "Execute Missing Commands passes over a value already gone and reports a value Windows did not delete: " + missing + " | " + notDeleted);
+    }
 
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
     {

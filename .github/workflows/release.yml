@@ -338,6 +338,8 @@ jobs:
           $unignored = $false
           $remembered = ''
           $launched = ''
+          $fits = ''
+          $fitsOk = $false
           $title = ''
           if ($started) {
             try {
@@ -415,6 +417,13 @@ jobs:
               Wait-Until { (Test-Path $plant) -or @(Get-Process regedit, notepad -ErrorAction SilentlyContinue | ForEach-Object { $_.Name.ToLower() } | Sort-Object -Unique).Count -eq 2 } | Out-Null
               $launched = (@(Get-Process regedit, notepad -ErrorAction SilentlyContinue | ForEach-Object { $_.Name.ToLower() } | Sort-Object -Unique) -join '/') + ' ' + (Test-Path $plant)
               Get-Process regedit, notepad -ErrorAction SilentlyContinue | Stop-Process -Force
+              $window.GetCurrentPattern([System.Windows.Automation.TransformPattern]::Pattern).Resize(400, 300)
+              Start-Sleep -Seconds 1
+              $smallest = $window.Current.BoundingRectangle
+              $countsRight = (Find-Id 'TextNonCompliant').Current.BoundingRectangle.Right
+              $buttonsLeft = (Find-Id 'ButtonColumns').Current.BoundingRectangle.Left
+              $fits = "$([Math]::Round($smallest.Width / $scale)) x $([Math]::Round($smallest.Height / $scale)), counts end $([Math]::Round($countsRight / $scale)), buttons start $([Math]::Round($buttonsLeft / $scale))"
+              $fitsOk = $smallest.Width / $scale -le 1280 -and $smallest.Height / $scale -le 672 -and $countsRight -lt $buttonsLeft
               Set-Find ''
             }
             catch {
@@ -454,7 +463,7 @@ jobs:
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
           Write-Host "both=$both, pathOrder=$pathOrder, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, blankFirst=$blankFirst, sortedUp=$sortedUp, sortedDown=$sortedDown, sortKept=$sortKept"
-          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered, launched=$launched"
+          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered, launched=$launched, smallest=$fits"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
           if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
@@ -478,6 +487,7 @@ jobs:
           if ($labelCount -ne 13 -or $labelsCut.Count -gt 0) { Write-Error "The Detail window showed $labelCount of its 13 labels, and these were cut off: $($labelsCut -join ', ')"; exit 1 }
           if (-not $ignored) { Write-Error 'Add to Ignore List did not take the row out of the noncompliant count'; exit 1 }
           if (-not $unignored) { Write-Error 'Remove from Ignore List did not show the row as noncompliant again without Query Registry'; exit 1 }
+          if (-not $fitsOk) { Write-Error "At its smallest RegistryKey Check does not fit a 1280 x 672 screen, or the line counts run into the buttons: $fits"; exit 1 }
           if ($launched -ne 'notepad/regedit False') { Write-Error "Jump to RegEdit and Open List.txt did not open RegEdit and Notepad from Windows, or ran the copies beside RegistryKey Check: $launched"; exit 1 }
           if ($remembered -ne 'True False/- Off/Off True | True -/True On/On | True -/-') { Write-Error "Compliant and Non-Compliant were not remembered, or Settings.json kept them in the default state: $remembered"; exit 1 }
           if (-not $running) { Write-Error 'RegistryKey Check closed by itself'; exit 1 }

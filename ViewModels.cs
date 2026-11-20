@@ -937,7 +937,7 @@ namespace RegistryKey_Check
                             {
                                 foreach (string name in key.GetValueNames())
                                 {
-                                    key.DeleteValue(name);
+                                    DeleteValue(key, name);
                                 }
                             }
                         }
@@ -956,7 +956,10 @@ namespace RegistryKey_Check
                         else if (mo.ListCommand == "reg delete")
                         {
                             key = root.OpenSubKey(mo.ListSubKey, writable: true);
-                            key?.DeleteValue(mo.ListValueName, throwOnMissingValue: false);
+                            if (key != null)
+                            {
+                                DeleteValue(key, mo.ListValueName);
+                            }
                         }
                         else if (mo.ListCommand == "reg add" && mo.ListValueName == "This_field_is_NULL")
                         {
@@ -1049,6 +1052,22 @@ namespace RegistryKey_Check
         private static ulong ListNumber(ModelRegCommand mo)
         {
             return mo.ListValueNumber ?? throw new FormatException("\"" + mo.ListValueData + "\" is not a valid " + mo.ListValueType + " number.");
+        }
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
+        private static extern int RegDeleteValue(SafeRegistryHandle key, string name);
+
+        private static void DeleteValue(RegistryKey key, string name)
+        {
+            int error = RegDeleteValue(key.Handle, name);
+            if (error == 5)
+            {
+                throw new UnauthorizedAccessException();
+            }
+            if (error != 0 && error != 2)
+            {
+                throw new IOException(Marshal.GetPInvokeErrorMessage(error));
+            }
         }
 
         [DllImport("ntdll.dll")]
