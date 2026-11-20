@@ -153,6 +153,16 @@ jobs:
               {
                   PostMessage(hwnd, 0x10, IntPtr.Zero, IntPtr.Zero);
               }
+              [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+              private static extern IntPtr FindWindow(string className, string title);
+              public static IntPtr Dialog()
+              {
+                  return FindWindow("#32770", "RegistryKey Check");
+              }
+              public static void Answer(IntPtr dialog, int button)
+              {
+                  PostMessage(dialog, 0x111, (IntPtr)button, IntPtr.Zero);
+              }
               public static void DoubleClick(int x, int y)
               {
                   SetCursorPos(x, y);
@@ -267,14 +277,6 @@ jobs:
               }
             }
             throw 'RegistryKey Check did not open again'
-          }
-          function Find-Answer([string]$name) {
-            $button = New-Object System.Windows.Automation.AndCondition((New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Button)), (New-Object System.Windows.Automation.PropertyCondition($auto::NameProperty, $name)))
-            foreach ($top in $auto::RootElement.FindAll($scope::Children, (New-Object System.Windows.Automation.PropertyCondition($auto::ProcessIdProperty, [int]$p.Id)))) {
-              $found = $top.FindFirst($scope::Descendants, $button)
-              if ($null -ne $found) { return $found }
-            }
-            $null
           }
           function Close-App {
             $window.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
@@ -488,10 +490,9 @@ jobs:
                 (Find-Id 'ButtonExecuteMissingCommands').GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
                 $busy = Wait-Until { -not (Is-Idle) }
                 [WindowShot]::PostClose([IntPtr]$window.Current.NativeWindowHandle)
-                $asked = Wait-Until { $null -ne (Find-Answer $answer) }
+                $asked = Wait-Until { [WindowShot]::Dialog() -ne [IntPtr]::Zero }
                 if ($asked) {
-                  try { (Find-Answer $answer).GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() }
-                  catch [System.Windows.Automation.ElementNotAvailableException] { }
+                  [WindowShot]::Answer([WindowShot]::Dialog(), $(if ($answer -eq 'Yes') { 6 } else { 7 }))
                 }
                 if ($answer -eq 'No') {
                   $finished = Wait-Until { -not $p.HasExited -and (Is-Idle) } 180
