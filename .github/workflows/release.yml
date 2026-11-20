@@ -179,6 +179,9 @@ jobs:
           New-Item -ItemType Directory -Path $dir -Force | Out-Null
           New-Item -ItemType Directory -Path $shots -Force | Out-Null
           Copy-Item 'dist\RegistryKeyCheck.exe' $dir
+          $plant = Join-Path $env:RUNNER_TEMP 'planted.txt'
+          Add-Type -OutputType WindowsApplication -OutputAssembly (Join-Path $dir 'Notepad.exe') -TypeDefinition "public static class Planted { public static void Main() { System.IO.File.WriteAllText(@`"$plant`", `"ran`"); } }"
+          Copy-Item (Join-Path $dir 'Notepad.exe') (Join-Path $dir 'regedit.exe')
           New-Item -ItemType File -Path (Join-Path $dir 'Log.txt') -Force | Out-Null
           New-Item -ItemType File -Path (Join-Path $dir 'Ignore.txt') -Force | Out-Null
           New-Item -Path $key -Force | Out-Null
@@ -334,6 +337,7 @@ jobs:
           $ignored = $false
           $unignored = $false
           $remembered = ''
+          $launched = ''
           $title = ''
           if ($started) {
             try {
@@ -406,6 +410,11 @@ jobs:
               Use-RowMenu 'Remove from Ignore List'
               $unignored = Wait-Until { (Read-Count 'noncompliant') -eq '1 noncompliant' -and (Is-Idle) -and -not (Test-Path (Join-Path $dir 'Ignore.txt')) }
               Save-Shot 'unignored'
+              Use-RowMenu 'Jump to RegEdit'
+              (Find-Id 'ButtonOpenListFile').GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+              Wait-Until { (Test-Path $plant) -or @(Get-Process regedit, notepad -ErrorAction SilentlyContinue | ForEach-Object { $_.Name.ToLower() } | Sort-Object -Unique).Count -eq 2 } | Out-Null
+              $launched = (@(Get-Process regedit, notepad -ErrorAction SilentlyContinue | ForEach-Object { $_.Name.ToLower() } | Sort-Object -Unique) -join '/') + ' ' + (Test-Path $plant)
+              Get-Process regedit, notepad -ErrorAction SilentlyContinue | Stop-Process -Force
               Set-Find ''
             }
             catch {
@@ -445,7 +454,7 @@ jobs:
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
           Write-Host "both=$both, pathOrder=$pathOrder, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, blankFirst=$blankFirst, sortedUp=$sortedUp, sortedDown=$sortedDown, sortKept=$sortKept"
-          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered"
+          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered, launched=$launched"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
           if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
@@ -469,11 +478,12 @@ jobs:
           if ($labelCount -ne 13 -or $labelsCut.Count -gt 0) { Write-Error "The Detail window showed $labelCount of its 13 labels, and these were cut off: $($labelsCut -join ', ')"; exit 1 }
           if (-not $ignored) { Write-Error 'Add to Ignore List did not take the row out of the noncompliant count'; exit 1 }
           if (-not $unignored) { Write-Error 'Remove from Ignore List did not show the row as noncompliant again without Query Registry'; exit 1 }
+          if ($launched -ne 'notepad/regedit False') { Write-Error "Jump to RegEdit and Open List.txt did not open RegEdit and Notepad from Windows, or ran the copies beside RegistryKey Check: $launched"; exit 1 }
           if ($remembered -ne 'True False/- Off/Off True | True -/True On/On | True -/-') { Write-Error "Compliant and Non-Compliant were not remembered, or Settings.json kept them in the default state: $remembered"; exit 1 }
           if (-not $running) { Write-Error 'RegistryKey Check closed by itself'; exit 1 }
           if ($written) { Write-Error 'Opening RegistryKey Check wrote a value from List.txt into the registry'; exit 1 }
           if ($emptyKept.Count -gt 0) { Write-Error "RegistryKey Check kept or made an empty file although nothing went wrong: $($emptyKept -join ', ')"; exit 1 }
-          Write-Host 'RegistryKey Check read List.txt, sorted it by Path, showed only the False row, let both filters be on together, found and sorted rows, updated the Ignore List at once and remembered the filters'
+          Write-Host 'RegistryKey Check read List.txt, sorted it by Path, showed only the False row, let both filters be on together, found and sorted rows, updated the Ignore List at once, remembered the filters and opened RegEdit and Notepad from Windows'
 
       - name: Keep the screenshots
         if: always()

@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.5
+
+- Fixed Open List.txt, Open Log.txt, Open Ignore.txt and Jump to RegEdit starting a Notepad.exe or regedit.exe left beside RegistryKey Check.
+- Fixed Query Registry writing an error into Log.txt for a key Windows will not let it read, instead of Details saying Access denied.
+
 ## 3.3.4
 
 - Fixed the Value Name Available? and List Match with Registry labels being cut off in the Detail window.

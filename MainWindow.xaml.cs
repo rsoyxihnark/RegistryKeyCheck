@@ -17,6 +17,8 @@ namespace RegistryKey_Check
 {
     public partial class MainWindow : Window
     {
+        private static readonly string notepad = Path.Combine(Environment.SystemDirectory, "Notepad.exe");
+
         private readonly AppSettings settings = AppSettings.Load();
 
         private readonly Dictionary<DataGridColumn, Func<ModelRegCommand, string>> columnTexts;
@@ -180,7 +182,7 @@ namespace RegistryKey_Check
         {
             try
             {
-                Process.Start("Notepad.exe", "Ignore.txt");
+                Process.Start(notepad, "Ignore.txt");
             }
             catch (Exception ex)
             {
@@ -294,7 +296,7 @@ namespace RegistryKey_Check
             {
                 if (File.Exists("List.txt"))
                 {
-                    Process.Start("Notepad.exe", "List.txt");
+                    Process.Start(notepad, "List.txt");
                 }
             }
             catch (Exception ex)
@@ -309,7 +311,7 @@ namespace RegistryKey_Check
             {
                 if (File.Exists("Log.txt"))
                 {
-                    Process.Start("Notepad.exe", "Log.txt");
+                    Process.Start(notepad, "Log.txt");
                 }
             }
             catch (Exception ex)

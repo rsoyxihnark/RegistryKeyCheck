@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using Microsoft.Win32;
 
@@ -379,6 +381,28 @@ try
     model.GetProperty("ComplianceReason")!.SetValue(refusedRow, "On the Ignore List");
     string ignoredDetails = (string)model.GetProperty("ComplianceDetails")!.GetValue(refusedRow)!;
     Check(fixedDetails == "Compliant" && ignoredDetails == "On the Ignore List", "Details stops saying why Windows refused a line once it is Compliant or ignored: " + fixedDetails + " | " + ignoredDetails);
+
+    string lockedLine = @"reg add ""HKCU\Software\RegistryKeyCheckTest\Locked"" /v ""X"" /d ""1"" /f";
+    string logFile = Path.Combine(work, "Log.txt");
+    long LogLength() => File.Exists(logFile) ? new FileInfo(logFile).Length : 0;
+    long logBefore = LogLength();
+    RegistryAccessRule denyRead = new RegistryAccessRule(WindowsIdentity.GetCurrent().User!, RegistryRights.QueryValues, AccessControlType.Deny);
+    using (RegistryKey lockedKey = Registry.CurrentUser.CreateSubKey(TestKey + @"\Locked"))
+    {
+        RegistrySecurity security = lockedKey.GetAccessControl();
+        security.AddAccessRule(denyRead);
+        lockedKey.SetAccessControl(security);
+        try
+        {
+            Run(new[] { lockedLine }, Array.Empty<string>(), false);
+        }
+        finally
+        {
+            security.RemoveAccessRule(denyRead);
+            lockedKey.SetAccessControl(security);
+        }
+    }
+    Check(Detail(lockedLine) == "Access denied." && LogLength() == logBefore, "A key Windows will not let Query Registry read says Access denied and writes nothing into Log.txt: " + Detail(lockedLine));
 
     foreach (RegistryView view in new[] { RegistryView.Registry32, RegistryView.Registry64 })
     {

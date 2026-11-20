@@ -838,10 +838,14 @@ namespace RegistryKey_Check
                 }
                 catch (Exception ex)
                 {
-                    mo.ComplianceReason = "Could not be read, see Log.txt";
-                    AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- QueryMethod " + DateTime.Now.ToString() + "\n");
-                    AppendLog("     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
-                    AppendLog(ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+                    mo.ComplianceReason = RefusedByWindows(mo, ex);
+                    if (mo.ComplianceReason.Length == 0)
+                    {
+                        mo.ComplianceReason = "Could not be read, see Log.txt";
+                        AppendLog("---vvv ! ! ! Warning ! ! ! vvv--- QueryMethod " + DateTime.Now.ToString() + "\n");
+                        AppendLog("     " + mo.RegCommandId + "-" + mo.ListId + "-" + mo.ListCommand + "-" + mo.ListBaseKey + "\\" + mo.ListSubKey + "-" + mo.ListValueName + "-" + mo.ListValueType + "-" + mo.ListValueData + "\n     " + mo.AvailableSubKey + "-" + mo.AvailableValueName + "-" + mo.RegEditValueType + "-" + mo.RegEditValueData + "\n");
+                        AppendLog(ex.ToString() + "\n---^^^ ! ! ! Warning ! ! ! ^^^---\n");
+                    }
                 }
             }
             MarkResets();
@@ -1095,7 +1099,7 @@ namespace RegistryKey_Check
                 {
                     regedit.SetValue("LastKey", lastKey, RegistryValueKind.String);
                 }
-                Process.Start("regedit.exe", "-m");
+                Process.Start(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "regedit.exe"), "-m");
             }
             catch (Exception ex)
             {
