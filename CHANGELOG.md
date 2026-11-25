@@ -1,18 +1,22 @@
 # Changelog
 
-## Unreleased
+## 3.5.0
 
-- The buttons and tabs of RegistryKey Check now have rounded corners and light up softly when you point at them.
+- The buttons of RegistryKey Check now have rounded corners, light up softly when you point at them and press in when you click them.
+- The tabs now have rounded corners and a blue line that fades in under the open tab.
 - The Non-Compliant and Compliant buttons now fade into their red or green and glow while their filter is on.
+- The Non-Compliant and Compliant buttons now show a faint red or green edge while their filter is off.
 - The Execute Missing Commands button now stands out in a brighter orange.
 - The buttons along the bottom of RegistryKey Check now all line up at the same height.
 - The Find box now shows a magnifier and a Find hint inside it instead of a Find label beside it.
 - The Find box now shows Ctrl+F at its right side, and Esc while you type in it.
+- The Find box now has a soft blue glow while the cursor is in it.
 - A thin moving line above the buttons now shows while Query Registry or Execute Missing Commands is working.
 - The list now says No rows to show when the Find box or the filters leave nothing to show.
 - The list now shows a green check and No noncompliant lines when Non-Compliant has nothing left to show.
 - The list now says what to do when List.txt has no reg lines.
 - The column headers now line up with the text in the rows below them.
+- The header of the column the list is sorted by now stands out from the other headers.
 - Fixed the sort arrow covering the UID header when the list is sorted by UID.
 - The list no longer draws lines between its columns.
 - The row menu and the Columns menu now have rounded corners and a soft shadow.
