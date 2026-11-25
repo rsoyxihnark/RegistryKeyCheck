@@ -240,6 +240,7 @@ jobs:
             $found
           }
           function Is-Idle { (Find-Id 'ButtonQueryFromRegEdit').Current.IsEnabled }
+          function Has-Text([string]$name) { @($window.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Text))) | Where-Object { -not $_.Current.IsOffscreen } | ForEach-Object { $_.Current.Name }) -contains $name }
           function Use-RowMenu([string]$name) {
             [WindowShot]::SetForegroundWindow([IntPtr]$window.Current.NativeWindowHandle) | Out-Null
             $row = $grid.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::DataItem)))
@@ -352,6 +353,7 @@ jobs:
           $labelClasses = ''
           $ignored = $false
           $unignored = $false
+          $emptyShown = ''
           $remembered = ''
           $launched = ''
           $fits = ''
@@ -426,6 +428,17 @@ jobs:
               Use-RowMenu 'Add to Ignore List'
               $ignored = Wait-Until { (Read-Count 'noncompliant') -eq '0 noncompliant' -and (Read-Count 'compliant') -eq '3 compliant' -and (Is-Idle) -and (Test-Path (Join-Path $dir 'Ignore.txt')) }
               Save-Shot 'ignored'
+              Set-Find ''
+              Flip 'ButtonFilterFalses'
+              $clean = Wait-Until { (Count-Rows) -eq 0 -and (Has-Text 'No noncompliant lines') }
+              Save-Shot 'clean'
+              Flip 'ButtonFilterFalses'
+              Set-Find 'NoSuchText'
+              $empty = Wait-Until { (Count-Rows) -eq 0 -and (Has-Text 'No rows to show') -and (Has-Text 'All Filters Reset shows every row') }
+              Save-Shot 'empty'
+              Set-Find 'Missing'
+              $refound = Wait-Until { (Count-Rows) -eq 1 -and -not (Has-Text 'No rows to show') }
+              $emptyShown = "$clean $empty $refound"
               Use-RowMenu 'Remove from Ignore List'
               $unignored = Wait-Until { (Read-Count 'noncompliant') -eq '1 noncompliant' -and (Is-Idle) -and -not (Test-Path (Join-Path $dir 'Ignore.txt')) }
               Save-Shot 'unignored'
@@ -489,6 +502,7 @@ jobs:
                 Open-App $bigDir
                 (Find-Id 'ButtonExecuteMissingCommands').GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
                 $busy = Wait-Until { -not (Is-Idle) }
+                if ($answer -eq 'No') { Save-Shot 'busy' }
                 [WindowShot]::PostClose([IntPtr]$window.Current.NativeWindowHandle)
                 $asked = Wait-Until { [WindowShot]::Dialog() -ne [IntPtr]::Zero }
                 if ($asked) {
@@ -521,7 +535,7 @@ jobs:
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
           Write-Host "both=$both, pathOrder=$pathOrder, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, blankFirst=$blankFirst, sortedUp=$sortedUp, sortedDown=$sortedDown, sortKept=$sortKept"
-          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, unignored=$unignored, remembered=$remembered, launched=$launched, smallest=$fits, prompt=$prompt"
+          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, emptyShown=$emptyShown, unignored=$unignored, remembered=$remembered, launched=$launched, smallest=$fits, prompt=$prompt"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
           if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
@@ -544,6 +558,7 @@ jobs:
           if ($detailShown -ne 'True 3/1/ True') { Write-Error "Double clicking a row did not open the Detail window with its UID, Expected and a blank Actual, or Esc did not close it: $detailShown"; exit 1 }
           if ($labelCount -ne 13 -or $labelsCut.Count -gt 0) { Write-Error "The Detail window showed $labelCount of its 13 labels, and these were cut off: $($labelsCut -join ', ')"; exit 1 }
           if (-not $ignored) { Write-Error 'Add to Ignore List did not take the row out of the noncompliant count'; exit 1 }
+          if ($emptyShown -ne 'True True True') { Write-Error "The list did not say No noncompliant lines or No rows to show when it had no rows, or kept saying it once a row came back: $emptyShown"; exit 1 }
           if (-not $unignored) { Write-Error 'Remove from Ignore List did not show the row as noncompliant again without Query Registry'; exit 1 }
           if (-not $fitsOk) { Write-Error "At its smallest RegistryKey Check does not fit a 1280 x 672 screen, or the line counts run into the buttons: $fits"; exit 1 }
           if ($launched -ne 'notepad/regedit False') { Write-Error "Jump to RegEdit and Open List.txt did not open RegEdit and Notepad from Windows, or ran the copies beside RegistryKey Check: $launched"; exit 1 }
