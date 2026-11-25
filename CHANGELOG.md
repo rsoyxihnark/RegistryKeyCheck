@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.2
+
+- The Detail window no longer shows List Match with Registry.
+
 ## 3.5.1
 
 - The Detail window no longer shows SubKey Available? and Value Name Available?.
@@ -25,7 +29,7 @@
 - The list no longer draws lines between its columns.
 - The row menu and the Columns menu now have rounded corners and a soft shadow.
 - The Detail window now shows its labels larger and easier to read, with every other line shaded.
-- The Detail window now shows List Match with Registry and Details in green, red or orange, the same as the list.
+- The Detail window now shows Details in green, red or orange, the same as the list.
 - The title bar of RegistryKey Check and the Detail window now matches the dark blue of the window on Windows 11.
 
 ## 3.4.1

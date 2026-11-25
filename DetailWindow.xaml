@@ -53,7 +53,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Border Style="{StaticResource Band}" Grid.Row="1" />
             <Border Style="{StaticResource Band}" Grid.Row="3" />
@@ -69,8 +68,7 @@
             <Label Content="Expected" Grid.Row="6" />
             <Label Content="Actual" Grid.Row="7" />
             <Label Content="Execute Result" Grid.Row="8" />
-            <Label Content="List Match with Registry" Grid.Row="9" />
-            <Label Content="Details" Grid.Row="10" />
+            <Label Content="Details" Grid.Row="9" />
             <TextBox x:Name="TextBoxUID" Grid.Row="0" />
             <TextBox x:Name="TextBoxListCommand" Grid.Row="1" />
             <TextBox x:Name="TextBoxListFullPath" Grid.Row="2" />
@@ -80,8 +78,7 @@
             <TextBox x:Name="TextBoxListValueData" Grid.Row="6" />
             <TextBox x:Name="TextBoxRegEditValueData" Grid.Row="7" />
             <TextBox x:Name="TextBoxExecuteResult" Grid.Row="8" />
-            <TextBox x:Name="TextBoxListMatchWithRegEdit" Grid.Row="9" />
-            <TextBox x:Name="TextBoxComplianceDetails" Grid.Row="10" />
+            <TextBox x:Name="TextBoxComplianceDetails" Grid.Row="9" />
         </Grid>
     </ScrollViewer>
 </Window>

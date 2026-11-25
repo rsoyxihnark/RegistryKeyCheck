@@ -34,12 +34,10 @@ namespace RegistryKey_Check
             TextBoxListValueData.Text = mo.ListValueDataShown;
             TextBoxRegEditValueData.Text = mo.RegEditValueDataShown;
             TextBoxExecuteResult.Text = mo.ExecuteResult;
-            TextBoxListMatchWithRegEdit.Text = mo.ListMatchWithRegEdit;
             TextBoxComplianceDetails.Text = mo.ComplianceDetails;
             string? status = mo.HasListWarning ? "OrangeBrush" : mo.ListMatchWithRegEdit == "True" ? "GreenBrush" : mo.ListMatchWithRegEdit == "False" ? "RedBrush" : null;
             if (status != null)
             {
-                TextBoxListMatchWithRegEdit.Foreground = (Brush)FindResource(status);
                 TextBoxComplianceDetails.Foreground = (Brush)FindResource(status);
             }
         }
