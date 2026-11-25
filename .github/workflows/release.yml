@@ -351,6 +351,7 @@ jobs:
           $labelsCut = @()
           $labelNeed = 0
           $labelClasses = ''
+          $labelsGone = $false
           $ignored = $false
           $unignored = $false
           $emptyShown = ''
@@ -409,11 +410,12 @@ jobs:
                 $detail = Find-Detail
                 $shown = @('TextBoxUID', 'TextBoxListValueData', 'TextBoxRegEditValueData' | ForEach-Object { $detail.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::AutomationIdProperty, $_))).GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value }) -join '/'
                 $detailScale = $detail.FindFirst($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::AutomationIdProperty, 'TextBoxUID'))).Current.BoundingRectangle.Width / 660
-                $labelNames = @('UID', 'List Command', 'Path', 'SubKey Available?', 'Value', 'Value Name Available?', 'List Value Type', 'Registry Value Type', 'Expected', 'Actual', 'Execute Result', 'List Match with Registry', 'Details')
+                $labelNames = @('UID', 'List Command', 'Path', 'Value', 'List Value Type', 'Registry Value Type', 'Expected', 'Actual', 'Execute Result', 'List Match with Registry', 'Details')
                 $texts = @($detail.FindAll($scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($auto::ControlTypeProperty, $types::Text))))
                 $labelClasses = @($texts | ForEach-Object { $_.Current.ClassName } | Sort-Object -Unique) -join '/'
                 $labels = @($texts | Where-Object { $labelNames -contains $_.Current.Name -and $_.Current.ClassName -ne 'TextBlock' })
                 $labelCount = $labels.Count
+                $labelsGone = @($texts | Where-Object { @('SubKey Available?', 'Value Name Available?') -contains $_.Current.Name }).Count -eq 0
                 foreach ($label in $labels) {
                   $text = New-Object System.Windows.Media.FormattedText($label.Current.Name, [System.Globalization.CultureInfo]::InvariantCulture, [System.Windows.FlowDirection]::LeftToRight, $typeface, 11, [System.Windows.Media.Brushes]::Black)
                   $labelNeed = [Math]::Max($labelNeed, [Math]::Ceiling($text.Width + 10))
@@ -535,7 +537,7 @@ jobs:
           Remove-Item -Path $key -Recurse -Force
           Write-Host "running=$running, rows=$rows, $counts, headers: $(($seen.Keys | Sort-Object) -join ', '), focused=$focused, lit=$lit, title=$title"
           Write-Host "both=$both, pathOrder=$pathOrder, compliantOnly=$compliantOnly, reset=$reset, unlit=$unlit, ctrlF=$ctrlF, found=$found, cleared=$cleared, blankFirst=$blankFirst, sortedUp=$sortedUp, sortedDown=$sortedDown, sortKept=$sortKept"
-          Write-Host "detailShown=$detailShown, labels=$labelCount, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, emptyShown=$emptyShown, unignored=$unignored, remembered=$remembered, launched=$launched, smallest=$fits, prompt=$prompt"
+          Write-Host "detailShown=$detailShown, labels=$labelCount, labelsGone=$labelsGone, labelClasses=$labelClasses, labelNeed=$labelNeed, labelsCut=$($labelsCut -join '/'), ignored=$ignored, emptyShown=$emptyShown, unignored=$unignored, remembered=$remembered, launched=$launched, smallest=$fits, prompt=$prompt"
           if (-not $started) { Write-Error 'RegistryKey Check did not read List.txt, run Query Registry, show only the False row and count 4 lines, 3 compliant and 1 noncompliant at start'; exit 1 }
           $version = [regex]::Match((Get-Content 'RegistryKey Check.csproj' -Raw), '<Version>(.*?)</Version>').Groups[1].Value
           if ($title -ne "RegistryKey Check $version") { Write-Error "The window title is '$title', not 'RegistryKey Check $version'"; exit 1 }
@@ -556,7 +558,8 @@ jobs:
           if (-not $sortedDown) { Write-Error 'Clicking the UID header twice did not sort the rows from the last line up'; exit 1 }
           if (-not $sortKept) { Write-Error 'Typing in the Find box lost the sort order of the rows'; exit 1 }
           if ($detailShown -ne 'True 3/1/ True') { Write-Error "Double clicking a row did not open the Detail window with its UID, Expected and a blank Actual, or Esc did not close it: $detailShown"; exit 1 }
-          if ($labelCount -ne 13 -or $labelsCut.Count -gt 0) { Write-Error "The Detail window showed $labelCount of its 13 labels, and these were cut off: $($labelsCut -join ', ')"; exit 1 }
+          if ($labelCount -ne 11 -or $labelsCut.Count -gt 0) { Write-Error "The Detail window showed $labelCount of its 11 labels, and these were cut off: $($labelsCut -join ', ')"; exit 1 }
+          if (-not $labelsGone) { Write-Error 'The Detail window still shows SubKey Available? or Value Name Available?'; exit 1 }
           if (-not $ignored) { Write-Error 'Add to Ignore List did not take the row out of the noncompliant count'; exit 1 }
           if ($emptyShown -ne 'True True True') { Write-Error "The list did not say No noncompliant lines or No rows to show when it had no rows, or kept saying it once a row came back: $emptyShown"; exit 1 }
           if (-not $unignored) { Write-Error 'Remove from Ignore List did not show the row as noncompliant again without Query Registry'; exit 1 }

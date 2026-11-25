@@ -54,41 +54,34 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Border Style="{StaticResource Band}" Grid.Row="1" />
             <Border Style="{StaticResource Band}" Grid.Row="3" />
             <Border Style="{StaticResource Band}" Grid.Row="5" />
             <Border Style="{StaticResource Band}" Grid.Row="7" />
             <Border Style="{StaticResource Band}" Grid.Row="9" />
-            <Border Style="{StaticResource Band}" Grid.Row="11" />
             <Label Content="UID" Grid.Row="0" />
             <Label Content="List Command" Grid.Row="1" />
             <Label Content="Path" Grid.Row="2" />
-            <Label Content="SubKey Available?" Grid.Row="3" />
-            <Label Content="Value" Grid.Row="4" />
-            <Label Content="Value Name Available?" Grid.Row="5" />
-            <Label Content="List Value Type" Grid.Row="6" />
-            <Label Content="Registry Value Type" Grid.Row="7" />
-            <Label Content="Expected" Grid.Row="8" />
-            <Label Content="Actual" Grid.Row="9" />
-            <Label Content="Execute Result" Grid.Row="10" />
-            <Label Content="List Match with Registry" Grid.Row="11" />
-            <Label Content="Details" Grid.Row="12" />
+            <Label Content="Value" Grid.Row="3" />
+            <Label Content="List Value Type" Grid.Row="4" />
+            <Label Content="Registry Value Type" Grid.Row="5" />
+            <Label Content="Expected" Grid.Row="6" />
+            <Label Content="Actual" Grid.Row="7" />
+            <Label Content="Execute Result" Grid.Row="8" />
+            <Label Content="List Match with Registry" Grid.Row="9" />
+            <Label Content="Details" Grid.Row="10" />
             <TextBox x:Name="TextBoxUID" Grid.Row="0" />
             <TextBox x:Name="TextBoxListCommand" Grid.Row="1" />
             <TextBox x:Name="TextBoxListFullPath" Grid.Row="2" />
-            <TextBox x:Name="TextBoxAvailableSubKey" Grid.Row="3" />
-            <TextBox x:Name="TextBoxListValueName" Grid.Row="4" />
-            <TextBox x:Name="TextBoxAvailableValueName" Grid.Row="5" />
-            <TextBox x:Name="TextBoxListValueType" Grid.Row="6" />
-            <TextBox x:Name="TextBoxRegEditValueType" Grid.Row="7" />
-            <TextBox x:Name="TextBoxListValueData" Grid.Row="8" />
-            <TextBox x:Name="TextBoxRegEditValueData" Grid.Row="9" />
-            <TextBox x:Name="TextBoxExecuteResult" Grid.Row="10" />
-            <TextBox x:Name="TextBoxListMatchWithRegEdit" Grid.Row="11" />
-            <TextBox x:Name="TextBoxComplianceDetails" Grid.Row="12" />
+            <TextBox x:Name="TextBoxListValueName" Grid.Row="3" />
+            <TextBox x:Name="TextBoxListValueType" Grid.Row="4" />
+            <TextBox x:Name="TextBoxRegEditValueType" Grid.Row="5" />
+            <TextBox x:Name="TextBoxListValueData" Grid.Row="6" />
+            <TextBox x:Name="TextBoxRegEditValueData" Grid.Row="7" />
+            <TextBox x:Name="TextBoxExecuteResult" Grid.Row="8" />
+            <TextBox x:Name="TextBoxListMatchWithRegEdit" Grid.Row="9" />
+            <TextBox x:Name="TextBoxComplianceDetails" Grid.Row="10" />
         </Grid>
     </ScrollViewer>
 </Window>

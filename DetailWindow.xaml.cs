@@ -28,9 +28,7 @@ namespace RegistryKey_Check
             TextBoxUID.Text = mo.ListId.ToString();
             TextBoxListCommand.Text = mo.ListCommand;
             TextBoxListFullPath.Text = mo.ListFullPath;
-            TextBoxAvailableSubKey.Text = mo.AvailableSubKey;
             TextBoxListValueName.Text = mo.ListValueNameShown;
-            TextBoxAvailableValueName.Text = mo.AvailableValueNameShown;
             TextBoxListValueType.Text = mo.ListValueTypeShown;
             TextBoxRegEditValueType.Text = mo.RegEditValueTypeShown;
             TextBoxListValueData.Text = mo.ListValueDataShown;

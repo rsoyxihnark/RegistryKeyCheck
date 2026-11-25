@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.1
+
+- The Detail window no longer shows SubKey Available? and Value Name Available?.
+
 ## 3.5.0
 
 - The buttons of RegistryKey Check now have rounded corners, light up softly when you point at them and press in when you click them.
