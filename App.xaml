@@ -23,7 +23,24 @@
         <SolidColorBrush x:Key="GreenBrush" Color="#FF5BC98C" />
         <SolidColorBrush x:Key="RedBrush" Color="#FFF06464" />
         <SolidColorBrush x:Key="OrangeBrush" Color="#FFF5A142" />
+        <SolidColorBrush x:Key="HeaderTextBrush" Color="#FFBFC6D4" />
+        <SolidColorBrush x:Key="KeyCapBrush" Color="#FF232838" />
         <SolidColorBrush x:Key="{x:Static DataGrid.FocusBorderBrushKey}" Color="#FF4A8CF7" />
+        <LinearGradientBrush x:Key="ExecuteBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FFFFB938" Offset="0" />
+            <GradientStop Color="#FFF7981D" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="SheenBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#16FFFFFF" Offset="0" />
+            <GradientStop Color="#00FFFFFF" Offset="0.55" />
+        </LinearGradientBrush>
+
+        <GeometryGroup x:Key="SearchGlyph">
+            <EllipseGeometry Center="6,6" RadiusX="5" RadiusY="5" />
+            <LineGeometry StartPoint="9.8,9.8" EndPoint="14,14" />
+        </GeometryGroup>
+        <PathGeometry x:Key="CheckGlyph" Figures="M 0,7 L 6,13 L 18,1" />
+        <PathGeometry x:Key="ListGlyph" Figures="M 0,1 L 18,1 M 0,7 L 18,7 M 0,13 L 11,13" />
 
         <Style TargetType="Label">
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
@@ -35,6 +52,71 @@
             <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
             <Setter Property="CaretBrush" Value="{StaticResource TextBrush}" />
             <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}" />
+        </Style>
+
+        <Style x:Key="FindBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid SnapsToDevicePixels="True">
+                            <Border x:Name="Glow" Background="{StaticResource AccentBrush}" CornerRadius="5" Opacity="0" IsHitTestVisible="False">
+                                <Border.Effect>
+                                    <BlurEffect Radius="8" />
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="28" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Path x:Name="Glass" Data="{StaticResource SearchGlyph}" Stroke="{StaticResource MutedBrush}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="Hint" Grid.Column="1" Text="Find" Margin="2,0,0,0" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" />
+                                    <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" VerticalAlignment="Center" Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" />
+                                    <Border x:Name="KeyCap" Grid.Column="2" Margin="6,0,6,0" Padding="6,1,6,2" VerticalAlignment="Center" CornerRadius="3" Background="{StaticResource KeyCapBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" IsHitTestVisible="False">
+                                        <TextBlock x:Name="KeyText" Text="Ctrl+F" FontSize="10" Foreground="{StaticResource MutedBrush}" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Hint" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Frame" Property="BorderBrush" Value="{StaticResource ThumbHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Frame" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Glass" Property="Stroke" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="KeyText" Property="Text" Value="Esc" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0.35" Duration="0:0:0.2" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.25" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsKeyboardFocusWithin" Value="True" />
+                                    <Condition Property="Text" Value="" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="KeyCap" Property="Visibility" Value="Collapsed" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="Button">
@@ -49,20 +131,48 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid SnapsToDevicePixels="True">
-                            <Border x:Name="Body" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3" />
-                            <Border x:Name="Shade" Background="#FFFFFFFF" CornerRadius="3" Opacity="0" />
+                        <Grid x:Name="Root" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
+                            <Border x:Name="Glow" Background="{TemplateBinding Background}" CornerRadius="5" Opacity="0" IsHitTestVisible="False">
+                                <Border.Effect>
+                                    <BlurEffect Radius="12" />
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="Body" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" />
+                            <Border x:Name="Sheen" Background="{StaticResource SheenBrush}" CornerRadius="5" Margin="1" IsHitTestVisible="False" />
+                            <Border x:Name="Shade" Background="#FFFFFFFF" CornerRadius="5" Opacity="0" />
+                            <Border x:Name="Press" Background="#FFFFFFFF" CornerRadius="5" Opacity="0" />
+                            <Border x:Name="Ring" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="5" Opacity="0" IsHitTestVisible="False" />
                             <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="True" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Shade" Property="Opacity" Value="0.08" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Shade" Storyboard.TargetProperty="Opacity" To="0.08" Duration="0:0:0.12" />
+                                            <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0.55" Duration="0:0:0.2" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Shade" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.25" />
+                                            <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.3" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Shade" Property="Opacity" Value="0.16" />
+                                <Setter TargetName="Press" Property="Opacity" Value="0.08" />
+                                <Setter TargetName="Root" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Body" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Ring" Property="Opacity" Value="1" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />
@@ -71,6 +181,12 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <Style x:Key="ExecuteButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource ExecuteBrush}" />
+            <Setter Property="BorderBrush" Value="#FFFFC566" />
+            <Setter Property="Foreground" Value="{StaticResource WindowBrush}" />
         </Style>
 
         <Style x:Key="FilterToggle" TargetType="ToggleButton">
@@ -85,25 +201,69 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Grid SnapsToDevicePixels="True">
-                            <Border x:Name="Body" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3" />
-                            <Border x:Name="Shade" Background="#FFFFFFFF" CornerRadius="3" Opacity="0" />
+                        <Grid x:Name="Root" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
+                            <Border x:Name="Glow" Background="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" CornerRadius="5" Opacity="0" IsHitTestVisible="False">
+                                <Border.Effect>
+                                    <BlurEffect Radius="10" />
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="Body" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" />
+                            <Border x:Name="Tint" BorderBrush="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" BorderThickness="1" CornerRadius="5" Opacity="0.35" IsHitTestVisible="False" />
+                            <Border x:Name="Lit" Background="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" CornerRadius="5" Opacity="0" />
+                            <Border x:Name="Sheen" Background="{StaticResource SheenBrush}" CornerRadius="5" Margin="1" IsHitTestVisible="False" />
+                            <Border x:Name="Shade" Background="#FFFFFFFF" CornerRadius="5" Opacity="0" />
+                            <Border x:Name="Press" Background="#FFFFFFFF" CornerRadius="5" Opacity="0" />
+                            <Border x:Name="Ring" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="5" Opacity="0" IsHitTestVisible="False" />
                             <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="True" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Body" Property="Background" Value="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
-                                <Setter TargetName="Body" Property="BorderBrush" Value="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <Setter TargetName="Lit" Property="Opacity" Value="1" />
+                                <Setter TargetName="Glow" Property="Opacity" Value="0.4" />
                                 <Setter Property="Foreground" Value="{StaticResource WindowBrush}" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Lit" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" From="0" To="0.4" Duration="0:0:0.3" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Lit" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Shade" Property="Opacity" Value="0.08" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Shade" Storyboard.TargetProperty="Opacity" To="0.08" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Shade" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.25" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Shade" Property="Opacity" Value="0.16" />
+                                <Setter TargetName="Press" Property="Opacity" Value="0.08" />
+                                <Setter TargetName="Root" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Body" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Ring" Property="Opacity" Value="1" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />
@@ -129,10 +289,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
                         <Grid SnapsToDevicePixels="True" Margin="0,0,2,0">
-                            <Border x:Name="Tab" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1,1,1,0" Padding="12,4">
+                            <Border x:Name="Tab" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1,1,1,0" CornerRadius="5,5,0,0" Padding="14,5">
                                 <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
                             </Border>
-                            <Border x:Name="Mark" Height="2" VerticalAlignment="Bottom" Background="{StaticResource AccentBrush}" Visibility="Collapsed" />
+                            <Border x:Name="Mark" Height="2" Margin="1,0" VerticalAlignment="Bottom" Background="{StaticResource AccentBrush}" Opacity="0" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -141,9 +301,23 @@
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Tab" Property="Background" Value="{StaticResource HeaderBrush}" />
-                                <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="Mark" Property="Opacity" Value="1" />
                                 <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
                                 <Setter Property="Panel.ZIndex" Value="1" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Mark" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.2" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Mark" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -156,13 +330,20 @@
             <Setter Property="Background" Value="{StaticResource HeaderBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="2" />
+            <Setter Property="Padding" Value="4" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
-                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
-                        </Border>
+                        <Grid Margin="4,2,8,8">
+                            <Border Background="#FF000000" CornerRadius="7" Opacity="0.45" Margin="0,2,0,-2" IsHitTestVisible="False">
+                                <Border.Effect>
+                                    <BlurEffect Radius="10" />
+                                </Border.Effect>
+                            </Border>
+                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="7" SnapsToDevicePixels="True">
+                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </Border>
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -173,7 +354,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="Item" Background="Transparent" Padding="4,4,18,4" SnapsToDevicePixels="True">
+                        <Border x:Name="Item" Background="Transparent" CornerRadius="4" Padding="4,5,18,5" SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="24" />
@@ -340,6 +521,7 @@
             <Setter Property="AlternationCount" Value="2" />
             <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource GridLineBrush}" />
             <Setter Property="VerticalGridLinesBrush" Value="{StaticResource GridLineBrush}" />
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
             <Setter Property="MinRowHeight" Value="26" />
         </Style>
 
@@ -356,38 +538,42 @@
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource HeaderTextBrush}" />
             <Setter Property="Background" Value="{StaticResource HeaderBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="6,8" />
+            <Setter Property="Padding" Value="5,8,4,8" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridColumnHeader">
                         <Grid>
-                            <Border x:Name="Head" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,1,1" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <Border x:Name="Head" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,0,1" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
                                 <Grid>
                                     <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="True" />
-                                    <Path x:Name="SortArrow" Data="M 0,6 L 4.5,0 L 9,6 Z" Fill="{StaticResource AccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" />
+                                    <Path x:Name="SortArrow" Data="M 0,4.5 L 4,0.5 L 8,4.5" Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" />
                                 </Grid>
                             </Border>
+                            <Rectangle Width="1" Margin="0,8,0,9" HorizontalAlignment="Right" Fill="{StaticResource LineBrush}" SnapsToDevicePixels="True" IsHitTestVisible="False" />
                             <Thumb x:Name="PART_LeftHeaderGripper" HorizontalAlignment="Left" Style="{StaticResource HeaderGripper}" />
                             <Thumb x:Name="PART_RightHeaderGripper" HorizontalAlignment="Right" Style="{StaticResource HeaderGripper}" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Head" Property="Background" Value="{StaticResource HoverBrush}" />
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Head" Property="Background" Value="{StaticResource PressedBrush}" />
                             </Trigger>
                             <Trigger Property="SortDirection" Value="Ascending">
                                 <Setter TargetName="SortArrow" Property="Visibility" Value="Visible" />
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
                             </Trigger>
                             <Trigger Property="SortDirection" Value="Descending">
                                 <Setter TargetName="SortArrow" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="SortArrow" Property="Data" Value="M 0,0 L 9,0 L 4.5,6 Z" />
+                                <Setter TargetName="SortArrow" Property="Data" Value="M 0,0.5 L 4,4.5 L 8,0.5" />
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

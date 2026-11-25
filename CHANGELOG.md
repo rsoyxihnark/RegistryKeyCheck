@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+- The buttons and tabs of RegistryKey Check now have rounded corners and light up softly when you point at them.
+- The Non-Compliant and Compliant buttons now fade into their red or green and glow while their filter is on.
+- The Execute Missing Commands button now stands out in a brighter orange.
+- The buttons along the bottom of RegistryKey Check now all line up at the same height.
+- The Find box now shows a magnifier and a Find hint inside it instead of a Find label beside it.
+- The Find box now shows Ctrl+F at its right side, and Esc while you type in it.
+- A thin moving line above the buttons now shows while Query Registry or Execute Missing Commands is working.
+- The list now says No rows to show when the Find box or the filters leave nothing to show.
+- The list now shows a green check and No noncompliant lines when Non-Compliant has nothing left to show.
+- The list now says what to do when List.txt has no reg lines.
+- The column headers now line up with the text in the rows below them.
+- Fixed the sort arrow covering the UID header when the list is sorted by UID.
+- The list no longer draws lines between its columns.
+- The row menu and the Columns menu now have rounded corners and a soft shadow.
+- The Detail window now shows its labels larger and easier to read, with every other line shaded.
+- The Detail window now shows List Match with Registry and Details in green, red or orange, the same as the list.
+- The title bar of RegistryKey Check and the Detail window now matches the dark blue of the window on Windows 11.
+
 ## 3.4.1
 
 - Closing RegistryKey Check while Execute Missing Commands runs now asks whether to stop it partway or let it finish first.

@@ -413,7 +413,7 @@ jobs:
                 $labels = @($texts | Where-Object { $labelNames -contains $_.Current.Name -and $_.Current.ClassName -ne 'TextBlock' })
                 $labelCount = $labels.Count
                 foreach ($label in $labels) {
-                  $text = New-Object System.Windows.Media.FormattedText($label.Current.Name, [System.Globalization.CultureInfo]::InvariantCulture, [System.Windows.FlowDirection]::LeftToRight, $typeface, 8, [System.Windows.Media.Brushes]::Black)
+                  $text = New-Object System.Windows.Media.FormattedText($label.Current.Name, [System.Globalization.CultureInfo]::InvariantCulture, [System.Windows.FlowDirection]::LeftToRight, $typeface, 11, [System.Windows.Media.Brushes]::Black)
                   $labelNeed = [Math]::Max($labelNeed, [Math]::Ceiling($text.Width + 10))
                   if ($label.Current.BoundingRectangle.Width / $detailScale -lt $text.Width + 10) { $labelsCut += $label.Current.Name }
                 }

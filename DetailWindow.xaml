@@ -9,19 +9,25 @@
         Title="Detail" SizeToContent="WidthAndHeight" MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}" WindowStartupLocation="CenterOwner" Background="{StaticResource WindowBrush}" Loaded="DetailWin_Loaded" PreviewKeyDown="DetailWin_PreviewKeyDown">
     <Window.Resources>
         <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
-            <Setter Property="Width" Value="110" />
-            <Setter Property="Height" Value="20" />
-            <Setter Property="Margin" Value="0,5" />
-            <Setter Property="FontSize" Value="8" />
+            <Setter Property="Width" Value="160" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="Padding" Value="5,6,14,5" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="Band" TargetType="Border">
+            <Setter Property="Grid.ColumnSpan" Value="2" />
+            <Setter Property="Background" Value="{StaticResource AlternateBrush}" />
+            <Setter Property="CornerRadius" Value="5" />
         </Style>
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Grid.Column" Value="1" />
             <Setter Property="Width" Value="660" />
             <Setter Property="MinHeight" Value="20" />
-            <Setter Property="Margin" Value="0,5,4,5" />
+            <Setter Property="Margin" Value="0,6,8,6" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="IsReadOnly" Value="True" />
@@ -31,9 +37,9 @@
         </Style>
     </Window.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid Margin="0,5">
+        <Grid Margin="10,10">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="120" />
+                <ColumnDefinition Width="160" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -51,6 +57,12 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
+            <Border Style="{StaticResource Band}" Grid.Row="1" />
+            <Border Style="{StaticResource Band}" Grid.Row="3" />
+            <Border Style="{StaticResource Band}" Grid.Row="5" />
+            <Border Style="{StaticResource Band}" Grid.Row="7" />
+            <Border Style="{StaticResource Band}" Grid.Row="9" />
+            <Border Style="{StaticResource Band}" Grid.Row="11" />
             <Label Content="UID" Grid.Row="0" />
             <Label Content="List Command" Grid.Row="1" />
             <Label Content="Path" Grid.Row="2" />

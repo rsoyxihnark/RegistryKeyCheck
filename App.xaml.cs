@@ -20,6 +20,12 @@ namespace RegistryKey_Check
                 {
                     DwmSetWindowAttribute(handle, 19, ref dark, sizeof(int));
                 }
+                int border = 0x0057433A;
+                int caption = 0x002B1F1B;
+                int captionText = 0x00EEE7E4;
+                DwmSetWindowAttribute(handle, 34, ref border, sizeof(int));
+                DwmSetWindowAttribute(handle, 35, ref caption, sizeof(int));
+                DwmSetWindowAttribute(handle, 36, ref captionText, sizeof(int));
             };
         }
     }

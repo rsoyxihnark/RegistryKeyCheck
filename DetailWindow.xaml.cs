@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace RegistryKey_Check
 {
@@ -37,6 +38,12 @@ namespace RegistryKey_Check
             TextBoxExecuteResult.Text = mo.ExecuteResult;
             TextBoxListMatchWithRegEdit.Text = mo.ListMatchWithRegEdit;
             TextBoxComplianceDetails.Text = mo.ComplianceDetails;
+            string? status = mo.HasListWarning ? "OrangeBrush" : mo.ListMatchWithRegEdit == "True" ? "GreenBrush" : mo.ListMatchWithRegEdit == "False" ? "RedBrush" : null;
+            if (status != null)
+            {
+                TextBoxListMatchWithRegEdit.Foreground = (Brush)FindResource(status);
+                TextBoxComplianceDetails.Foreground = (Brush)FindResource(status);
+            }
         }
     }
 }

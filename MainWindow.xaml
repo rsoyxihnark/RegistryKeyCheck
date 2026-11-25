@@ -18,9 +18,8 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="60" />
                     </Grid.RowDefinitions>
-                    <StackPanel x:Name="PanelFind" Orientation="Horizontal" Margin="0,0,0,4">
-                        <Label Content="Find" VerticalAlignment="Center" />
-                        <TextBox x:Name="TextBoxFind" Width="320" Height="24" VerticalContentAlignment="Center" TextChanged="TextBoxFind_TextChanged" PreviewKeyDown="TextBoxFind_PreviewKeyDown" />
+                    <StackPanel x:Name="PanelFind" Orientation="Horizontal" Margin="2,4,0,6">
+                        <TextBox x:Name="TextBoxFind" Style="{StaticResource FindBox}" Width="340" Height="28" TextChanged="TextBoxFind_TextChanged" PreviewKeyDown="TextBoxFind_PreviewKeyDown" />
                     </StackPanel>
                     <DataGrid x:Name="DataGridRegCommands" RowHeaderWidth="0" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
                         <DataGrid.Resources>
@@ -70,11 +69,134 @@
                             </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button x:Name="ButtonReadListFile" Grid.Row="2" Content="Read List.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,10,0" VerticalAlignment="Top" Width="160" Click="ButtonReadListFile_Click" />
-                    <Button x:Name="ButtonQueryFromRegEdit" Grid.Row="2" Content="Query Registry" HorizontalAlignment="Right" Height="40" Margin="0,10,176,0" VerticalAlignment="Top" Width="160" Click="ButtonQueryFromRegEdit_Click" />
-                    <Button x:Name="ButtonExecuteMissingCommands" Background="#FFFFA500" Foreground="#FF1B1F2B" Grid.Row="2" Content="Execute Missing Commands" HorizontalAlignment="Right" Height="40" Margin="0,10,342,0" VerticalAlignment="Top" Width="160" Click="ButtonExecuteMissingCommands_Click" />
-                    <Button x:Name="ButtonOpenListFile" Grid.Row="2" Content="Open List.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,508,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenListFile_Click" />
-                    <Button x:Name="ButtonOpenLogFile" Grid.Row="2" Content="Open Log.txt" HorizontalAlignment="Right" Height="40" Margin="0,10,674,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenLogFile_Click" />
+                    <StackPanel x:Name="PanelEmpty" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,36,0,0" IsHitTestVisible="False">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasItems, ElementName=DataGridRegCommands}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <Grid Width="52" Height="52" Margin="0,0,0,12" HorizontalAlignment="Center">
+                            <Ellipse x:Name="EmptyRing" StrokeThickness="1.5">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Stroke" Value="{StaticResource LineBrush}" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsChecked, ElementName=ButtonFilterFalses}" Value="True" />
+                                                    <Condition Binding="{Binding IsChecked, ElementName=ButtonFilterTrues}" Value="False" />
+                                                    <Condition Binding="{Binding Text, ElementName=TextBoxFind}" Value="" />
+                                                    <Condition Binding="{Binding Text, ElementName=TextNonCompliant}" Value="0 noncompliant" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Stroke" Value="{StaticResource GreenBrush}" />
+                                            </MultiDataTrigger>
+                                            <DataTrigger Binding="{Binding Text, ElementName=TextLines}" Value="0 lines">
+                                                <Setter Property="Stroke" Value="{StaticResource LineBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <Path x:Name="EmptyGlyph" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Setter Property="Data" Value="{StaticResource SearchGlyph}" />
+                                        <Setter Property="Stroke" Value="{StaticResource MutedBrush}" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsChecked, ElementName=ButtonFilterFalses}" Value="True" />
+                                                    <Condition Binding="{Binding IsChecked, ElementName=ButtonFilterTrues}" Value="False" />
+                                                    <Condition Binding="{Binding Text, ElementName=TextBoxFind}" Value="" />
+                                                    <Condition Binding="{Binding Text, ElementName=TextNonCompliant}" Value="0 noncompliant" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Data" Value="{StaticResource CheckGlyph}" />
+                                                <Setter Property="Stroke" Value="{StaticResource GreenBrush}" />
+                                            </MultiDataTrigger>
+                                            <DataTrigger Binding="{Binding Text, ElementName=TextLines}" Value="0 lines">
+                                                <Setter Property="Data" Value="{StaticResource ListGlyph}" />
+                                                <Setter Property="Stroke" Value="{StaticResource MutedBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                        </Grid>
+                        <TextBlock x:Name="TextEmpty" FontSize="15" Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="No rows to show" />
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsChecked, ElementName=ButtonFilterFalses}" Value="True" />
+                                                <Condition Binding="{Binding IsChecked, ElementName=ButtonFilterTrues}" Value="False" />
+                                                <Condition Binding="{Binding Text, ElementName=TextBoxFind}" Value="" />
+                                                <Condition Binding="{Binding Text, ElementName=TextNonCompliant}" Value="0 noncompliant" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Text" Value="No noncompliant lines" />
+                                        </MultiDataTrigger>
+                                        <DataTrigger Binding="{Binding Text, ElementName=TextLines}" Value="0 lines">
+                                            <Setter Property="Text" Value="No rows to show" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock x:Name="TextEmptyHint" FontSize="12" Margin="0,5,0,0" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="All Filters Reset shows every row" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Text, ElementName=TextLines}" Value="0 lines">
+                                            <Setter Property="Text" Value="Write reg lines into List.txt, then press Read List.txt" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                    <Border x:Name="BusyBar" Grid.Row="2" Height="2" Margin="1,2,1,0" VerticalAlignment="Top" CornerRadius="1" Opacity="0" IsHitTestVisible="False">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <LinearGradientBrush.RelativeTransform>
+                                    <TranslateTransform X="-1" />
+                                </LinearGradientBrush.RelativeTransform>
+                                <GradientStop Color="#004A8CF7" Offset="0.3" />
+                                <GradientStop Color="#FF4A8CF7" Offset="0.5" />
+                                <GradientStop Color="#004A8CF7" Offset="0.7" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEnabled, ElementName=ButtonQueryFromRegEdit}" Value="False">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="BusyRun">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2" />
+                                                    <DoubleAnimation Storyboard.TargetProperty="(Border.Background).(Brush.RelativeTransform).(TranslateTransform.X)" From="-0.7" To="0.7" Duration="0:0:1.1" RepeatBehavior="Forever" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="BusyRun" />
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                    <Button x:Name="ButtonReadListFile" Grid.Row="2" Content="Read List.txt" HorizontalAlignment="Right" Height="43" Margin="0,8,10,0" VerticalAlignment="Top" Width="160" Click="ButtonReadListFile_Click" />
+                    <Button x:Name="ButtonQueryFromRegEdit" Grid.Row="2" Content="Query Registry" HorizontalAlignment="Right" Height="43" Margin="0,8,176,0" VerticalAlignment="Top" Width="160" Click="ButtonQueryFromRegEdit_Click" />
+                    <Button x:Name="ButtonExecuteMissingCommands" Style="{StaticResource ExecuteButton}" Grid.Row="2" Content="Execute Missing Commands" HorizontalAlignment="Right" Height="43" Margin="0,8,342,0" VerticalAlignment="Top" Width="160" Click="ButtonExecuteMissingCommands_Click" />
+                    <Button x:Name="ButtonOpenListFile" Grid.Row="2" Content="Open List.txt" HorizontalAlignment="Right" Height="43" Margin="0,8,508,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenListFile_Click" />
+                    <Button x:Name="ButtonOpenLogFile" Grid.Row="2" Content="Open Log.txt" HorizontalAlignment="Right" Height="43" Margin="0,8,674,0" VerticalAlignment="Top" Width="160" Click="ButtonOpenLogFile_Click" />
                     <ToggleButton x:Name="ButtonFilterFalses" Style="{StaticResource FilterToggle}" Tag="{StaticResource RedBrush}" VerticalContentAlignment="Top" Grid.Row="2" Content="Non-Compliant" HorizontalAlignment="Right" Height="21" Margin="0,8,840,0" VerticalAlignment="Top" Width="100" Checked="FilterButton_Changed" Unchecked="FilterButton_Changed" />
                     <ToggleButton x:Name="ButtonFilterTrues" Style="{StaticResource FilterToggle}" Tag="{StaticResource GreenBrush}" VerticalContentAlignment="Top" Grid.Row="2" Content="Compliant" HorizontalAlignment="Right" Height="21" Margin="0,30,840,0" VerticalAlignment="Top" Width="100" Checked="FilterButton_Changed" Unchecked="FilterButton_Changed" />
                     <Button x:Name="ButtonAllFiltersReset" Grid.Row="2" Content="All Filters Reset" HorizontalAlignment="Right" Height="43" Margin="0,8,946,0" VerticalAlignment="Top" Width="100" Click="ButtonAllFiltersReset_Click" />
