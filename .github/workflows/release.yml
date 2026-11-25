@@ -591,3 +591,25 @@ jobs:
           git log -1 --format=%b HEAD | tr -d '\r' > notes.md
           gh release create "v$VERSION" dist/RegistryKeyCheck.exe --title "RegistryKey Check $VERSION" --notes-file notes.md --target "$GITHUB_SHA"
           gh release view "v$VERSION" --json assets --jq '.assets[].name' | grep -qx 'RegistryKeyCheck.exe' || { echo "::error::RegistryKeyCheck.exe is not attached to v$VERSION"; exit 1; }
+
+      - name: Bring published release notes in line with CHANGELOG.md
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          log=$(tr -d '\r' < CHANGELOG.md | sed 's/[[:space:]]*$//')
+          for tag in $(gh release list --limit 1000 --json tagName --jq '.[].tagName' | tr -d '\r'); do
+            ver=${tag#v}
+            entries=$(printf '%s\n' "$log" | awk -v h="## $ver" '$0==h{f=1;next} /^## /{if(f)exit} f && /^- /')
+            if [ -z "$entries" ]; then
+              echo "$tag has no section in CHANGELOG.md, so its notes were left as they are"
+              continue
+            fi
+            notes=$(gh release view "$tag" --json body --jq .body | tr -d '\r' | sed 's/[[:space:]]*$//' | grep '^- ' || true)
+            if [ "$notes" != "$entries" ]; then
+              printf '%s\n' "$entries" > notes.md
+              gh release edit "$tag" --notes-file notes.md > /dev/null
+              echo "The notes of $tag now match CHANGELOG.md"
+            fi
+          done
