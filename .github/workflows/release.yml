@@ -502,7 +502,7 @@ jobs:
                 Open-App $bigDir
                 (Find-Id 'ButtonExecuteMissingCommands').GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
                 $busy = Wait-Until { -not (Is-Idle) }
-                if ($answer -eq 'No') { Save-Shot 'busy' }
+                if ($answer -eq 'No') { Start-Sleep -Milliseconds 600; Save-Shot 'busy' }
                 [WindowShot]::PostClose([IntPtr]$window.Current.NativeWindowHandle)
                 $asked = Wait-Until { [WindowShot]::Dialog() -ne [IntPtr]::Zero }
                 if ($asked) {
